@@ -24,3 +24,6 @@ docs/PROJETO.md
 
 # Windows
 desktop.ini
+
+# Pacote Python instalado em modo editável
+*.egg-info/
