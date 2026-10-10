@@ -1,0 +1,23 @@
+# Ambiente
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Segredos (nunca versionar)
+.env
+.streamlit/secrets.toml
+
+# Dados brutos e banco local
+data/raw/
+warehouse.duckdb
+*.duckdb.wal
+
+# dbt
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+
+docs/PROJETO.md
