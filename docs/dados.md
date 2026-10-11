@@ -171,8 +171,10 @@ Nada disso bloqueia a Fase 1, porque o modelo usa só `N` com DI = `0`.
 2. **Recarregar a janela inteira a cada mês**, e não só o mês novo, porque a ANAC regera a série
    (seção 4.1). A carga guarda a data "Atualizado em" e o hash de cada arquivo, e só recarrega o que
    mudou.
-3. **Mês do voo = mês da partida prevista**, e não o mês do arquivo. O teste de borda usa tolerância
-   de **48 horas** para todos os tipos de linha. Os voos `N` ficam todos dentro de 6 horas.
+3. **Mês do voo = mês do arquivo da ANAC.** Usar o mês da partida prevista criaria "meses" com
+   poucas dezenas de voos (por exemplo, setembro de 2026 a partir dos voos de 1º de setembro que
+   vêm no arquivo de agosto). A partida prevista pode passar até **48 horas** da virada; o que
+   passar disso vai para a quarentena. Os voos `N` ficam todos dentro de 6 horas.
 4. **Duplicatas removidas também entre arquivos**: se o mesmo voo aparece em dois meses, fica uma
    linha só, a do arquivo mais recente.
 5. **Chave do voo**: hash de todas as colunas originais, porque a combinação natural não é única.
@@ -182,6 +184,10 @@ Nada disso bloqueia a Fase 1, porque o modelo usa só `N` com DI = `0`.
    alvo (não são nem realizados nem cancelados) e são contados à parte.
 7. **Justificativas fora do app**: a análise de motivos sai da página de Pontualidade e vira uma
    limitação no README e no `docs/modelo.md`.
+8. **Voos sem partida prevista não vão para a quarentena.** São 2.200 a 2.800 por mês (cerca de 3%),
+   todos com DI diferente de `0`: voos extras, sem horário programado. Não são erro de dado, e
+   colocá-los na quarentena estouraria o limite de 2% todo mês. Eles ficam em `fct_flights`, sem
+   atraso calculado, e não entram no modelo, que usa só DI = `0`.
 
 ## 7. Diferenças em relação ao `PROJETO.md` (versão 2.1)
 
@@ -195,5 +201,6 @@ Nada disso bloqueia a Fase 1, porque o modelo usa só `N` com DI = `0`.
 | 3.1.1 | Conferir se algum mês tem justificativas | 100% `N/A` nos 6 meses | Decisão 7 |
 | 3.4 | Fuso provavelmente de Brasília | Confirmado pelos dados nos 6 meses | Sem ajuste |
 | 5.2 | Tolerância de 6 h na virada do mês | Voos `I` e `G` até 36 h depois | Tolerância de 48 h (decisão 3) |
+| 3.4 | Partida real sem partida prevista vai para a quarentena | São voos extras (DI ≠ 0), cerca de 3% do mês | Ficam fora da quarentena (decisão 8) |
 | 5.2 | "Nenhuma duplicata depois da limpeza" | Duplicatas também entre arquivos; chave natural não é única | Decisões 4 e 5 |
 | 6.3 | L = 2, a confirmar | Setembro ainda não saiu em 10/10/2026 | L = 2 confirmado |

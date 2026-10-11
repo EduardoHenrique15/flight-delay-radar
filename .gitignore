@@ -19,6 +19,7 @@ warehouse.duckdb
 dbt/target/
 dbt/logs/
 dbt/dbt_packages/
+dbt/.user.yml
 
 docs/PROJETO.md
 

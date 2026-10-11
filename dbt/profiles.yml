@@ -1,0 +1,8 @@
+# Sem segredos: só aponta para o banco local. O caminho é relativo à pasta dbt/.
+fdr:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('FDR_WAREHOUSE', '../data/warehouse.duckdb') }}"
+      threads: 4

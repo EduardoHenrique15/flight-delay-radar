@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: stg_vra
+    description: Linhas distintas do VRA por arquivo, com nomes em snake_case, códigos padronizados e datas convertidas.
+    columns:
+      - name: voo_id
+        description: Hash de todas as colunas originais.
+        data_tests: [not_null]
+      - name: mes_arquivo
+        data_tests: [not_null]
+
+  - name: int_flights
+    description: Todos os voos sem duplicatas, com atraso calculado e motivo de quarentena.
+    columns:
+      - name: voo_id
+        data_tests: [unique, not_null]
+
+  - name: int_quarantine
+    description: Voos rejeitados pelas regras de qualidade, com o motivo.
+    columns:
+      - name: motivo_quarentena
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - partida prevista fora do mês do arquivo
+                  - atraso fora da faixa aceita
+                  - conflito de chave
+
+  - name: fct_flights
+    description: Um voo por linha, sem duplicatas e sem os registros em quarentena.
+    columns:
+      - name: voo_id
+        data_tests: [unique, not_null]
+      - name: mes
+        data_tests: [not_null]
+      - name: cia
+        data_tests: [not_null]
+      - name: origem
+        data_tests: [not_null]
+      - name: destino
+        data_tests: [not_null]
+      - name: situacao
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [REALIZADO, CANCELADO, NÃO INFORMADO]
+      - name: justificativa
+        description: Sempre vazia de 2022 a 2026 (docs/dados.md, seção 4.3).
+
+  - name: agg_punctuality_monthly
+    description: Pontualidade e cancelamentos por mês, companhia, aeroporto de origem e tipo de linha.
+
+  - name: agg_route_hour
+    description: Atrasos por mês, rota e hora prevista, na base do modelo.

@@ -1,0 +1,31 @@
+name: fdr
+version: "0.1.0"
+config-version: 2
+profile: fdr
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Alvo principal (A15) e faixas descritivas, em minutos.
+  limiar_atraso_min: 15
+  # Faixa de atraso aceita; fora dela o voo vai para a quarentena (PROJETO.md, seção 5.2).
+  atraso_min_minimo: -120
+  atraso_min_maximo: 1440
+  # Tolerância para partida prevista depois do fim do mês do arquivo (docs/dados.md, decisão 3).
+  tolerancia_virada_horas: 48
+  # Limite da quarentena por mês, em fração.
+  quarentena_max_fracao: 0.02
+
+models:
+  fdr:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: table
+    marts:
+      +materialized: table

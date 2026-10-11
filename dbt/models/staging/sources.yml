@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Tabelas carregadas por src/fdr/ingest/load_raw.py, com os valores originais.
+    schema: main
+    tables:
+      - name: raw_vra
+        description: Linhas dos CSVs mensais do VRA, como texto, com o arquivo de origem.
+      - name: raw_vra_cargas
+        description: Uma linha por arquivo carregado, com a data "Atualizado em" e o hash.
