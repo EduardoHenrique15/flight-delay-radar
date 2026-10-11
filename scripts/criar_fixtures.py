@@ -5,10 +5,14 @@ precisa tratar: duplicatas exatas, voo repetido em dois arquivos, cancelados, vo
 prevista, virada da meia-noite, partida prevista no mês seguinte, atrasos fora da faixa aceita e
 conflito de chave. As linhas são copiadas byte a byte, no mesmo formato dos arquivos da ANAC.
 
+Também grava data/fixtures/referencia/airports.csv: só os aeroportos do OurAirports que aparecem
+na amostra (o arquivo completo tem 12 MB e fica fora do git).
+
 Uso: python scripts/criar_fixtures.py [--origem data/raw/vra] [--destino data/fixtures/vra]
 """
 
 import argparse
+import csv
 import random
 from collections import Counter
 from datetime import datetime, timedelta
@@ -61,6 +65,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--origem", type=Path, default=Path("data/raw/vra"))
     parser.add_argument("--destino", type=Path, default=Path("data/fixtures/vra"))
+    parser.add_argument("--aeroportos", type=Path, default=Path("data/raw/referencia/airports.csv"))
     args = parser.parse_args()
     args.destino.mkdir(parents=True, exist_ok=True)
 
@@ -86,6 +91,29 @@ def main() -> None:
         conteudo = BOM + "\r\n".join([metadado, cabecalho, *linhas]) + "\r\n"
         (args.destino / nome).write_bytes(conteudo.encode("utf-8"))
         print(f"{nome}: {len(linhas)} linhas")
+
+    codigos = {
+        campos(linha)[i] for _, _, linhas in selecoes.values() for linha in linhas for i in (4, 5)
+    }
+    gravar_aeroportos(args.aeroportos, args.destino.parent / "referencia" / "airports.csv", codigos)
+
+
+def gravar_aeroportos(origem: Path, destino: Path, codigos: set[str]) -> None:
+    """Copia do OurAirports só as linhas cujo ident, icao_code ou gps_code está na amostra."""
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    with origem.open(encoding="utf-8", newline="") as entrada:
+        leitor = csv.DictReader(entrada)
+        linhas = [
+            linha
+            for linha in leitor
+            if codigos & {linha["ident"], linha["icao_code"], linha["gps_code"]}
+        ]
+        colunas = leitor.fieldnames
+    with destino.open("w", encoding="utf-8", newline="") as saida:
+        escritor = csv.DictWriter(saida, fieldnames=colunas, lineterminator="\n")
+        escritor.writeheader()
+        escritor.writerows(linhas)
+    print(f"{destino.name}: {len(linhas)} aeroportos")
 
 
 if __name__ == "__main__":

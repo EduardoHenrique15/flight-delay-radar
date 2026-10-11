@@ -7,3 +7,4 @@ ruff==0.17.0
 ipykernel==7.4.0
 dbt-core==1.12.5
 dbt-duckdb==1.11.0
+holidays==0.106

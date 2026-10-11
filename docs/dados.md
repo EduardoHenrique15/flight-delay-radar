@@ -27,7 +27,7 @@ O passo a passo e as tabelas completas estão em `notebooks/00_reconhecimento.ip
 - A listagem mostra a data e o tamanho de cada arquivo. Em 11/10/2026, os arquivos de agosto de
   2026 e de outubro de 2025 tinham a mesma data (07/10/2026 07:50), o que confirma que a série é
   regerada a cada publicação (seção 4.1).
-- Não achamos dicionário de dados na pasta. As dúvidas da seção 5 ficam em aberto.
+- Não achamos dicionário de dados na pasta. As dúvidas da seção 6 ficam em aberto.
 
 O download automático (`src/fdr/ingest/download_vra.py`) lê essas listagens e baixa só o que
 mudou. Se o site bloquear, os arquivos podem ser colocados à mão em `data/raw/vra/`.
@@ -163,7 +163,44 @@ Cancelamentos em voos nacionais: 1,6%.
   Manaus para Guarulhos. No horário local de cada aeroporto, a diferença seria de cerca de 2 horas.
   Os dois lados estão no mesmo fuso.
 
-## 5. Dúvidas em aberto
+## 5. Tabelas de apoio
+
+### 5.1 Aeroportos
+
+- Fonte: [OurAirports](https://ourairports.com/data/), arquivo `airports.csv` (domínio público),
+  baixado à mão em `data/raw/referencia/airports.csv`.
+- O código do VRA é procurado por `ident`, depois `icao_code`, depois `gps_code`. Com o arquivo de
+  outubro de 2026, 376 dos 379 códigos do VRA (jan/2022 a ago/2026) foram encontrados. Os 3 que
+  faltam (`GVPR`, `SEQU`, `GSAI`) só aparecem em voos internacionais.
+- Um teste do dbt falha se mais de 0,5% dos voos nacionais tiverem aeroporto sem coordenadas ou
+  sem fuso. É o aviso de que a ANAC passou a usar um aeródromo que não está no OurAirports.
+
+### 5.2 Fuso horário de cada aeroporto
+
+- O Brasil não tem horário de verão desde 2019, então, para a janela do projeto (2022 em diante), a
+  diferença para Brasília é fixa. Ela vem da UF (seed `fusos_uf`): Acre −2 h; Amazonas, Roraima,
+  Rondônia, Mato Grosso e Mato Grosso do Sul −1 h; os demais estados 0 h.
+- Exceção por aeroporto (seed `fusos_aeroportos`): Fernando de Noronha (`SBFN`), +1 h.
+- **Limitação:** alguns municípios do oeste do Amazonas seguem o fuso do Acre (−2 h), mas o
+  projeto usa o fuso da UF (−1 h) para todo o Amazonas. Afeta poucos voos e só a variável de hora
+  local, não o atraso.
+
+### 5.3 Companhias
+
+- O nome vem de uma tabela mantida à mão (seed `companhias`), só com as companhias conhecidas com
+  segurança: 53 das 113 que aparecem nos dados, entre elas as 20 com mais voos. As demais
+  aparecem pelo código ICAO, sem nome inventado.
+- Se a companhia não está no seed, ela é considerada brasileira quando opera voo nacional (`N`):
+  só empresa brasileira pode fazer voo doméstico no Brasil.
+
+### 5.4 Feriados e calendário
+
+- Feriados nacionais da biblioteca `holidays`, em português, do início da janela até o ano
+  seguinte ao atual. Feriados estaduais e municipais ficam de fora.
+- O calendário (`dim_date`) marca feriado, véspera, dia seguinte e férias escolares aproximadas
+  (janeiro, julho e a segunda quinzena de dezembro).
+
+## 6. Dúvidas em aberto
 
 Sem o dicionário de dados da ANAC, estes significados continuam sendo inferências a partir dos dados:
 
@@ -173,9 +210,9 @@ Sem o dicionário de dados da ANAC, estes significados continuam sendo inferênc
   modelo de qualquer jeito.
 - Fuso: horário de Brasília, inferido pelos dados (seção 4.11).
 
-Nada disso bloqueia a Fase 1, porque o modelo usa só `N` com DI = `0`.
+Nada disso bloqueia o projeto, porque o modelo usa só `N` com DI = `0`.
 
-## 6. Decisões tomadas
+## 7. Decisões tomadas
 
 1. **Um único layout** na staging, sem mapeamento por versão. Se um arquivo vier com cabeçalho
    diferente, a carga falha com uma mensagem clara.
@@ -199,8 +236,11 @@ Nada disso bloqueia a Fase 1, porque o modelo usa só `N` com DI = `0`.
    todos com DI diferente de `0`: voos extras, sem horário programado. Não são erro de dado, e
    colocá-los na quarentena estouraria o limite de 2% todo mês. Eles ficam em `fct_flights`, sem
    atraso calculado, e não entram no modelo, que usa só DI = `0`.
+9. **Hora local de partida pelo fuso da origem.** Os horários do VRA estão em Brasília; para as
+   variáveis de "hora do dia", a tabela de voos ganha `hora_prevista_local` (seção 5.2). O atraso
+   não muda, porque previsto e real estão no mesmo fuso.
 
-## 7. Diferenças em relação ao `PROJETO.md` (versão 2.1)
+## 8. Diferenças em relação ao `PROJETO.md` (versão 2.1)
 
 | Seção | O que dizia | O que os dados mostraram | Ajuste |
 | --- | --- | --- | --- |

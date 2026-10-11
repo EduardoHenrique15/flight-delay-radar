@@ -9,7 +9,7 @@ import sys
 import duckdb
 import pytest
 
-from fdr.config import PASTA_FIXTURES_VRA
+from fdr.config import ARQUIVO_AEROPORTOS_FIXTURE, PASTA_FIXTURES_VRA
 
 
 def linhas_de_dados(pasta) -> int:
@@ -26,6 +26,7 @@ def pipeline(tmp_path_factory):
     ambiente = {
         **os.environ,
         "FDR_PASTA_VRA": str(PASTA_FIXTURES_VRA),
+        "FDR_ARQUIVO_AEROPORTOS": str(ARQUIVO_AEROPORTOS_FIXTURE),
         "FDR_WAREHOUSE": str(pasta / "warehouse.duckdb"),
         "FDR_PASTA_MARTS": str(pasta / "marts"),
         "FDR_BANCO_APP": str(pasta / "app.duckdb"),
@@ -130,3 +131,40 @@ def test_exportacao_gera_os_arquivos_do_app(pipeline):
     assert manifest["ultimo_mes"] == "2026-07-01"
     assert all(info["linhas"] > 0 for info in manifest["tabelas"].values())
     assert (pasta / "app.duckdb").exists()
+
+
+def test_todo_voo_tem_aeroporto_e_companhia_nas_dimensoes(pipeline):
+    con, _ = pipeline
+    sem_aeroporto, sem_companhia = con.execute("""
+        select
+            count(*) filter (where o.icao is null or d.icao is null),
+            count(*) filter (where c.cia is null)
+        from fct_flights f
+        left join dim_airports o on o.icao = f.origem
+        left join dim_airports d on d.icao = f.destino
+        left join dim_airlines c on c.cia = f.cia
+    """).fetchone()
+    assert (sem_aeroporto, sem_companhia) == (0, 0)
+
+
+def test_hora_local_usa_o_fuso_da_origem(pipeline):
+    con, _ = pipeline
+    errados = con.execute("""
+        select count(*) from fct_flights f join dim_airports a on a.icao = f.origem
+        where f.partida_prevista is not null and a.diferenca_brasilia_h is not null
+          and f.hora_prevista_local <> (f.hora_prevista_brasilia + a.diferenca_brasilia_h + 24) % 24
+    """).fetchone()[0]
+    fora_de_brasilia = con.execute("""
+        select count(*) from fct_flights f join dim_airports a on a.icao = f.origem
+        where a.diferenca_brasilia_h <> 0 and f.partida_prevista is not null
+    """).fetchone()[0]
+    assert errados == 0
+    assert fora_de_brasilia > 0, "a amostra deveria ter voos saindo de outro fuso"
+
+
+def test_calendario_tem_feriados(pipeline):
+    con, _ = pipeline
+    tiradentes = con.execute(
+        "select feriado, nome_feriado from dim_date where data = date '2026-04-21'"
+    ).fetchone()
+    assert tiradentes == (True, "Tiradentes")

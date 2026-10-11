@@ -1,0 +1,54 @@
+icao,nome,brasileira
+TAM,LATAM Airlines Brasil,true
+AZU,Azul,true
+GLO,Gol,true
+ACN,Azul Conecta,true
+PTB,Voepass,true
+SID,Sideral,true
+TTL,Total Linhas Aéreas,true
+MWM,Modern Logistics,true
+LTG,LATAM Cargo Brasil,true
+PAM,MAP Linhas Aéreas,true
+LAN,LATAM Airlines Chile,false
+LPE,LATAM Airlines Peru,false
+LAP,LATAM Airlines Paraguay,false
+LCO,LATAM Cargo Chile,false
+CMP,Copa Airlines,false
+TAP,TAP Air Portugal,false
+ARG,Aerolíneas Argentinas,false
+IBE,Iberia,false
+QTR,Qatar Airways,false
+AVA,Avianca,false
+AAL,American Airlines,false
+UAL,United Airlines,false
+DAL,Delta Air Lines,false
+SKU,Sky Airline,false
+JAT,JetSMART,false
+ETH,Ethiopian Airlines,false
+AFR,Air France,false
+KLM,KLM,false
+THY,Turkish Airlines,false
+UAE,Emirates,false
+DLH,Lufthansa,false
+GEC,Lufthansa Cargo,false
+BAW,British Airways,false
+ITY,ITA Airways,false
+ACA,Air Canada,false
+BOV,Boliviana de Aviación,false
+FBZ,Flybondi,false
+AEA,Air Europa,false
+SWR,Swiss,false
+KAL,Korean Air,false
+AMX,Aeroméxico,false
+CCA,Air China,false
+RAM,Royal Air Maroc,false
+SAA,South African Airways,false
+DTA,TAAG Angola Airlines,false
+GTI,Atlas Air,false
+CLX,Cargolux,false
+UPS,UPS Airlines,false
+FDX,FedEx,false
+DAE,DHL Aero Expreso,false
+CKS,Kalitta Air,false
+MPH,Martinair,false
+CJT,Cargojet,false

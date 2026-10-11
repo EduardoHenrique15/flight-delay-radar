@@ -24,6 +24,17 @@ vars:
   tolerancia_virada_horas: 48
   # Limite da quarentena por mês, em fração.
   quarentena_max_fracao: 0.02
+  # Fração máxima de voos nacionais com aeroporto sem coordenadas ou sem fuso.
+  aeroportos_sem_dados_max_fracao: 0.005
+
+seeds:
+  fdr:
+    fusos_uf:
+      +column_types:
+        diferenca_brasilia_h: integer
+    fusos_aeroportos:
+      +column_types:
+        diferenca_brasilia_h: integer
 
 models:
   fdr:

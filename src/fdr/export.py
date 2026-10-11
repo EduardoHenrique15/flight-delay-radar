@@ -16,9 +16,11 @@ import duckdb
 
 from fdr.config import BANCO_APP, MESES_DEPLOY, PASTA_MARTS, TAMANHO_MAX_ARQUIVO_MB, WAREHOUSE
 
-# Nome no app -> consulta sobre o warehouse. Toda consulta tem a coluna "mes" para o recorte.
+# Nome no app -> (consulta sobre o warehouse, ordem). As tabelas com a coluna "mes" são
+# recortadas na janela do deploy; as dimensões vão inteiras (são pequenas).
 CONSULTAS = {
-    "voos": """
+    "voos": (
+        """
         select
             mes,
             data_prevista,
@@ -28,7 +30,7 @@ CONSULTAS = {
             regular,
             origem,
             destino,
-            cast(hour(partida_prevista) as tinyint) as hora_prevista,
+            cast(hora_prevista_local as tinyint) as hora_prevista,
             cast(duracao_prevista_min as smallint) as duracao_prevista_min,
             situacao,
             cast(atraso_partida_min as smallint) as atraso_partida_min,
@@ -37,14 +39,17 @@ CONSULTAS = {
             atrasado_30,
             atrasado_60
         from fct_flights
-    """,
-    "pontualidade_mensal": "select * from agg_punctuality_monthly",
-    "atraso_rota_hora": "select * from agg_route_hour",
-}
-ORDEM = {
-    "voos": "mes, cia, origem, destino, data_prevista",
-    "pontualidade_mensal": "mes, cia, origem, tipo_linha",
-    "atraso_rota_hora": "mes, origem, destino, hora_prevista",
+        """,
+        "mes, cia, origem, destino, data_prevista",
+    ),
+    "pontualidade_mensal": (
+        "select * from agg_punctuality_monthly",
+        "mes, cia, origem, tipo_linha",
+    ),
+    "atraso_rota_hora": ("select * from agg_route_hour", "mes, origem, destino, hora_prevista"),
+    "aeroportos": ("select * exclude (encontrado_no_ourairports) from dim_airports", "icao"),
+    "companhias": ("select * from dim_airlines", "cia"),
+    "rotas": ("select * from dim_routes", "origem, destino"),
 }
 
 
@@ -69,13 +74,13 @@ def exportar(
         ).fetchone()[0]
 
         tabelas = {}
-        for nome, consulta in CONSULTAS.items():
+        for nome, (consulta, ordem) in CONSULTAS.items():
             destino = pasta_marts / f"{nome}.parquet"
-            recorte = f"""
-                select * from ({consulta})
-                where mes between '{primeiro_mes}' and '{ultimo_mes}'
-                order by {ORDEM[nome]}
-            """
+            colunas = [c[0] for c in con.execute(f"describe {consulta}").fetchall()]
+            filtro = (
+                f"where mes between '{primeiro_mes}' and '{ultimo_mes}'" if "mes" in colunas else ""
+            )
+            recorte = f"select * from ({consulta}) {filtro} order by {ordem}"
             con.execute(
                 f"copy ({recorte}) to '{_sql_path(destino)}' "
                 "(format parquet, compression zstd, compression_level 9)"

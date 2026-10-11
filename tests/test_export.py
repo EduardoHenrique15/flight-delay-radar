@@ -25,7 +25,7 @@ def warehouse(tmp_path):
                 true as regular,
                 'SBRF' as origem,
                 'SBGR' as destino,
-                mes + interval 2 day + interval 10 hour as partida_prevista,
+                10 as hora_prevista_local,
                 180 as duracao_prevista_min,
                 'REALIZADO' as situacao,
                 20 as atraso_partida_min,
@@ -46,6 +46,14 @@ def warehouse(tmp_path):
             "select mes, 'SBRF' as origem, 'SBGR' as destino, 10 as hora_prevista, 1 as voos "
             "from fct_flights"
         )
+        con.execute(
+            "create table dim_airports as select 'SBRF' as icao, 'Recife' as cidade, "
+            "true as encontrado_no_ourairports"
+        )
+        con.execute("create table dim_airlines as select 'GLO' as cia, 'Gol' as nome")
+        con.execute(
+            "create table dim_routes as select 'SBRF' as origem, 'SBGR' as destino, 2100 as km"
+        )
     return caminho
 
 
@@ -59,6 +67,9 @@ def test_exporta_so_a_janela_pedida(warehouse, tmp_path):
         "voos": 2,
         "pontualidade_mensal": 2,
         "atraso_rota_hora": 2,
+        "aeroportos": 1,
+        "companhias": 1,
+        "rotas": 1,
     }
     assert json.loads((marts / "manifest.json").read_text(encoding="utf-8")) == manifest
 
@@ -78,7 +89,24 @@ def test_banco_do_assistente_tem_so_as_tabelas_exportadas(warehouse, tmp_path):
     exportar(warehouse, tmp_path / "marts", app, meses=24)
     with duckdb.connect(str(app), read_only=True) as con:
         tabelas = {t[0] for t in con.execute("show tables").fetchall()}
-    assert tabelas == {"voos", "pontualidade_mensal", "atraso_rota_hora"}
+    assert tabelas == {
+        "voos",
+        "pontualidade_mensal",
+        "atraso_rota_hora",
+        "aeroportos",
+        "companhias",
+        "rotas",
+    }
+
+
+def test_dimensoes_vao_inteiras_e_sem_colunas_internas(warehouse, tmp_path):
+    marts = tmp_path / "marts"
+    exportar(warehouse, marts, tmp_path / "app.duckdb", meses=1)
+    colunas = {
+        c[0]
+        for c in duckdb.sql(f"describe select * from '{marts / 'aeroportos.parquet'}'").fetchall()
+    }
+    assert colunas == {"icao", "cidade"}
 
 
 def test_reexportar_substitui_o_banco(warehouse, tmp_path):

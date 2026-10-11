@@ -1,8 +1,8 @@
 """Caminhos e constantes do projeto. Os valores vêm do docs/PROJETO.md e do docs/dados.md.
 
-Os caminhos de dados podem ser trocados por variáveis de ambiente (FDR_PASTA_VRA, FDR_WAREHOUSE,
-FDR_PASTA_MARTS, FDR_BANCO_APP). Os testes e o CI usam isso para rodar o pipeline na amostra de
-data/fixtures/ sem tocar nos dados reais.
+Os caminhos de dados podem ser trocados por variáveis de ambiente (FDR_PASTA_VRA,
+FDR_ARQUIVO_AEROPORTOS, FDR_WAREHOUSE, FDR_PASTA_MARTS, FDR_BANCO_APP). Os testes e o CI usam
+isso para rodar o pipeline na amostra de data/fixtures/ sem tocar nos dados reais.
 """
 
 import os
@@ -18,6 +18,11 @@ def _caminho(variavel: str, padrao: Path) -> Path:
 PASTA_DADOS = RAIZ / "data"
 PASTA_RAW_VRA = _caminho("FDR_PASTA_VRA", PASTA_DADOS / "raw" / "vra")
 PASTA_FIXTURES_VRA = PASTA_DADOS / "fixtures" / "vra"
+ARQUIVO_AEROPORTOS = _caminho(
+    "FDR_ARQUIVO_AEROPORTOS", PASTA_DADOS / "raw" / "referencia" / "airports.csv"
+)
+ARQUIVO_AEROPORTOS_FIXTURE = PASTA_DADOS / "fixtures" / "referencia" / "airports.csv"
+URL_AEROPORTOS = "https://davidmegginson.github.io/ourairports-data/airports.csv"
 WAREHOUSE = _caminho("FDR_WAREHOUSE", PASTA_DADOS / "warehouse.duckdb")
 PASTA_DBT = RAIZ / "dbt"
 

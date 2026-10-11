@@ -9,3 +9,7 @@ sources:
         description: Linhas dos CSVs mensais do VRA, como texto, com o arquivo de origem.
       - name: raw_vra_cargas
         description: Uma linha por arquivo carregado, com a data "Atualizado em" e o hash.
+      - name: raw_airports
+        description: Aeroportos do OurAirports (domínio público), carregados por src/fdr/ingest/reference.py.
+      - name: raw_feriados
+        description: Feriados nacionais do Brasil, gerados pela biblioteca holidays.

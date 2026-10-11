@@ -32,9 +32,10 @@ jobs:
           ruff check .
           ruff format --check .
 
-      - name: Pipeline de dados na amostra (carga, dbt build e exportação)
+      - name: Pipeline de dados na amostra (carga, referências, dbt build e exportação)
         env:
           FDR_PASTA_VRA: data/fixtures/vra
+          FDR_ARQUIVO_AEROPORTOS: data/fixtures/referencia/airports.csv
           FDR_WAREHOUSE: ${{ runner.temp }}/warehouse.duckdb
           FDR_PASTA_MARTS: ${{ runner.temp }}/marts
           FDR_BANCO_APP: ${{ runner.temp }}/app.duckdb

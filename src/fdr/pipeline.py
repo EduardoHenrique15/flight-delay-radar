@@ -1,5 +1,7 @@
 """Orquestra o pipeline. Por enquanto só a etapa de dados: carga -> dbt build -> exportação.
 
+A carga inclui as referências (aeroportos e feriados), e o dbt build carrega os seeds.
+
 Uso: python -m fdr.pipeline --stage data
 """
 
@@ -13,6 +15,7 @@ import duckdb
 from fdr.config import PASTA_DBT, PASTA_RAW_VRA, WAREHOUSE
 from fdr.export import exportar
 from fdr.ingest.load_raw import carregar_pasta
+from fdr.ingest.reference import carregar_referencias
 
 
 def rodar_dbt(*args: str) -> None:
@@ -34,11 +37,13 @@ def rodar_dbt(*args: str) -> None:
 
 
 def etapa_dados(forcar: bool = False) -> None:
-    print("1/3 Carga dos CSVs do VRA")
+    print("1/3 Carga dos CSVs do VRA e das referências")
     WAREHOUSE.parent.mkdir(parents=True, exist_ok=True)
     with duckdb.connect(str(WAREHOUSE)) as con:
         for nome, linhas in carregar_pasta(con, PASTA_RAW_VRA, forcar).items():
             print(f"    {nome:<16} {'sem mudanças' if linhas is None else f'{linhas:,} linhas'}")
+        for tabela, linhas in carregar_referencias(con).items():
+            print(f"    {tabela:<16} {linhas:,} linhas (referência)")
 
     print("2/3 dbt build (modelos e testes de qualidade)")
     rodar_dbt("build")

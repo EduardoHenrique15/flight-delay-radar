@@ -34,14 +34,31 @@ models:
     columns:
       - name: voo_id
         data_tests: [unique, not_null]
+      - name: hora_prevista_local
+        description: Hora prevista de partida no fuso do aeroporto de origem.
       - name: mes
         data_tests: [not_null]
       - name: cia
-        data_tests: [not_null]
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_airlines')
+                field: cia
       - name: origem
-        data_tests: [not_null]
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_airports')
+                field: icao
       - name: destino
-        data_tests: [not_null]
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_airports')
+                field: icao
       - name: situacao
         data_tests:
           - not_null
@@ -56,3 +73,48 @@ models:
 
   - name: agg_route_hour
     description: Atrasos por mês, rota e hora prevista, na base do modelo.
+
+  - name: dim_airports
+    description: Um aeroporto por código ICAO usado nos voos, com local, coordenadas e fuso.
+    columns:
+      - name: icao
+        data_tests: [unique, not_null]
+      - name: diferenca_brasilia_h
+        description: Horas a somar ao horário de Brasília para chegar à hora local.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [-2, -1, 0, 1]
+
+  - name: dim_airlines
+    description: Uma companhia por código ICAO, com nome (quando conhecido) e se é brasileira.
+    columns:
+      - name: cia
+        data_tests: [unique, not_null]
+
+  - name: dim_routes
+    description: Uma rota por par origem-destino, com a distância em linha reta.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "origem || '-' || destino"
+
+  - name: dim_date
+    description: Calendário com feriados nacionais, vésperas, dia seguinte e férias aproximadas.
+    columns:
+      - name: data
+        data_tests: [unique, not_null]
+
+seeds:
+  - name: companhias
+    description: Nomes das companhias conhecidas com segurança, mantido à mão.
+    columns:
+      - name: icao
+        data_tests: [unique, not_null]
+  - name: fusos_uf
+    description: Fuso de cada UF e a diferença para Brasília (sem horário de verão desde 2019).
+    columns:
+      - name: uf
+        data_tests: [unique, not_null]
+  - name: fusos_aeroportos
+    description: Aeroportos com fuso diferente do da sua UF.
