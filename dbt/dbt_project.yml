@@ -10,6 +10,10 @@ macro-paths: ["macros"]
 target-path: "target"
 clean-targets: ["target", "dbt_packages"]
 
+flags:
+  # Não envia estatísticas de uso do dbt para fora.
+  send_anonymous_usage_stats: false
+
 vars:
   # Alvo principal (A15) e faixas descritivas, em minutos.
   limiar_atraso_min: 15

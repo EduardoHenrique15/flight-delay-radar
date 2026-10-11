@@ -7,6 +7,13 @@ RAIZ = Path(__file__).resolve().parents[2]
 PASTA_DADOS = RAIZ / "data"
 PASTA_RAW_VRA = PASTA_DADOS / "raw" / "vra"
 WAREHOUSE = PASTA_DADOS / "warehouse.duckdb"
+PASTA_DBT = RAIZ / "dbt"
+
+# O que vai para o deploy: marts em Parquet e o banco do assistente (PROJETO.md, seção 2).
+PASTA_MARTS = PASTA_DADOS / "marts"
+BANCO_APP = PASTA_DADOS / "app.duckdb"
+MESES_DEPLOY = 24
+TAMANHO_MAX_ARQUIVO_MB = 50
 
 # Alvo principal: atraso na partida maior que 15 minutos (critério A15).
 LIMIAR_ATRASO_MIN = 15
