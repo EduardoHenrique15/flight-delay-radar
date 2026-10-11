@@ -15,11 +15,22 @@ O passo a passo e as tabelas completas estão em `notebooks/00_reconhecimento.ip
 ## 1. Onde estão os arquivos
 
 - Diretório: https://sistemas.anac.gov.br/dadosabertos/, pasta "Voos e operações aéreas" >
-  "Voo Regular Ativo (VRA)".
-- Nome: `VRA_<ano><mês sem zero à esquerda>.csv`. Exemplos: `VRA_20221.csv` é janeiro de 2022 e
-  `VRA_20236.csv` é junho de 2023. Ainda falta ver um mês de 10 a 12 para confirmar o padrão
-  `VRA_202510.csv`.
+  "Voo Regular Ativo (VRA)". É uma listagem simples ("Index of"), sem verificação anti-robô.
+- Estrutura conferida em 11/10/2026: `VRA/<ano>/<MM - Mês>/`, com pastas de 2000 a 2026 e o mês
+  escrito por extenso em português (`01 - Janeiro`, `03 - Março`, ...).
+- Cada pasta de mês tem dois arquivos com o mesmo conteúdo: `VRA_<ano><mês>.csv` e
+  `VRA_<ano><mês>.json`. O projeto usa só o CSV.
+- Nome: mês sem zero à esquerda. `VRA_20221.csv` é janeiro de 2022 e `VRA_202510.csv` é outubro
+  de 2025.
+- As pastas dos meses futuros já existem, mas vazias. Em 11/10/2026, `2026/09 - Setembro/`
+  existia sem nenhum arquivo.
+- A listagem mostra a data e o tamanho de cada arquivo. Em 11/10/2026, os arquivos de agosto de
+  2026 e de outubro de 2025 tinham a mesma data (07/10/2026 07:50), o que confirma que a série é
+  regerada a cada publicação (seção 4.1).
 - Não achamos dicionário de dados na pasta. As dúvidas da seção 5 ficam em aberto.
+
+O download automático (`src/fdr/ingest/download_vra.py`) lê essas listagens e baixa só o que
+mudou. Se o site bloquear, os arquivos podem ser colocados à mão em `data/raw/vra/`.
 
 ## 2. Formato do arquivo
 
