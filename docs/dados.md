@@ -169,11 +169,13 @@ Cancelamentos em voos nacionais: 1,6%.
 
 - Fonte: [OurAirports](https://ourairports.com/data/), arquivo `airports.csv` (domínio público),
   baixado à mão em `data/raw/referencia/airports.csv`.
-- O código do VRA é procurado por `ident`, depois `icao_code`, depois `gps_code`. Com o arquivo de
-  outubro de 2026, 376 dos 379 códigos do VRA (jan/2022 a ago/2026) foram encontrados. Os 3 que
-  faltam (`GVPR`, `SEQU`, `GSAI`) só aparecem em voos internacionais.
+- O código do VRA é procurado por `ident`, depois `icao_code`, depois `gps_code`.
+- A série completa (jan/2022 a ago/2026) usa 684 códigos de aeroporto. Na amostra de 6 meses da
+  Fase 0, 376 de 379 códigos foram encontrados no OurAirports; os 3 que faltavam (`GVPR`, `SEQU`,
+  `GSAI`) só apareciam em voos internacionais.
 - Um teste do dbt falha se mais de 0,5% dos voos nacionais tiverem aeroporto sem coordenadas ou
-  sem fuso. É o aviso de que a ANAC passou a usar um aeródromo que não está no OurAirports.
+  sem fuso. Na série completa ele passa. É também o aviso de que a ANAC passou a usar um aeródromo
+  que não está no OurAirports.
 
 ### 5.2 Fuso horário de cada aeroporto
 
@@ -187,9 +189,9 @@ Cancelamentos em voos nacionais: 1,6%.
 
 ### 5.3 Companhias
 
-- O nome vem de uma tabela mantida à mão (seed `companhias`), só com as companhias conhecidas com
-  segurança: 53 das 113 que aparecem nos dados, entre elas as 20 com mais voos. As demais
-  aparecem pelo código ICAO, sem nome inventado.
+- O nome vem de uma tabela mantida à mão (seed `companhias`), só com as 53 companhias conhecidas
+  com segurança. A série completa tem 173 companhias; as demais aparecem pelo código ICAO, sem
+  nome inventado. Na amostra de 6 meses, as 20 companhias com mais voos estavam todas no seed.
 - Se a companhia não está no seed, ela é considerada brasileira quando opera voo nacional (`N`):
   só empresa brasileira pode fazer voo doméstico no Brasil.
 
