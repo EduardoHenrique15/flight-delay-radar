@@ -14,6 +14,7 @@ mão: basta colocar os arquivos em data/raw/vra/ com o nome original.
 Uso:
     python -m fdr.ingest.download_vra --listar   # só mostra o que está disponível
     python -m fdr.ingest.download_vra            # baixa o que falta desde jan/2022
+    python -m fdr.ingest.download_vra --inicio 2019-01 --fim 2021-12 --pasta data/raw/vra_historico
 """
 
 import argparse
@@ -121,18 +122,21 @@ def buscar_listagem(sessao: requests.Session, url: str) -> list[Item]:
 
 
 def listar_disponiveis(
-    sessao: requests.Session, inicio: tuple[int, int] = INICIO_JANELA
+    sessao: requests.Session,
+    inicio: tuple[int, int] = INICIO_JANELA,
+    fim: tuple[int, int] | None = None,
 ) -> list[ArquivoRemoto]:
-    """Percorre anos e meses a partir de `inicio` e devolve os CSVs publicados."""
+    """Percorre anos e meses de `inicio` até `fim` (inclusive) e devolve os CSVs publicados."""
+    fim = fim or (9999, 12)
     disponiveis = []
     for pasta_ano in buscar_listagem(sessao, URL_BASE):
         achado_ano = PASTA_ANO.match(pasta_ano.nome)
-        if not achado_ano or int(achado_ano.group(1)) < inicio[0]:
+        if not achado_ano or not inicio[0] <= int(achado_ano.group(1)) <= fim[0]:
             continue
         ano = int(achado_ano.group(1))
         for pasta_mes in buscar_listagem(sessao, pasta_ano.url):
             achado_mes = PASTA_MES.match(pasta_mes.nome)
-            if not achado_mes or (ano, int(achado_mes.group(1))) < inicio:
+            if not achado_mes or not inicio <= (ano, int(achado_mes.group(1))) <= fim:
                 continue
             mes = int(achado_mes.group(1))
             csvs = [i for i in buscar_listagem(sessao, pasta_mes.url) if ARQUIVO_VRA.match(i.nome)]
@@ -197,13 +201,15 @@ def sincronizar(
     pasta: Path = PASTA_RAW_VRA,
     sessao: requests.Session | None = None,
     pausa_s: float = PAUSA_ENTRE_DOWNLOADS_S,
+    inicio: tuple[int, int] = INICIO_JANELA,
+    fim: tuple[int, int] | None = None,
 ) -> dict[str, str]:
-    """Baixa o que falta e devolve {arquivo: situação}."""
+    """Baixa o que falta no período e devolve {arquivo: situação}."""
     sessao = sessao or criar_sessao()
     pasta.mkdir(parents=True, exist_ok=True)
     registro = ler_registro(pasta)
     situacao = {}
-    for remoto in listar_disponiveis(sessao):
+    for remoto in listar_disponiveis(sessao, inicio, fim):
         nome = remoto.item.nome
         if not precisa_baixar(remoto, pasta, registro):
             situacao[nome] = "já estava em dia"
@@ -221,20 +227,33 @@ def sincronizar(
     return situacao
 
 
+def ano_mes(texto: str) -> tuple[int, int]:
+    """Converte "2019-01" em (2019, 1), para os argumentos --inicio e --fim."""
+    try:
+        ano, mes = (int(parte) for parte in texto.split("-"))
+    except ValueError as erro:
+        raise argparse.ArgumentTypeError(f"use o formato AAAA-MM (ex.: 2019-01): {texto}") from erro
+    if not 1 <= mes <= 12:
+        raise argparse.ArgumentTypeError(f"mês inválido: {texto}")
+    return ano, mes
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Baixa os CSVs do VRA da ANAC.")
     parser.add_argument("--pasta", type=Path, default=PASTA_RAW_VRA)
     parser.add_argument("--listar", action="store_true", help="só lista, sem baixar")
+    parser.add_argument("--inicio", type=ano_mes, default=INICIO_JANELA, help="AAAA-MM")
+    parser.add_argument("--fim", type=ano_mes, default=None, help="AAAA-MM (inclusive)")
     args = parser.parse_args()
 
     try:
         if args.listar:
-            for remoto in listar_disponiveis(criar_sessao()):
+            for remoto in listar_disponiveis(criar_sessao(), args.inicio, args.fim):
                 item = remoto.item
                 tamanho = f"{item.tamanho / 1e6:6.1f} MB" if item.tamanho else "     ?"
                 print(f"{remoto.ano}-{remoto.mes:02d}  {item.nome:<16} {tamanho}  {item.data}")
             return
-        for nome, situacao in sincronizar(args.pasta).items():
+        for nome, situacao in sincronizar(args.pasta, inicio=args.inicio, fim=args.fim).items():
             print(f"{nome:<16} {situacao}")
     except AcessoBloqueadoError as erro:
         raise SystemExit(

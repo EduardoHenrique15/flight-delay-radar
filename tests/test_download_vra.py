@@ -45,6 +45,7 @@ class SiteFalso:
     def __init__(self, conteudo_agosto=b"x" * 100):
         self.base = dv.URL_BASE
         self.arquivos = {
+            "2021/12 - Dezembro/VRA_202112.csv": b"d" * 40,
             "2022/01 - Janeiro/VRA_20221.csv": b"j" * 50,
             "2026/08 - Agosto/VRA_20268.csv": conteudo_agosto,
         }
@@ -61,6 +62,12 @@ class SiteFalso:
                 ("2021/", "13-Nov-2021 10:59", "-"),
                 ("2022/", "05-Jun-2024 22:35", "-"),
                 ("2026/", "05-Oct-2026 13:00", "-"),
+            ]),
+            self._url("2021/"): listagem("/VRA/2021/", [
+                ("12 - Dezembro/", "05-Jun-2024 22:34", "-"),
+            ]),
+            self._url("2021/12 - Dezembro/"): listagem("/VRA/2021/12 - Dezembro/", [
+                ("VRA_202112.csv", "07-Oct-2026 07:49", "40"),
             ]),
             self._url("2022/"): listagem("/VRA/2022/", [
                 ("01 - Janeiro/", "05-Jun-2024 22:35", "-"),
@@ -163,3 +170,18 @@ def test_download_incompleto_nao_substitui_o_arquivo(tmp_path, monkeypatch):
         sincronizar(tmp_path, sessao=site, pausa_s=0)
     assert (tmp_path / "VRA_20268.csv").read_bytes() == b"antigo"
     assert not list(tmp_path.glob("*.part"))
+
+
+def test_periodo_escolhido_baixa_so_os_meses_pedidos(tmp_path):
+    situacao = sincronizar(
+        tmp_path, sessao=SiteFalso(), pausa_s=0, inicio=(2021, 6), fim=(2022, 12)
+    )
+    assert list(situacao) == ["VRA_202112.csv", "VRA_20221.csv"]
+
+
+@pytest.mark.parametrize("texto", ["2019", "2019-13", "jan-2019"])
+def test_periodo_em_formato_errado_falha(texto):
+    import argparse
+
+    with pytest.raises(argparse.ArgumentTypeError):
+        dv.ano_mes(texto)
