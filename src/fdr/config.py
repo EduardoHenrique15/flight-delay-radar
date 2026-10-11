@@ -35,7 +35,8 @@ TAMANHO_MAX_ARQUIVO_MB = 50
 # Alvo principal: atraso na partida maior que 15 minutos (critério A15).
 LIMIAR_ATRASO_MIN = 15
 
-# Treino e análise começam em janeiro de 2022 (2020 e 2021 distorcidos pela pandemia).
+# Treino e análise começam em janeiro de 2022: 2020 e 2021 foram outro regime de operação
+# (docs/decisoes/001-janela-de-dados.md).
 INICIO_JANELA = (2022, 1)
 
 # Defasagem de publicação da ANAC em meses, medida na Fase 0 (docs/dados.md, seção 4.2).
