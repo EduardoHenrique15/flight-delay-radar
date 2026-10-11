@@ -41,5 +41,10 @@ jobs:
           FDR_BANCO_APP: ${{ runner.temp }}/app.duckdb
         run: python -m fdr.pipeline --stage data
 
+      - name: Variáveis do modelo na amostra (regra contra vazamento)
+        env:
+          FDR_WAREHOUSE: ${{ runner.temp }}/warehouse.duckdb
+        run: python -m fdr.pipeline --stage features
+
       - name: Testes
         run: pytest

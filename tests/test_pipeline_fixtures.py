@@ -1,4 +1,4 @@
-"""Teste de ponta a ponta: roda o pipeline de dados (carga, dbt build e exportação) na amostra
+"""Teste de ponta a ponta: roda o pipeline (carga, dbt build, exportação e variáveis) na amostra
 de data/fixtures/vra/, em pastas temporárias, sem tocar nos dados reais."""
 
 import json
@@ -31,15 +31,16 @@ def pipeline(tmp_path_factory):
         "FDR_PASTA_MARTS": str(pasta / "marts"),
         "FDR_BANCO_APP": str(pasta / "app.duckdb"),
     }
-    resultado = subprocess.run(
-        [sys.executable, "-m", "fdr.pipeline", "--stage", "data"],
-        env=ambiente,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
-    assert resultado.returncode == 0, resultado.stdout[-3000:] + resultado.stderr[-3000:]
+    for etapa in ("data", "features"):
+        resultado = subprocess.run(
+            [sys.executable, "-m", "fdr.pipeline", "--stage", etapa],
+            env=ambiente,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        assert resultado.returncode == 0, resultado.stdout[-3000:] + resultado.stderr[-3000:]
     con = duckdb.connect(ambiente["FDR_WAREHOUSE"], read_only=True)
     yield con, pasta
     con.close()
@@ -168,3 +169,23 @@ def test_calendario_tem_feriados(pipeline):
         "select feriado, nome_feriado from dim_date where data = date '2026-04-21'"
     ).fetchone()
     assert tiradentes == (True, "Tiradentes")
+
+
+def test_variaveis_usam_so_o_mes_de_corte(pipeline):
+    """A amostra tem maio, junho e julho de 2026. Com defasagem de 2 meses, julho usa só maio,
+    e maio e junho ficam sem histórico."""
+    con, _ = pipeline
+    por_mes = dict(
+        con.execute("""
+            select mes, max(voos_global_12m) from features_voos group by mes
+        """).fetchall()
+    )
+    voos_maio = con.execute("""
+        select count(*) from fct_flights
+        where mes = date '2026-05-01' and nacional and regular and atrasado_15 is not null
+    """).fetchone()[0]
+    assert {str(m): v for m, v in por_mes.items()} == {
+        "2026-05-01": 0,
+        "2026-06-01": 0,
+        "2026-07-01": voos_maio,
+    }

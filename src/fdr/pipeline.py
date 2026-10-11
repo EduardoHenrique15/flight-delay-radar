@@ -1,8 +1,11 @@
-"""Orquestra o pipeline. Por enquanto só a etapa de dados: carga -> dbt build -> exportação.
+"""Orquestra o pipeline.
 
-A carga inclui as referências (aeroportos e feriados), e o dbt build carrega os seeds.
+Etapas:
+  data      carga dos CSVs e das referências -> dbt build (modelos e testes) -> exportação
+  features  tabela de variáveis do modelo, com a regra contra vazamento (features_voos)
 
 Uso: python -m fdr.pipeline --stage data
+     python -m fdr.pipeline --stage features
 """
 
 import argparse
@@ -14,6 +17,8 @@ import duckdb
 
 from fdr.config import PASTA_DBT, PASTA_RAW_VRA, WAREHOUSE
 from fdr.export import exportar
+from fdr.features.build import TABELA as TABELA_FEATURES
+from fdr.features.build import construir as construir_features
 from fdr.ingest.load_raw import carregar_pasta
 from fdr.ingest.reference import carregar_referencias
 
@@ -55,13 +60,22 @@ def etapa_dados(forcar: bool = False) -> None:
         print(f"    {nome:<20} {info['linhas']:>9,} linhas")
 
 
+def etapa_features() -> None:
+    print("Tabela de variáveis do modelo (regra contra vazamento)")
+    with duckdb.connect(str(WAREHOUSE)) as con:
+        linhas = construir_features(con)
+    print(f"    {TABELA_FEATURES}: {linhas:,} voos")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Pipeline do Flight Delay Radar.")
-    parser.add_argument("--stage", choices=["data"], required=True)
+    parser.add_argument("--stage", choices=["data", "features"], required=True)
     parser.add_argument("--forcar", action="store_true", help="recarrega todos os CSVs")
     args = parser.parse_args()
     if args.stage == "data":
         etapa_dados(args.forcar)
+    elif args.stage == "features":
+        etapa_features()
     print("Pronto.")
 
 
