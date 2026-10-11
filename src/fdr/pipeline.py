@@ -3,9 +3,11 @@
 Etapas:
   data      carga dos CSVs e das referências -> dbt build (modelos e testes) -> exportação
   features  tabela de variáveis do modelo, com a regra contra vazamento (features_voos)
+  baseline  avaliação do baseline no tempo; grava models/metrics.json
 
 Uso: python -m fdr.pipeline --stage data
      python -m fdr.pipeline --stage features
+     python -m fdr.pipeline --stage baseline
 """
 
 import argparse
@@ -67,15 +69,24 @@ def etapa_features() -> None:
     print(f"    {TABELA_FEATURES}: {linhas:,} voos")
 
 
+def etapa_baseline() -> None:
+    from fdr.model import baseline
+
+    print("Baseline: taxa histórica da rota x hora, avaliada no tempo")
+    baseline.main()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Pipeline do Flight Delay Radar.")
-    parser.add_argument("--stage", choices=["data", "features"], required=True)
+    parser.add_argument("--stage", choices=["data", "features", "baseline"], required=True)
     parser.add_argument("--forcar", action="store_true", help="recarrega todos os CSVs")
     args = parser.parse_args()
     if args.stage == "data":
         etapa_dados(args.forcar)
     elif args.stage == "features":
         etapa_features()
+    elif args.stage == "baseline":
+        etapa_baseline()
     print("Pronto.")
 
 

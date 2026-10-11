@@ -9,3 +9,4 @@ dbt-core==1.12.5
 dbt-duckdb==1.11.0
 holidays==0.106
 matplotlib==3.11.2
+scikit-learn==1.9.1

@@ -42,6 +42,18 @@ INICIO_JANELA = (2022, 1)
 # Defasagem de publicação da ANAC em meses, medida na Fase 0 (docs/dados.md, seção 4.2).
 DEFASAGEM_PUBLICACAO_MESES = 2
 
+# Modelo (PROJETO.md, seção 6; docs/decisoes/003-regra-as-of.md).
+# Os exemplos de treino começam em jan/2023: 2022 serve só de histórico para as variáveis.
+INICIO_TREINO = (2023, 1)
+MESES_TESTE = 3  # os 3 últimos meses, usados uma única vez
+MESES_VALIDACAO = 3  # cada janela de validação
+CORTES_VALIDACAO = 5  # validação cruzada no tempo (rolling origin)
+MIN_VOOS_HISTORICO = 30  # abaixo disso, o baseline recorre ao nível seguinte
+AMOSTRAS_BOOTSTRAP = 200
+SEMENTE = 42
+PASTA_MODELOS = RAIZ / "models"
+ARQUIVO_METRICAS = PASTA_MODELOS / "metrics.json"
+
 # Cabeçalho exato do VRA, igual de jan/2022 a ago/2026 (docs/dados.md, seção 2).
 COLUNAS_VRA = (
     "ICAO Empresa Aérea",
