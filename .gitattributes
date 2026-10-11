@@ -1,0 +1,3 @@
+# A amostra dos testes reproduz byte a byte os arquivos da ANAC (UTF-8 com BOM e CRLF).
+# Sem esta linha, o Git converteria as quebras de linha e a amostra deixaria de ser fiel.
+data/fixtures/vra/*.csv binary

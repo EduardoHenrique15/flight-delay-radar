@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Instalar dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e .
+
+      - name: Ruff (lint e formatação)
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Pipeline de dados na amostra (carga, dbt build e exportação)
+        env:
+          FDR_PASTA_VRA: data/fixtures/vra
+          FDR_WAREHOUSE: ${{ runner.temp }}/warehouse.duckdb
+          FDR_PASTA_MARTS: ${{ runner.temp }}/marts
+          FDR_BANCO_APP: ${{ runner.temp }}/app.duckdb
+        run: python -m fdr.pipeline --stage data
+
+      - name: Testes
+        run: pytest
