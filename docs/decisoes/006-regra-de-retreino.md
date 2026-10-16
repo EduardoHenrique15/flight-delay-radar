@@ -42,6 +42,9 @@ situações:
 - Ele só vira campeão se ganhar no mês novo com folga: o intervalo de 95% do ganho de PR-AUC,
   num bootstrap pareado por dia, precisa ficar acima de zero.
 - Com ou sem promoção, o contador de meses volta a zero.
+- Se o campeão já usa todos os meses publicados (o fim do treino dele é M − 2), o retreino fica
+  adiado: um desafiante sairia idêntico. Na simulação, isso aconteceu em dez/2025, quando o ECE
+  passou de 5 p.p. com o campeão treinado até out/2025. Nesse caso, o contador não volta a zero.
 
 **Histórico retroativo:**
 - Um campeão "da época" é treinado com os dados até out/2025.

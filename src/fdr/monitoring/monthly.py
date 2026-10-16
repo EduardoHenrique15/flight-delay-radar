@@ -160,8 +160,12 @@ def processar_mes(
         "retreino": {"disparou": bool(motivos), "motivos": motivos},
     }
     proximo = Campeao(campeao.modelo, campeao.perfil, campeao.meses_em_uso + 1)
-    if motivos:
-        inicio, fim = date(*INICIO_TREINO, 1), mes_menos(mes, 2)
+    inicio, fim = date(*INICIO_TREINO, 1), mes_menos(mes, 2)
+    if motivos and date.fromisoformat(campeao.modelo.metadados["treino"][1]) >= fim:
+        # O campeão já usa tudo o que estaria publicado: um desafiante sairia idêntico. O
+        # retreino fica adiado, e o contador segue, para tentar de novo no mês seguinte.
+        entrada["retreino"]["adiado"] = "sem meses novos publicados desde o treino do campeão"
+    elif motivos:
         desafiante = final.treinar_periodo(dados, inicio, fim, decisoes)
         resultado = comparar(
             dados_mes[ALVO].to_numpy(),
@@ -212,7 +216,9 @@ def simular(
         meses.append(entrada)
         retreino = entrada["retreino"]
         situacao = "sem retreino"
-        if retreino["disparou"]:
+        if retreino.get("adiado"):
+            situacao = "retreino adiado (sem meses novos)"
+        elif retreino["disparou"]:
             situacao = "desafiante promovido" if retreino["promovido"] else "campeão mantido"
         avisar(
             f"    {mes:%m/%Y}: PR-AUC {entrada['modelo']['pr_auc']:.4f}, ganho sobre o baseline "

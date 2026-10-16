@@ -109,7 +109,8 @@ def test_retreino_dispara_e_contador_volta_a_zero_depois_de_cada_retreino(simula
     retreinos = [m for m in simulacao["meses"] if m["retreino"]["disparou"]]
     assert retreinos, "com no máximo 2 meses sem retreino, a simulação precisa retreinar"
     for entrada in simulacao["meses"]:
-        esperado = 0 if entrada["retreino"]["disparou"] else entrada["meses_em_uso"] + 1
+        retreinou = "desafiante_treino" in entrada["retreino"]
+        esperado = 0 if retreinou else entrada["meses_em_uso"] + 1
         assert entrada["meses_em_uso_seguinte"] == esperado
 
 
@@ -162,3 +163,25 @@ def test_variaveis_de_calendario_nao_disparam_o_retreino(tmp_path):
         "destino",
     ]
     assert monthly.regra_retreino(avaliacao(psi={"mes_do_ano": 8.0}), 0, ["mes_do_ano"]) == []
+
+
+def test_retreino_e_adiado_quando_nao_ha_meses_novos(monkeypatch):
+    """Em dez/2025, o que está publicado vai até out/2025, igual ao treino do campeão."""
+    from fdr.model import final, registry, train
+
+    dados = dados_sinteticos(por_mes=200)
+    inicio, fim = date(2023, 1, 1), date(2025, 10, 1)
+    campeao = monthly.Campeao(
+        final.treinar_periodo(dados, inicio, fim, DECISOES),
+        registry.perfil_de_referencia(train.no_periodo(dados, inicio, fim)),
+        meses_em_uso=3,
+    )
+    monkeypatch.setattr(monthly, "MESES_MAXIMOS_SEM_RETREINO", 0)  # força o gatilho
+    entrada, proximo = monthly.processar_mes(
+        dados, date(2025, 12, 1), campeao, DECISOES, [], "simulacao"
+    )
+    assert entrada["retreino"]["disparou"]
+    assert "adiado" in entrada["retreino"]
+    assert "desafiante_treino" not in entrada["retreino"]
+    assert proximo.modelo is campeao.modelo
+    assert proximo.meses_em_uso == 4  # sem retreino de verdade, o contador não zera
