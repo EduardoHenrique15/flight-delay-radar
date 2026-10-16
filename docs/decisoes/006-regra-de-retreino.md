@@ -29,6 +29,11 @@ situações:
 3. **Uma variável importante muda de distribuição:** PSI de 0,25 ou mais em uma das 5 variáveis
    de maior SHAP (`models/explicacao_global.json`). Faixas com menos de 100 voos não pesam no
    PSI.
+   - As variáveis de calendário ficam de fora (mês do ano, férias, feriado, véspera e dia
+     seguinte). Um mês só sempre tem um mês do ano diferente da mistura de 12 meses do treino.
+   - Na primeira simulação, o `mes_do_ano` (5ª variável de maior SHAP) teve PSI entre 7,55 e
+     8,87 em todos os meses e disparou o retreino todo mês, sem que nada tivesse mudado. O PSI
+     delas continua no histórico, mas não dispara nada.
 4. **O modelo envelhece:** passaram 6 meses desde o último retreino.
 
 **Campeão contra desafiante:**

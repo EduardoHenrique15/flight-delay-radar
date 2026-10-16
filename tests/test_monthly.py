@@ -1,5 +1,6 @@
 """Testes do monitoramento mensal: regra de retreino, promoção e histórico retroativo."""
 
+import json
 from datetime import date
 
 import numpy as np
@@ -131,3 +132,33 @@ def test_historico_e_gravado_com_as_regras(tmp_path):
     monthly.gravar_historico(historico, caminho)
     relido = monthly.ler_historico(caminho)
     assert relido["regras"]["ece_maximo"] == monthly.ECE_MAXIMO
+
+
+def test_variaveis_de_calendario_nao_disparam_o_retreino(tmp_path):
+    """Um mês só tem sempre o mesmo mes_do_ano: o PSI é alto por definição, não por mudança."""
+    explicacao = {
+        "por_variavel": [
+            {"variavel": v}
+            for v in [
+                "hora_prevista_local",
+                "mes_do_ano",
+                "taxa_rota_hora_12m",
+                "feriado",
+                "dia_semana",
+                "origem",
+                "destino",
+                "cia",
+            ]
+        ]
+    }
+    caminho = tmp_path / "explicacao_global.json"
+    caminho.write_text(json.dumps(explicacao), encoding="utf-8")
+    importantes = monthly.variaveis_importantes(caminho)
+    assert importantes == [
+        "hora_prevista_local",
+        "taxa_rota_hora_12m",
+        "dia_semana",
+        "origem",
+        "destino",
+    ]
+    assert monthly.regra_retreino(avaliacao(psi={"mes_do_ano": 8.0}), 0, ["mes_do_ano"]) == []

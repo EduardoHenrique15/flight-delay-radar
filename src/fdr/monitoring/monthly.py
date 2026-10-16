@@ -9,7 +9,8 @@ Para cada mês novo publicado pela ANAC:
      baseline não sobe nem desce com a taxa de atraso do mês, ao contrário da PR-AUC sozinha
      (decisão do Eduardo em 16/10/2026);
    - o ECE passar de 5 p.p.;
-   - uma variável importante (as 5 de maior SHAP) tiver PSI de 0,25 ou mais;
+   - uma variável importante (as 5 de maior SHAP, fora as de calendário) tiver PSI de 0,25 ou
+     mais;
    - já tiverem passado 6 meses desde o último retreino (ou desde o início do campeão);
 5. se a regra disparar, treina um desafiante com os dados até o mês M - 2 (o que estaria
    publicado) e com as escolhas do ADR 005. Ele só vira campeão se ganhar no mês novo com
@@ -70,12 +71,23 @@ def mes_menos(mes: date, meses: int) -> date:
     return date(indice // 12, indice % 12 + 1, 1)
 
 
+# Variáveis de calendário mudam de distribuição todo mês por definição (um mês só contra os 12
+# do treino): o PSI delas é alto sem que nada tenha mudado nos dados. Ficam registradas no
+# histórico, mas não disparam o retreino.
+CALENDARIO = frozenset(
+    {"mes_do_ano", "ferias_escolares", "feriado", "vespera_feriado", "pos_feriado"}
+)
+
+
 def variaveis_importantes(caminho: Path = ARQUIVO_EXPLICACAO) -> list[str]:
-    """As de maior SHAP médio no teste (models/explicacao_global.json)."""
+    """As de maior SHAP médio no teste (models/explicacao_global.json), fora as de calendário."""
     if not caminho.exists():
         return []
     explicacao = json.loads(caminho.read_text(encoding="utf-8"))
-    return [v["variavel"] for v in explicacao["por_variavel"][:VARIAVEIS_IMPORTANTES]]
+    candidatas = [
+        v["variavel"] for v in explicacao["por_variavel"] if v["variavel"] not in CALENDARIO
+    ]
+    return candidatas[:VARIAVEIS_IMPORTANTES]
 
 
 def avaliar_mes(campeao: Campeao, dados_mes: pd.DataFrame, janela: int) -> dict:
@@ -91,7 +103,11 @@ def avaliar_mes(campeao: Campeao, dados_mes: pd.DataFrame, janela: int) -> dict:
         "baseline": {k: round(v, 6) for k, v in referencia.items() if k != "voos"},
         "ganho_pr_auc": round(modelo["pr_auc"] - referencia["pr_auc"], 6),
         "psi": psi,
-        "psi_alertas": {v: drift.nivel(x) for v, x in psi.items() if x >= drift.LIMITE_ATENCAO},
+        "psi_alertas": {
+            v: drift.nivel(x)
+            for v, x in psi.items()
+            if x >= drift.LIMITE_ATENCAO and v not in CALENDARIO
+        },
     }
 
 
@@ -103,6 +119,8 @@ def regra_retreino(avaliacao: dict, meses_em_uso: int, importantes: list[str]) -
     if avaliacao["modelo"]["ece"] > ECE_MAXIMO:
         motivos.append(f"ECE de {avaliacao['modelo']['ece']:.1%} (máximo {ECE_MAXIMO:.0%})")
     for variavel in importantes:
+        if variavel in CALENDARIO:
+            continue
         if avaliacao["psi"].get(variavel, 0.0) >= drift.LIMITE_ALERTA:
             motivos.append(f"PSI de {avaliacao['psi'][variavel]:.2f} em {variavel}")
     if meses_em_uso >= MESES_MAXIMOS_SEM_RETREINO:
