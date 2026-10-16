@@ -16,7 +16,7 @@ from pathlib import Path
 
 import duckdb
 
-from fdr.config import COLUNAS_VRA, PASTA_RAW_VRA, WAREHOUSE
+from fdr.config import COLUNAS_VRA, INICIO_JANELA, PASTA_RAW_VRA, WAREHOUSE
 
 PADRAO_NOME = re.compile(r"^VRA_(\d{4})(\d{1,2})\.csv$", re.IGNORECASE)
 PADRAO_ATUALIZADO = re.compile(r"^Atualizado em: (\d{4}-\d{2}-\d{2})$")
@@ -155,11 +155,35 @@ def carregar_arquivo(
     return carregadas
 
 
+def fora_da_janela(pasta: Path, inicio: tuple[int, int] = INICIO_JANELA) -> list[str]:
+    """Arquivos da pasta anteriores ao início da janela de dados (ADR 001): não são carregados."""
+    return sorted(
+        (arq.name for arq in pasta.glob("VRA_*.csv") if mes_do_arquivo(arq.name) < inicio),
+        key=mes_do_arquivo,
+    )
+
+
 def carregar_pasta(
-    con: duckdb.DuckDBPyConnection, pasta: Path, forcar: bool = False
+    con: duckdb.DuckDBPyConnection,
+    pasta: Path,
+    forcar: bool = False,
+    inicio: tuple[int, int] = INICIO_JANELA,
 ) -> dict[str, int | None]:
-    """Carrega todos os VRA_*.csv da pasta, em ordem cronológica."""
-    arquivos = sorted(pasta.glob("VRA_*.csv"), key=lambda p: mes_do_arquivo(p.name))
+    """Carrega os VRA_*.csv da pasta a partir de `inicio`, em ordem cronológica. Arquivos mais
+    antigos são ignorados, e o que deles tiver ficado de cargas anteriores sai do banco."""
+    preparar_tabelas(con)
+    antigos = fora_da_janela(pasta, inicio)
+    carregados_antes = [
+        nome for (nome,) in con.execute("select arquivo_origem from raw_vra_cargas").fetchall()
+    ]
+    for nome in carregados_antes:
+        if mes_do_arquivo(nome) < inicio:
+            con.execute("delete from raw_vra where arquivo_origem = ?", [nome])
+            con.execute("delete from raw_vra_cargas where arquivo_origem = ?", [nome])
+    arquivos = sorted(
+        (arq for arq in pasta.glob("VRA_*.csv") if arq.name not in antigos),
+        key=lambda p: mes_do_arquivo(p.name),
+    )
     return {arq.name: carregar_arquivo(con, arq, forcar) for arq in arquivos}
 
 
@@ -171,6 +195,8 @@ def main() -> None:
     args = parser.parse_args()
 
     args.banco.parent.mkdir(parents=True, exist_ok=True)
+    for nome in fora_da_janela(args.pasta):
+        print(f"{nome:<16} ignorado (antes do início da janela de dados)")
     with duckdb.connect(str(args.banco)) as con:
         resultado = carregar_pasta(con, args.pasta, args.forcar)
         for nome, linhas in resultado.items():

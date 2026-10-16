@@ -23,7 +23,7 @@ CONSULTAS = {
         """
         select
             mes,
-            data_prevista,
+            data_prevista_local as data_prevista,
             cia,
             numero_voo,
             tipo_linha,

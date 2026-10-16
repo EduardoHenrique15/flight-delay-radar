@@ -24,7 +24,7 @@ from fdr.config import PASTA_DBT, PASTA_RAW_VRA, WAREHOUSE
 from fdr.export import exportar
 from fdr.features.build import TABELA as TABELA_FEATURES
 from fdr.features.build import construir as construir_features
-from fdr.ingest.load_raw import carregar_pasta
+from fdr.ingest.load_raw import carregar_pasta, fora_da_janela
 from fdr.ingest.reference import carregar_referencias
 
 
@@ -49,6 +49,8 @@ def rodar_dbt(*args: str) -> None:
 def etapa_dados(forcar: bool = False) -> None:
     print("1/3 Carga dos CSVs do VRA e das referências")
     WAREHOUSE.parent.mkdir(parents=True, exist_ok=True)
+    for nome in fora_da_janela(PASTA_RAW_VRA):
+        print(f"    {nome:<16} ignorado (antes do início da janela de dados)")
     with duckdb.connect(str(WAREHOUSE)) as con:
         for nome, linhas in carregar_pasta(con, PASTA_RAW_VRA, forcar).items():
             print(f"    {nome:<16} {'sem mudanças' if linhas is None else f'{linhas:,} linhas'}")

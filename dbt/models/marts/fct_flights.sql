@@ -6,6 +6,8 @@ select
     voo_id,
     mes_arquivo as mes,
     cast(partida_prevista as date) as data_prevista,
+    cast(partida_prevista + to_hours(coalesce(o.diferenca_brasilia_h, 0)) as date)
+        as data_prevista_local,
     cia,
     numero_voo,
     di,

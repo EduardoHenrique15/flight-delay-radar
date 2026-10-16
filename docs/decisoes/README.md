@@ -7,4 +7,4 @@ de arquivos gerados pelo projeto (em `dados/` ou nas tabelas do pipeline), nunca
 | --- | --- | --- |
 | [001](001-janela-de-dados.md) | Janela de dados a partir de janeiro de 2022 | aceita |
 | [002](002-alvo-a15.md) | Alvo A15, só voos realizados, nacionais e regulares | aceita |
-| [003](003-regra-as-of.md) | Regra contra vazamento, defasagem de 2 meses e treino a partir de 2023 | aceita |
+| [003](003-regra-as-of.md) | Regra contra vazamento, defasagem de 2 meses, treino a partir de 2023, variáveis da hora da previsão e intervalo de 1 mês | aceita |

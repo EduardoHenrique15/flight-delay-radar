@@ -11,6 +11,7 @@ from fdr.ingest.load_raw import (
     FormatoInvalidoError,
     carregar_arquivo,
     carregar_pasta,
+    fora_da_janela,
     inspecionar,
     mes_do_arquivo,
 )
@@ -144,3 +145,17 @@ def test_carregar_pasta_carrega_cada_mes_uma_vez(con, tmp_path):
     assert list(resultado.values()) == [1, 2, 1]
     assert set(carregar_pasta(con, tmp_path).values()) == {None}
     assert con.execute("select count(*) from raw_vra").fetchone() == (4,)
+
+
+def test_arquivos_antes_da_janela_sao_ignorados_e_removidos(con, tmp_path):
+    """Um mês de 2021 esquecido na pasta não entra, e uma carga antiga dele sai do banco."""
+    antigo = escrever_vra(tmp_path, "VRA_202112.csv", [VOO_REALIZADO])
+    escrever_vra(tmp_path, "VRA_20268.csv", [VOO_REALIZADO, VOO_CANCELADO])
+    carregar_arquivo(con, antigo)  # como se tivesse sido carregado antes da regra
+    assert fora_da_janela(tmp_path) == ["VRA_202112.csv"]
+
+    resultado = carregar_pasta(con, tmp_path)
+    assert list(resultado) == ["VRA_20268.csv"]
+    arquivos = {a for (a,) in con.execute("select distinct arquivo_origem from raw_vra").fetchall()}
+    cargas = {a for (a,) in con.execute("select arquivo_origem from raw_vra_cargas").fetchall()}
+    assert arquivos == cargas == {"VRA_20268.csv"}

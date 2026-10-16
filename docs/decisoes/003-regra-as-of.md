@@ -1,6 +1,6 @@
 # ADR 003: regra contra vazamento (as-of), defasagem de publicação e início do treino
 
-- **Situação:** aceita
+- **Situação:** aceita (atualizada em 16/10/2026: seção "Atualização")
 - **Data:** 11/10/2026
 
 ## Contexto
@@ -24,7 +24,7 @@ mês M − 2.
 3. **A regra é implementada em SQL** (`src/fdr/features/build.py`) e provada por
    `tests/test_no_leakage.py`: atrasos enormes colocados nos meses M − 1 e M não mudam as
    variáveis de M, enquanto uma mudança no mês de corte muda. Quebrar a regra de propósito (usar
-   o histórico até o próprio mês M) faz 3 dos 5 testes falharem.
+   o histórico até o próprio mês M) faz 3 dos 7 testes falharem.
 4. **Os exemplos de treino começam em janeiro de 2023** (decisão do Eduardo em 11/10/2026). O ano
    de 2022 entra só como histórico. Assim, todo voo de treino tem 12 meses completos de
    histórico, e os meses de fevereiro a abril de 2022, ainda afetados pela pandemia
@@ -52,3 +52,34 @@ têm histórico.
   época. É uma limitação pequena, já que as diferenças entre versões tendem a ser correções
   pontuais.
 - O baseline e os modelos da Fase 3 usam a mesma tabela `features_voos`, com a mesma regra.
+
+## Atualização de 16/10/2026: variáveis da hora da previsão e intervalo de 1 mês
+
+Uma revisão do projeto achou dois pontos em que a avaliação ficava mais fácil que a vida real.
+O Eduardo aprovou as correções abaixo.
+
+1. **Só entram no modelo variáveis que existem na hora da previsão.** Para um voo futuro, o app
+   conhece a companhia, a rota, a data e a hora previstas e o histórico publicado. A malha do
+   próprio mês (quantas partidas o aeroporto teve naquela hora, quanto durou cada voo
+   programado) só é publicada junto com os atrasos, então saiu do modelo. No lugar dela entram
+   versões típicas, calculadas com a mesma regra as-of:
+   - partidas típicas por dia na origem, no mesmo dia da semana e hora (3 meses até o corte);
+   - partidas típicas da mesma companhia na origem antes dessa hora (a posição do voo no dia);
+   - duração programada típica da companhia na rota e a folga da programação (duração
+     programada menos a real, 12 meses até o corte).
+
+   A malha realizada continua na tabela, só para análise (`COLUNAS_SO_ANALISE` em
+   `src/fdr/features/build.py`), e um teste garante que ela não entra no modelo.
+2. **Sazonalidade:** taxa de atraso da rota, da origem e da companhia no mesmo mês do ano
+   anterior (M − 12, sempre antes do corte). Ataca o ponto fraco do baseline em dezembro.
+3. **Intervalo de 1 mês entre o treino e a avaliação** (`MESES_INTERVALO` em
+   `src/fdr/config.py`). Quando o mês P é publicado, o calendário já está em P + 2: o modelo
+   nunca prevê o mês logo depois do último rótulo que viu. Em cada janela de validação, o treino
+   termina 2 meses antes do início da validação, e o treino final, avaliado no teste
+   (jun a ago/2026), vai até abr/2026.
+4. **Calendário na data local.** O dia da semana e os feriados usam a data no fuso do aeroporto
+   de origem (`data_prevista_local`), a mesma referência da hora local.
+
+`tests/test_no_leakage.py` cobre as variáveis novas: atrasos enormes nos meses M − 1 e M não
+mudam nenhuma delas, e quebrar de propósito a regra da programação, da duração ou da
+sazonalidade faz os testes falharem.

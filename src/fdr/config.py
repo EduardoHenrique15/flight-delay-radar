@@ -47,6 +47,9 @@ DEFASAGEM_PUBLICACAO_MESES = 2
 INICIO_TREINO = (2023, 1)
 MESES_TESTE = 3  # os 3 últimos meses, usados uma única vez
 MESES_VALIDACAO = 3  # cada janela de validação
+# Intervalo entre o fim do treino e a avaliação: simula a defasagem dos rótulos
+# (docs/decisoes/003-regra-as-of.md).
+MESES_INTERVALO = 1
 CORTES_VALIDACAO = 5  # validação cruzada no tempo (rolling origin)
 MIN_VOOS_HISTORICO = 30  # abaixo disso, o baseline recorre ao nível seguinte
 AMOSTRAS_BOOTSTRAP = 200

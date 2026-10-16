@@ -39,7 +39,7 @@ from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
 from fdr.config import ARQUIVO_METRICAS, INICIO_TREINO, SEMENTE, WAREHOUSE
-from fdr.features.build import ALVO, JANELAS_MESES, TABELA
+from fdr.features.build import ALVO, GRAOS_SAZONAIS, JANELAS_MESES, TABELA
 from fdr.model import baseline
 from fdr.model.evaluate import ece, metricas
 from fdr.model.splits import Divisao, definir_divisao
@@ -48,13 +48,20 @@ from fdr.model.splits import Divisao, definir_divisao
 CATEGORICAS = ("cia", "origem", "destino")
 CALENDARIO = ("hora_prevista_local", "dia_semana", "mes_do_ano")
 BINARIAS = ("feriado", "vespera_feriado", "pos_feriado", "ferias_escolares")
-CONTINUAS = ("duracao_prevista_min", "distancia_km", "partidas_programadas_origem_hora")
+# Programação e duração típicas (as-of): conhecidas para um voo futuro (features/build.py).
+CONTINUAS = (
+    "distancia_km",
+    "duracao_tipica_min",
+    "folga_tipica_min",
+    "partidas_tipicas_origem_hora",
+    "partidas_cia_antes_tipicas",
+)
 HISTORICO = tuple(
     f"{tipo}_{nivel}_{j}m"
     for nivel in baseline.NIVEIS
     for j in JANELAS_MESES
     for tipo in ("taxa", "voos")
-)
+) + tuple(f"{tipo}_{nivel}_ano_anterior" for nivel in GRAOS_SAZONAIS for tipo in ("taxa", "voos"))
 VARIAVEIS = CATEGORICAS + CALENDARIO + BINARIAS + CONTINUAS + HISTORICO
 
 # Ordem de simplicidade para a regra de 1 erro-padrão.
@@ -178,7 +185,7 @@ def prever_lightgbm(modelo: lgb.Booster, dados: pd.DataFrame) -> np.ndarray:
 def criar_logistica() -> Pipeline:
     """One-hot nas categorias e no calendário; números padronizados (PROJETO.md, seção 6.5)."""
     contagens = [c for c in HISTORICO if c.startswith("voos_")]
-    contagens.append("partidas_programadas_origem_hora")
+    contagens += [c for c in CONTINUAS if c.startswith("partidas_")]
     taxas = [c for c in HISTORICO if c.startswith("taxa_")]
     preparo = ColumnTransformer(
         [
@@ -211,7 +218,7 @@ def criar_logistica() -> Pipeline:
             (
                 "voo",
                 make_pipeline(SimpleImputer(strategy="median"), StandardScaler()),
-                ["duracao_prevista_min", "distancia_km"],
+                [c for c in CONTINUAS if not c.startswith("partidas_")],
             ),
         ]
     )

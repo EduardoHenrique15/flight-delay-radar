@@ -19,6 +19,7 @@ def warehouse(tmp_path):
             select
                 mes::date as mes,
                 (mes + interval 2 day)::date as data_prevista,
+                (mes + interval 2 day)::date as data_prevista_local,
                 'GLO' as cia,
                 '1234' as numero_voo,
                 'N' as tipo_linha,

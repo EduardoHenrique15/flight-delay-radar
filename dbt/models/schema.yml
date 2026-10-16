@@ -34,6 +34,10 @@ models:
     columns:
       - name: voo_id
         data_tests: [unique, not_null]
+      - name: data_prevista
+        description: Data prevista de partida no horário de Brasília (o horário do VRA).
+      - name: data_prevista_local
+        description: Data prevista de partida no fuso do aeroporto de origem (calendário do modelo).
       - name: hora_prevista_local
         description: Hora prevista de partida no fuso do aeroporto de origem.
       - name: mes

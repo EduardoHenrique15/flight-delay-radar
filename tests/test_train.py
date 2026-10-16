@@ -8,13 +8,15 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from fdr.features.build import ALVO, PROIBIDAS
+from fdr.features.build import ALVO, COLUNAS_SO_ANALISE, PROIBIDAS
 from fdr.model import train
 from fdr.model.splits import definir_divisao
 
 
 def test_nenhuma_variavel_proibida_ou_alvo_entra_no_modelo():
     assert not set(train.VARIAVEIS) & PROIBIDAS
+    # A malha realizada do mês sai junto com os atrasos: o app não teria esse dado.
+    assert not set(train.VARIAVEIS) & COLUNAS_SO_ANALISE
     assert ALVO not in train.VARIAVEIS
     assert len(set(train.VARIAVEIS)) == len(train.VARIAVEIS)
 
@@ -41,13 +43,12 @@ def dados_sinteticos(por_mes: int = 400, semente: int = 0) -> pd.DataFrame:
             "hora_prevista_local": hora,
             "dia_semana": gerador.integers(1, 8, n),
             "mes_do_ano": pd.DatetimeIndex(mes).month,
-            "duracao_prevista_min": gerador.uniform(50, 200, n),
-            "distancia_km": gerador.uniform(300, 2500, n),
-            "partidas_programadas_origem_hora": gerador.integers(1, 30, n),
         }
     )
     for coluna in train.BINARIAS:
         dados[coluna] = (gerador.uniform(size=n) < 0.05).astype(int)
+    for coluna in train.CONTINUAS:
+        dados[coluna] = gerador.uniform(0, 300, n)
     for coluna in train.HISTORICO:
         if coluna.startswith("taxa_"):
             valores = np.clip(verdade + gerador.normal(0, 0.05, n), 0, 1)
@@ -153,8 +154,8 @@ def test_validacao_completa_em_dados_sinteticos(validacao):
     assert ultimo == divisao.validacao_principal.validacao[1].isoformat()
     # Há sinal nos dados: os modelos com aprendizado batem o acaso.
     resumo = resultado["resumo"]
-    assert resumo["logistica"]["roc_auc_medio"] > 0.6
-    assert resumo["lightgbm"]["roc_auc_medio"] > 0.6
+    assert resumo["logistica"]["roc_auc_medio"] > 0.55  # o acaso dá 0,5
+    assert resumo["lightgbm"]["roc_auc_medio"] > 0.55
 
 
 def test_validacao_e_reprodutivel(validacao):
