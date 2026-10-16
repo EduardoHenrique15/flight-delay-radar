@@ -57,7 +57,9 @@ class ModeloAtraso:
 
     def salvar(self, pasta: Path = PASTA_MODELOS) -> None:
         pasta.mkdir(parents=True, exist_ok=True)
-        self.booster.save_model(str(pasta / ARQUIVO_MODELO))
+        # Gravado pelo Python: o LightGBM em C++ não aceita acentos no caminho no Windows
+        # ("Área de Trabalho").
+        (pasta / ARQUIVO_MODELO).write_text(self.booster.model_to_string(), encoding="utf-8")
         _gravar_json(pasta / ARQUIVO_METADADOS, self.metadados)
 
     @classmethod
@@ -65,7 +67,8 @@ class ModeloAtraso:
         metadados = json.loads((pasta / ARQUIVO_METADADOS).read_text(encoding="utf-8"))
         if metadados["variaveis"] != list(train.VARIAVEIS):
             raise ValueError("O modelo salvo usa outras variáveis: treine de novo.")
-        return cls(lgb.Booster(model_file=str(pasta / ARQUIVO_MODELO)), metadados)
+        texto = (pasta / ARQUIVO_MODELO).read_text(encoding="utf-8")
+        return cls(lgb.Booster(model_str=texto), metadados)
 
 
 def perfil_de_referencia(dados: pd.DataFrame) -> dict:

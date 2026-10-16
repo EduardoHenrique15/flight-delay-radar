@@ -82,8 +82,9 @@ def test_treino_final_e_reprodutivel(treinado):
 
 def test_modelo_salvo_e_carregado_preve_igual(treinado, tmp_path):
     dados, divisao, modelo, _, _ = treinado
-    modelo.salvar(tmp_path)
-    carregado = registry.ModeloAtraso.carregar(tmp_path)
+    pasta = tmp_path / "Área de Trabalho"  # acento no caminho, como no Windows do Eduardo
+    modelo.salvar(pasta)
+    carregado = registry.ModeloAtraso.carregar(pasta)
     teste = train.no_periodo(dados, *divisao.teste).copy()
     np.testing.assert_allclose(carregado.prever(teste), modelo.prever(teste))
     # Categoria que o treino não viu (companhia nova) não quebra a previsão.
