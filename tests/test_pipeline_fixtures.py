@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 import duckdb
+import numpy as np
 import pytest
 
 from fdr.config import ARQUIVO_AEROPORTOS_FIXTURE, PASTA_FIXTURES_VRA
@@ -189,3 +190,13 @@ def test_variaveis_usam_so_o_mes_de_corte(pipeline):
         "2026-06-01": 0,
         "2026-07-01": voos_maio,
     }
+
+
+def test_modelo_le_todas_as_variaveis_da_tabela(pipeline):
+    from fdr.model import train
+
+    con, _ = pipeline
+    dados = train.carregar(con)
+    assert set(train.VARIAVEIS) <= set(dados.columns)
+    assert len(dados) == con.execute("select count(*) from features_voos").fetchone()[0]
+    assert np.isfinite(train.matriz(dados)[:, train.VARIAVEIS.index("hora_prevista_local")]).all()

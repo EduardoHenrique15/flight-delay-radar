@@ -4,10 +4,13 @@ Etapas:
   data      carga dos CSVs e das referências -> dbt build (modelos e testes) -> exportação
   features  tabela de variáveis do modelo, com a regra contra vazamento (features_voos)
   baseline  avaliação do baseline no tempo; grava models/metrics.json
+  validacao regressão logística e LightGBM na validação cruzada no tempo, escolha do modelo e
+            da calibração (sem tocar no teste); grava models/metrics.json
 
 Uso: python -m fdr.pipeline --stage data
      python -m fdr.pipeline --stage features
      python -m fdr.pipeline --stage baseline
+     python -m fdr.pipeline --stage validacao
 """
 
 import argparse
@@ -76,9 +79,18 @@ def etapa_baseline() -> None:
     baseline.main()
 
 
+def etapa_validacao() -> None:
+    from fdr.model import train
+
+    print("Modelos: regressão logística e LightGBM, validados no tempo (o teste fica de fora)")
+    train.main()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Pipeline do Flight Delay Radar.")
-    parser.add_argument("--stage", choices=["data", "features", "baseline"], required=True)
+    parser.add_argument(
+        "--stage", choices=["data", "features", "baseline", "validacao"], required=True
+    )
     parser.add_argument("--forcar", action="store_true", help="recarrega todos os CSVs")
     args = parser.parse_args()
     if args.stage == "data":
@@ -87,6 +99,8 @@ def main() -> None:
         etapa_features()
     elif args.stage == "baseline":
         etapa_baseline()
+    elif args.stage == "validacao":
+        etapa_validacao()
     print("Pronto.")
 
 
