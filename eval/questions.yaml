@@ -1,0 +1,199 @@
+# Perguntas da avaliação do assistente, com o SQL de referência escrito à mão
+# (PROJETO.md, seção 8.4). "recusar: true" marca as perguntas que os dados não respondem.
+# "demo: true" marca as que viram respostas de demonstração (modo sem chave).
+
+- id: 1
+  categoria: simples
+  pergunta: Quantos voos foram realizados em julho de 2026?
+  sql: SELECT sum(realizados) FROM pontualidade_mensal WHERE mes = DATE '2026-07-01'
+  demo: true
+- id: 2
+  categoria: simples
+  pergunta: Quantos voos a Azul cancelou em agosto de 2026?
+  sql: SELECT sum(cancelados) FROM pontualidade_mensal WHERE cia = 'AZU' AND mes = DATE '2026-08-01'
+- id: 3
+  categoria: simples
+  pergunta: Qual é o nome do aeroporto de código SBKP?
+  sql: SELECT nome FROM aeroportos WHERE icao = 'SBKP'
+- id: 4
+  categoria: simples
+  pergunta: Qual a distância entre Guarulhos e Recife?
+  sql: SELECT distancia_km FROM rotas WHERE origem = 'SBGR' AND destino = 'SBRF'
+- id: 5
+  categoria: simples
+  pergunta: Qual foi a taxa de atraso dos voos nacionais em agosto de 2026?
+  sql: >-
+    SELECT sum(atrasados_15) / sum(realizados_com_horario) FROM pontualidade_mensal
+    WHERE tipo_linha = 'N' AND mes = DATE '2026-08-01'
+  demo: true
+- id: 6
+  categoria: simples
+  pergunta: Quantas companhias aéreas brasileiras aparecem nos dados?
+  sql: SELECT count(*) FROM companhias WHERE brasileira
+- id: 7
+  categoria: simples
+  pergunta: Qual é o código ICAO da Gol?
+  sql: SELECT cia FROM companhias WHERE nome = 'Gol'
+- id: 8
+  categoria: simples
+  pergunta: Quantos aeroportos de Minas Gerais aparecem nos dados?
+  sql: SELECT count(*) FROM aeroportos WHERE uf = 'MG'
+- id: 9
+  categoria: simples
+  pergunta: Qual foi o maior atraso de partida, em minutos, registrado em julho de 2026?
+  sql: SELECT max(atraso_partida_min) FROM voos WHERE mes = DATE '2026-07-01'
+- id: 10
+  categoria: simples
+  pergunta: Quantos voos internacionais foram realizados em julho de 2026?
+  sql: >-
+    SELECT sum(realizados) FROM pontualidade_mensal
+    WHERE tipo_linha = 'I' AND mes = DATE '2026-07-01'
+- id: 11
+  categoria: agregacao
+  pergunta: >-
+    Entre as companhias com pelo menos 1000 voos nacionais realizados em julho de 2026, qual
+    teve a maior taxa de atraso?
+  sql: >-
+    SELECT cia FROM pontualidade_mensal WHERE tipo_linha = 'N' AND mes = DATE '2026-07-01'
+    GROUP BY cia HAVING sum(realizados_com_horario) >= 1000
+    ORDER BY sum(atrasados_15) / sum(realizados_com_horario) DESC LIMIT 1
+- id: 12
+  categoria: agregacao
+  pergunta: Quais os 5 aeroportos de origem com mais voos nacionais cancelados em 2026?
+  sql: >-
+    SELECT origem, sum(cancelados) AS cancelados FROM pontualidade_mensal
+    WHERE tipo_linha = 'N' AND year(mes) = 2026
+    GROUP BY origem ORDER BY cancelados DESC LIMIT 5
+  demo: true
+- id: 13
+  categoria: agregacao
+  pergunta: Em que hora do dia os voos nacionais regulares têm a maior taxa de atraso?
+  sql: >-
+    SELECT hora_prevista FROM atraso_rota_hora GROUP BY hora_prevista
+    ORDER BY sum(atrasados_15) / sum(voos) DESC LIMIT 1
+  demo: true
+- id: 14
+  categoria: agregacao
+  pergunta: Quais as 3 companhias com mais voos nacionais realizados em agosto de 2026?
+  sql: >-
+    SELECT cia, sum(realizados) AS realizados FROM pontualidade_mensal
+    WHERE tipo_linha = 'N' AND mes = DATE '2026-08-01'
+    GROUP BY cia ORDER BY realizados DESC LIMIT 3
+- id: 15
+  categoria: agregacao
+  pergunta: Qual a taxa de cancelamento dos voos nacionais da LATAM em 2026?
+  sql: >-
+    SELECT sum(cancelados) / sum(voos) FROM pontualidade_mensal
+    WHERE cia = 'TAM' AND tipo_linha = 'N' AND year(mes) = 2026
+- id: 16
+  categoria: agregacao
+  pergunta: >-
+    Quais as 5 companhias com mais voos atrasados mais de 1 hora em julho de 2026?
+  sql: >-
+    SELECT cia, sum(atrasados_60) AS atrasados FROM pontualidade_mensal
+    WHERE mes = DATE '2026-07-01' GROUP BY cia ORDER BY atrasados DESC LIMIT 5
+- id: 17
+  categoria: agregacao
+  pergunta: >-
+    Qual o atraso médio de partida, em minutos, dos voos realizados da Gol em agosto de 2026?
+  sql: >-
+    SELECT avg(atraso_partida_min) FROM voos
+    WHERE cia = 'GLO' AND situacao = 'REALIZADO' AND mes = DATE '2026-08-01'
+- id: 18
+  categoria: agregacao
+  pergunta: >-
+    Qual dia de agosto de 2026 teve mais voos nacionais com mais de 15 minutos de atraso?
+  sql: >-
+    SELECT data_prevista FROM voos
+    WHERE tipo_linha = 'N' AND atrasado_15 AND mes = DATE '2026-08-01'
+    GROUP BY data_prevista ORDER BY count(*) DESC LIMIT 1
+- id: 19
+  categoria: juncao
+  pergunta: >-
+    Entre os aeroportos de Santa Catarina com pelo menos 500 voos nacionais realizados em
+    2026, qual tem a maior taxa de atraso?
+  sql: >-
+    SELECT a.nome FROM pontualidade_mensal p JOIN aeroportos a ON a.icao = p.origem
+    WHERE a.uf = 'SC' AND p.tipo_linha = 'N' AND year(p.mes) = 2026
+    GROUP BY a.nome HAVING sum(p.realizados_com_horario) >= 500
+    ORDER BY sum(p.atrasados_15) / sum(p.realizados_com_horario) DESC LIMIT 1
+- id: 20
+  categoria: juncao
+  pergunta: >-
+    Quantos voos nacionais foram realizados a partir de aeroportos do estado do Rio de
+    Janeiro em julho de 2026?
+  sql: >-
+    SELECT sum(p.realizados) FROM pontualidade_mensal p JOIN aeroportos a ON a.icao = p.origem
+    WHERE a.uf = 'RJ' AND p.tipo_linha = 'N' AND p.mes = DATE '2026-07-01'
+- id: 21
+  categoria: juncao
+  pergunta: Qual o nome da companhia com mais voos realizados em agosto de 2026?
+  sql: >-
+    SELECT c.nome FROM pontualidade_mensal p JOIN companhias c ON c.cia = p.cia
+    WHERE p.mes = DATE '2026-08-01' GROUP BY c.nome ORDER BY sum(p.realizados) DESC LIMIT 1
+  demo: true
+- id: 22
+  categoria: juncao
+  pergunta: Quais as 3 rotas domésticas mais longas que tiveram voos em 2026?
+  sql: >-
+    SELECT r.origem, r.destino, r.distancia_km FROM rotas r
+    WHERE r.domestica AND EXISTS (SELECT 1 FROM voos v WHERE v.origem = r.origem
+    AND v.destino = r.destino AND year(v.mes) = 2026)
+    ORDER BY r.distancia_km DESC LIMIT 3
+- id: 23
+  categoria: juncao
+  pergunta: >-
+    Qual cidade de origem teve mais voos nacionais com mais de 15 minutos de atraso em julho
+    de 2026?
+  sql: >-
+    SELECT a.cidade FROM pontualidade_mensal p JOIN aeroportos a ON a.icao = p.origem
+    WHERE p.tipo_linha = 'N' AND p.mes = DATE '2026-07-01'
+    GROUP BY a.cidade ORDER BY sum(p.atrasados_15) DESC LIMIT 1
+- id: 24
+  categoria: tempo
+  pergunta: Em qual mês de 2025 a taxa de atraso dos voos nacionais foi maior?
+  sql: >-
+    SELECT mes FROM pontualidade_mensal WHERE tipo_linha = 'N' AND year(mes) = 2025
+    GROUP BY mes ORDER BY sum(atrasados_15) / sum(realizados_com_horario) DESC LIMIT 1
+  demo: true
+- id: 25
+  categoria: tempo
+  pergunta: Como evoluiu a taxa de atraso dos voos nacionais mês a mês em 2026?
+  sql: >-
+    SELECT mes, sum(atrasados_15) / sum(realizados_com_horario) AS taxa FROM pontualidade_mensal
+    WHERE tipo_linha = 'N' AND year(mes) = 2026 GROUP BY mes ORDER BY mes
+  demo: true
+- id: 26
+  categoria: tempo
+  pergunta: >-
+    Compare a taxa de atraso dos voos nacionais em dezembro de 2024 e em dezembro de 2025.
+  sql: >-
+    SELECT mes, sum(atrasados_15) / sum(realizados_com_horario) AS taxa FROM pontualidade_mensal
+    WHERE tipo_linha = 'N' AND mes IN (DATE '2024-12-01', DATE '2025-12-01')
+    GROUP BY mes ORDER BY mes
+- id: 27
+  categoria: tempo
+  pergunta: Quantos voos nacionais foram cancelados no último mês disponível?
+  sql: >-
+    SELECT sum(cancelados) FROM pontualidade_mensal
+    WHERE tipo_linha = 'N' AND mes = (SELECT max(mes) FROM pontualidade_mensal)
+- id: 28
+  categoria: tempo
+  pergunta: Qual trimestre de 2025 teve mais voos nacionais realizados?
+  sql: >-
+    SELECT quarter(mes) AS trimestre FROM pontualidade_mensal
+    WHERE tipo_linha = 'N' AND year(mes) = 2025
+    GROUP BY trimestre ORDER BY sum(realizados) DESC LIMIT 1
+- id: 29
+  categoria: recusa
+  pergunta: Qual o preço médio da passagem de São Paulo para o Rio de Janeiro?
+  recusar: true
+- id: 30
+  categoria: recusa
+  pergunta: Vai chover em Guarulhos amanhã?
+  recusar: true
+  demo: true
+- id: 31
+  categoria: recusa
+  pergunta: Qual o nome do piloto do voo GLO 1234?
+  recusar: true

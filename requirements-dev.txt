@@ -11,3 +11,6 @@ holidays==0.106
 matplotlib==3.11.2
 scikit-learn==1.9.1
 lightgbm==4.7.0
+google-genai==2.27.0
+sqlglot==30.21.0
+pyyaml==6.0.3

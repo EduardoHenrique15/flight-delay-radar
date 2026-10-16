@@ -12,6 +12,7 @@ __pycache__/
 
 # Dados brutos e banco local
 data/raw/
+data/cache/
 warehouse.duckdb
 *.duckdb.wal
 

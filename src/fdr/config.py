@@ -72,3 +72,9 @@ COLUNAS_VRA = (
     "Situação Voo",
     "Código Justificativa",
 )
+
+# Assistente texto->SQL (PROJETO.md, seção 8): respostas gravadas de demonstração (versionadas),
+# cache das respostas aprovadas e contagem de uso (fora do git).
+ARQUIVO_DEMO_ASSISTENTE = PASTA_DADOS / "demo" / "assistant_cache.json"
+ARQUIVO_CACHE_ASSISTENTE = PASTA_DADOS / "cache" / "assistente.json"
+ARQUIVO_USO_ASSISTENTE = PASTA_DADOS / "cache" / "uso_assistente.json"
