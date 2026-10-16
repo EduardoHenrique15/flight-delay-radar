@@ -159,7 +159,7 @@ def main() -> None:
         print(f"Gráfico: {caminho}")
 
     print(f"Temas que mais pesam ({importancia['voos']:,} voos do teste):")
-    for item in importancia["por_tema"]:
+    for item in sorted(importancia["por_tema"], key=lambda r: -r["pontos_medios_abs"]):
         print(f"    {item['tema']:<36} {item['pontos_medios_abs']:5.2f} p.p. em média")
     print("Três voos de exemplo (os de maior risco previsto da amostra):")
     p = modelo.prever(amostra)
