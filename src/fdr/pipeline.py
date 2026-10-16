@@ -9,6 +9,8 @@ Etapas:
   train     treino final com as escolhas da validação e teste usado uma única vez; grava
             models/model.txt, metadata.json, reference_profile.json e metrics.json
   explain   explicação do modelo (SHAP por tema) e gráficos em docs/img/
+  monitor-historico  histórico retroativo do monitoramento (simulação de dez/2025 a ago/2026)
+  monitor   monitora os meses novos publicados; grava monitoring/history.json
 
 Uso: python -m fdr.pipeline --stage data
      python -m fdr.pipeline --stage features
@@ -16,6 +18,8 @@ Uso: python -m fdr.pipeline --stage data
      python -m fdr.pipeline --stage validacao
      python -m fdr.pipeline --stage train
      python -m fdr.pipeline --stage explain
+     python -m fdr.pipeline --stage monitor-historico
+     python -m fdr.pipeline --stage monitor
 """
 
 import argparse
@@ -107,11 +111,27 @@ def etapa_explicacao() -> None:
     explain.main()
 
 
+def etapa_monitoramento(historico_retroativo: bool) -> None:
+    from fdr.monitoring import monthly
+
+    print("Monitoramento mensal: métricas, PSI, regra de retreino e campeão contra desafiante")
+    monthly.executar(historico_retroativo)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Pipeline do Flight Delay Radar.")
     parser.add_argument(
         "--stage",
-        choices=["data", "features", "baseline", "validacao", "train", "explain"],
+        choices=[
+            "data",
+            "features",
+            "baseline",
+            "validacao",
+            "train",
+            "explain",
+            "monitor",
+            "monitor-historico",
+        ],
         required=True,
     )
     parser.add_argument("--forcar", action="store_true", help="recarrega todos os CSVs")
@@ -128,6 +148,10 @@ def main() -> None:
         etapa_treino()
     elif args.stage == "explain":
         etapa_explicacao()
+    elif args.stage == "monitor":
+        etapa_monitoramento(historico_retroativo=False)
+    elif args.stage == "monitor-historico":
+        etapa_monitoramento(historico_retroativo=True)
     print("Pronto.")
 
 

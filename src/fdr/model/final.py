@@ -17,7 +17,7 @@ Uso: python -m fdr.model.final
 
 import hashlib
 import json
-from datetime import datetime
+from datetime import date, datetime
 
 import duckdb
 import lightgbm as lgb
@@ -85,11 +85,17 @@ def ler_decisoes(metricas_salvas: dict) -> dict:
     }
 
 
-def treinar_final(dados: pd.DataFrame, divisao: Divisao, decisoes: dict) -> ModeloAtraso:
-    """LightGBM nos meses de treino final, com o número de árvores fixo (sem parada antecipada)."""
+def treinar_periodo(
+    dados: pd.DataFrame,
+    inicio: date,
+    fim: date,
+    decisoes: dict,
+    teste: tuple[date, date] | None = None,
+) -> ModeloAtraso:
+    """LightGBM nos meses de `inicio` a `fim`, com o número de árvores fixo (sem parada
+    antecipada). Usado no treino final e nos retreinos do monitoramento (Fase 4)."""
     meses = dados["mes"].to_numpy()
-    inicio, fim = (np.datetime64(d) for d in divisao.treino_final)
-    linhas = (meses >= inicio) & (meses <= fim)
+    linhas = (meses >= np.datetime64(inicio)) & (meses <= np.datetime64(fim))
     base = lgb.Dataset(
         train.matriz(dados, linhas),
         label=dados[ALVO].to_numpy()[linhas],
@@ -105,8 +111,8 @@ def treinar_final(dados: pd.DataFrame, divisao: Divisao, decisoes: dict) -> Mode
         "versao": VERSAO,
         "treinado_em": datetime.now().isoformat(timespec="seconds"),
         "modelo": decisoes["modelo"],
-        "treino": [d.isoformat() for d in divisao.treino_final],
-        "teste": [d.isoformat() for d in divisao.teste],
+        "treino": [inicio.isoformat(), fim.isoformat()],
+        "teste": [d.isoformat() for d in teste] if teste else None,
         "voos_treino": int(linhas.sum()),
         "variaveis": list(train.VARIAVEIS),
         "parametros": {**train.PARAMETROS_FIXOS, **decisoes["parametros"]},
@@ -119,6 +125,11 @@ def treinar_final(dados: pd.DataFrame, divisao: Divisao, decisoes: dict) -> Mode
         "hash_dados_treino": hash_dos_dados(dados[linhas]),
     }
     return ModeloAtraso(booster, metadados)
+
+
+def treinar_final(dados: pd.DataFrame, divisao: Divisao, decisoes: dict) -> ModeloAtraso:
+    """O modelo final: treino em `divisao.treino_final`, avaliado depois no teste."""
+    return treinar_periodo(dados, *divisao.treino_final, decisoes, teste=divisao.teste)
 
 
 def hash_dos_dados(dados: pd.DataFrame) -> str:

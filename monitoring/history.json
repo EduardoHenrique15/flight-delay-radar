@@ -1,0 +1,971 @@
+{
+  "simulacao": {
+    "campeao_inicial_treino": [
+      "2023-01-01",
+      "2025-10-01"
+    ],
+    "meses": [
+      {
+        "mes": "2025-12-01",
+        "tipo": "simulacao",
+        "campeao_treino": [
+          "2023-01-01",
+          "2025-10-01"
+        ],
+        "meses_em_uso": 0,
+        "voos": 66306,
+        "modelo": {
+          "pr_auc": 0.45511,
+          "roc_auc": 0.69638,
+          "brier": 0.192906,
+          "ece": 0.103288,
+          "taxa_real": 0.275827,
+          "taxa_prevista": 0.172605
+        },
+        "baseline": {
+          "pr_auc": 0.399063,
+          "roc_auc": 0.648416,
+          "brier": 0.20615,
+          "ece": 0.129492,
+          "taxa_real": 0.275827,
+          "taxa_prevista": 0.146391
+        },
+        "ganho_pr_auc": 0.056047,
+        "psi": {
+          "cia": 0.0943,
+          "origem": 0.0219,
+          "destino": 0.0224,
+          "hora_prevista_local": 0.0028,
+          "dia_semana": 0.0106,
+          "mes_do_ano": 8.0276,
+          "feriado": 0.0,
+          "vespera_feriado": 0.0,
+          "pos_feriado": 0.0,
+          "ferias_escolares": 0.0,
+          "distancia_km": 0.0218,
+          "duracao_tipica_min": 0.0209,
+          "folga_tipica_min": 0.1347,
+          "partidas_tipicas_origem_hora": 0.0098,
+          "partidas_cia_antes_tipicas": 0.0063,
+          "taxa_rota_hora_3m": 0.0613,
+          "voos_rota_hora_3m": 0.1393,
+          "taxa_rota_hora_12m": 0.0138,
+          "voos_rota_hora_12m": 0.0437,
+          "taxa_cia_3m": 5.0234,
+          "voos_cia_3m": 5.2224,
+          "taxa_cia_12m": 4.894,
+          "voos_cia_12m": 5.1248,
+          "taxa_origem_3m": 2.3097,
+          "voos_origem_3m": 0.8757,
+          "taxa_origem_12m": 0.5913,
+          "voos_origem_12m": 1.5822,
+          "taxa_global_3m": 8.4803,
+          "voos_global_3m": 7.987,
+          "taxa_global_12m": 7.958,
+          "voos_global_12m": 7.8879,
+          "taxa_rota_ano_anterior": 0.9961,
+          "voos_rota_ano_anterior": 0.0705,
+          "taxa_origem_ano_anterior": 1.8757,
+          "voos_origem_ano_anterior": 0.8814,
+          "taxa_cia_ano_anterior": 7.9544,
+          "voos_cia_ano_anterior": 5.0691
+        },
+        "psi_alertas": {
+          "mes_do_ano": "alerta",
+          "folga_tipica_min": "atenção",
+          "voos_rota_hora_3m": "atenção",
+          "taxa_cia_3m": "alerta",
+          "voos_cia_3m": "alerta",
+          "taxa_cia_12m": "alerta",
+          "voos_cia_12m": "alerta",
+          "taxa_origem_3m": "alerta",
+          "voos_origem_3m": "alerta",
+          "taxa_origem_12m": "alerta",
+          "voos_origem_12m": "alerta",
+          "taxa_global_3m": "alerta",
+          "voos_global_3m": "alerta",
+          "taxa_global_12m": "alerta",
+          "voos_global_12m": "alerta",
+          "taxa_rota_ano_anterior": "alerta",
+          "taxa_origem_ano_anterior": "alerta",
+          "voos_origem_ano_anterior": "alerta",
+          "taxa_cia_ano_anterior": "alerta",
+          "voos_cia_ano_anterior": "alerta"
+        },
+        "retreino": {
+          "disparou": true,
+          "motivos": [
+            "ECE de 10.3% (máximo 5%)",
+            "PSI de 8.03 em mes_do_ano"
+          ],
+          "desafiante_treino": [
+            "2023-01-01",
+            "2025-10-01"
+          ],
+          "ganho_pr_auc": 0.0,
+          "ganho_pr_auc_intervalo_95": [
+            0.0,
+            0.0
+          ],
+          "promovido": false
+        },
+        "meses_em_uso_seguinte": 0
+      },
+      {
+        "mes": "2026-01-01",
+        "tipo": "simulacao",
+        "campeao_treino": [
+          "2023-01-01",
+          "2025-10-01"
+        ],
+        "meses_em_uso": 0,
+        "voos": 68231,
+        "modelo": {
+          "pr_auc": 0.308237,
+          "roc_auc": 0.687029,
+          "brier": 0.12965,
+          "ece": 0.035039,
+          "taxa_real": 0.164383,
+          "taxa_prevista": 0.129457
+        },
+        "baseline": {
+          "pr_auc": 0.278079,
+          "roc_auc": 0.66499,
+          "brier": 0.130912,
+          "ece": 0.01997,
+          "taxa_real": 0.164383,
+          "taxa_prevista": 0.145432
+        },
+        "ganho_pr_auc": 0.030157,
+        "psi": {
+          "cia": 0.0988,
+          "origem": 0.0262,
+          "destino": 0.0261,
+          "hora_prevista_local": 0.0037,
+          "dia_semana": 0.0088,
+          "mes_do_ano": 8.4628,
+          "feriado": 0.0,
+          "vespera_feriado": 0.0,
+          "pos_feriado": 0.0,
+          "ferias_escolares": 0.0,
+          "distancia_km": 0.0348,
+          "duracao_tipica_min": 0.0311,
+          "folga_tipica_min": 0.1997,
+          "partidas_tipicas_origem_hora": 0.0104,
+          "partidas_cia_antes_tipicas": 0.0048,
+          "taxa_rota_hora_3m": 0.0102,
+          "voos_rota_hora_3m": 0.0326,
+          "taxa_rota_hora_12m": 0.0202,
+          "voos_rota_hora_12m": 0.0489,
+          "taxa_cia_3m": 4.7367,
+          "voos_cia_3m": 6.3654,
+          "taxa_cia_12m": 4.8272,
+          "voos_cia_12m": 5.1374,
+          "taxa_origem_3m": 1.2797,
+          "voos_origem_3m": 0.8822,
+          "taxa_origem_12m": 0.8285,
+          "voos_origem_12m": 1.6059,
+          "taxa_global_3m": 8.5684,
+          "voos_global_3m": 7.9417,
+          "taxa_global_12m": 7.958,
+          "voos_global_12m": 7.8879,
+          "taxa_rota_ano_anterior": 0.0993,
+          "voos_rota_ano_anterior": 0.0972,
+          "taxa_origem_ano_anterior": 0.9736,
+          "voos_origem_ano_anterior": 0.8934,
+          "taxa_cia_ano_anterior": 4.5326,
+          "voos_cia_ano_anterior": 5.1912
+        },
+        "psi_alertas": {
+          "mes_do_ano": "alerta",
+          "folga_tipica_min": "atenção",
+          "taxa_cia_3m": "alerta",
+          "voos_cia_3m": "alerta",
+          "taxa_cia_12m": "alerta",
+          "voos_cia_12m": "alerta",
+          "taxa_origem_3m": "alerta",
+          "voos_origem_3m": "alerta",
+          "taxa_origem_12m": "alerta",
+          "voos_origem_12m": "alerta",
+          "taxa_global_3m": "alerta",
+          "voos_global_3m": "alerta",
+          "taxa_global_12m": "alerta",
+          "voos_global_12m": "alerta",
+          "taxa_origem_ano_anterior": "alerta",
+          "voos_origem_ano_anterior": "alerta",
+          "taxa_cia_ano_anterior": "alerta",
+          "voos_cia_ano_anterior": "alerta"
+        },
+        "retreino": {
+          "disparou": true,
+          "motivos": [
+            "PSI de 8.46 em mes_do_ano"
+          ],
+          "desafiante_treino": [
+            "2023-01-01",
+            "2025-11-01"
+          ],
+          "ganho_pr_auc": -0.000736,
+          "ganho_pr_auc_intervalo_95": [
+            -0.003003,
+            0.001515
+          ],
+          "promovido": false
+        },
+        "meses_em_uso_seguinte": 0
+      },
+      {
+        "mes": "2026-02-01",
+        "tipo": "simulacao",
+        "campeao_treino": [
+          "2023-01-01",
+          "2025-10-01"
+        ],
+        "meses_em_uso": 0,
+        "voos": 58676,
+        "modelo": {
+          "pr_auc": 0.280328,
+          "roc_auc": 0.681695,
+          "brier": 0.123125,
+          "ece": 0.007322,
+          "taxa_real": 0.154544,
+          "taxa_prevista": 0.147263
+        },
+        "baseline": {
+          "pr_auc": 0.261863,
+          "roc_auc": 0.668388,
+          "brier": 0.12454,
+          "ece": 0.007778,
+          "taxa_real": 0.154544,
+          "taxa_prevista": 0.15487
+        },
+        "ganho_pr_auc": 0.018465,
+        "psi": {
+          "cia": 0.0974,
+          "origem": 0.0223,
+          "destino": 0.0217,
+          "hora_prevista_local": 0.0011,
+          "dia_semana": 0.0007,
+          "mes_do_ano": 8.7139,
+          "feriado": 0.0,
+          "vespera_feriado": 0.0,
+          "pos_feriado": 0.0,
+          "ferias_escolares": 0.0,
+          "distancia_km": 0.0262,
+          "duracao_tipica_min": 0.0301,
+          "folga_tipica_min": 0.2542,
+          "partidas_tipicas_origem_hora": 0.0274,
+          "partidas_cia_antes_tipicas": 0.0109,
+          "taxa_rota_hora_3m": 0.2361,
+          "voos_rota_hora_3m": 0.1319,
+          "taxa_rota_hora_12m": 0.0615,
+          "voos_rota_hora_12m": 0.0985,
+          "taxa_cia_3m": 5.2579,
+          "voos_cia_3m": 6.4418,
+          "taxa_cia_12m": 5.1773,
+          "voos_cia_12m": 5.1499,
+          "taxa_origem_3m": 0.9626,
+          "voos_origem_3m": 0.9024,
+          "taxa_origem_12m": 1.1039,
+          "voos_origem_12m": 0.8984,
+          "taxa_global_3m": 8.512,
+          "voos_global_3m": 7.987,
+          "taxa_global_12m": 7.958,
+          "voos_global_12m": 7.8879,
+          "taxa_rota_ano_anterior": 0.1894,
+          "voos_rota_ano_anterior": 0.0417,
+          "taxa_origem_ano_anterior": 0.5665,
+          "voos_origem_ano_anterior": 2.2728,
+          "taxa_cia_ano_anterior": 4.6689,
+          "voos_cia_ano_anterior": 5.1915
+        },
+        "psi_alertas": {
+          "mes_do_ano": "alerta",
+          "folga_tipica_min": "alerta",
+          "taxa_rota_hora_3m": "atenção",
+          "voos_rota_hora_3m": "atenção",
+          "taxa_cia_3m": "alerta",
+          "voos_cia_3m": "alerta",
+          "taxa_cia_12m": "alerta",
+          "voos_cia_12m": "alerta",
+          "taxa_origem_3m": "alerta",
+          "voos_origem_3m": "alerta",
+          "taxa_origem_12m": "alerta",
+          "voos_origem_12m": "alerta",
+          "taxa_global_3m": "alerta",
+          "voos_global_3m": "alerta",
+          "taxa_global_12m": "alerta",
+          "voos_global_12m": "alerta",
+          "taxa_rota_ano_anterior": "atenção",
+          "taxa_origem_ano_anterior": "alerta",
+          "voos_origem_ano_anterior": "alerta",
+          "taxa_cia_ano_anterior": "alerta",
+          "voos_cia_ano_anterior": "alerta"
+        },
+        "retreino": {
+          "disparou": true,
+          "motivos": [
+            "PSI de 8.71 em mes_do_ano"
+          ],
+          "desafiante_treino": [
+            "2023-01-01",
+            "2025-12-01"
+          ],
+          "ganho_pr_auc": -0.002841,
+          "ganho_pr_auc_intervalo_95": [
+            -0.010239,
+            0.003688
+          ],
+          "promovido": false
+        },
+        "meses_em_uso_seguinte": 0
+      },
+      {
+        "mes": "2026-03-01",
+        "tipo": "simulacao",
+        "campeao_treino": [
+          "2023-01-01",
+          "2025-10-01"
+        ],
+        "meses_em_uso": 0,
+        "voos": 65787,
+        "modelo": {
+          "pr_auc": 0.248133,
+          "roc_auc": 0.684754,
+          "brier": 0.10815,
+          "ece": 0.006881,
+          "taxa_real": 0.131379,
+          "taxa_prevista": 0.127602
+        },
+        "baseline": {
+          "pr_auc": 0.220885,
+          "roc_auc": 0.665006,
+          "brier": 0.110887,
+          "ece": 0.024393,
+          "taxa_real": 0.131379,
+          "taxa_prevista": 0.155734
+        },
+        "ganho_pr_auc": 0.027249,
+        "psi": {
+          "cia": 0.0914,
+          "origem": 0.0166,
+          "destino": 0.0162,
+          "hora_prevista_local": 0.001,
+          "dia_semana": 0.009,
+          "mes_do_ano": 8.5597,
+          "feriado": 0.0,
+          "vespera_feriado": 0.0,
+          "pos_feriado": 0.0,
+          "ferias_escolares": 0.0,
+          "distancia_km": 0.0092,
+          "duracao_tipica_min": 0.0208,
+          "folga_tipica_min": 0.3022,
+          "partidas_tipicas_origem_hora": 0.0412,
+          "partidas_cia_antes_tipicas": 0.0124,
+          "taxa_rota_hora_3m": 0.1867,
+          "voos_rota_hora_3m": 0.1068,
+          "taxa_rota_hora_12m": 0.0426,
+          "voos_rota_hora_12m": 0.1538,
+          "taxa_cia_3m": 5.9966,
+          "voos_cia_3m": 5.3115,
+          "taxa_cia_12m": 6.3902,
+          "voos_cia_12m": 6.3981,
+          "taxa_origem_3m": 1.559,
+          "voos_origem_3m": 0.8773,
+          "taxa_origem_12m": 1.2821,
+          "voos_origem_12m": 0.894,
+          "taxa_global_3m": 8.0633,
+          "voos_global_3m": 7.987,
+          "taxa_global_12m": 7.958,
+          "voos_global_12m": 7.8879,
+          "taxa_rota_ano_anterior": 0.2859,
+          "voos_rota_ano_anterior": 0.066,
+          "taxa_origem_ano_anterior": 1.6492,
+          "voos_origem_ano_anterior": 0.8886,
+          "taxa_cia_ano_anterior": 5.9046,
+          "voos_cia_ano_anterior": 5.0927
+        },
+        "psi_alertas": {
+          "mes_do_ano": "alerta",
+          "folga_tipica_min": "alerta",
+          "taxa_rota_hora_3m": "atenção",
+          "voos_rota_hora_3m": "atenção",
+          "voos_rota_hora_12m": "atenção",
+          "taxa_cia_3m": "alerta",
+          "voos_cia_3m": "alerta",
+          "taxa_cia_12m": "alerta",
+          "voos_cia_12m": "alerta",
+          "taxa_origem_3m": "alerta",
+          "voos_origem_3m": "alerta",
+          "taxa_origem_12m": "alerta",
+          "voos_origem_12m": "alerta",
+          "taxa_global_3m": "alerta",
+          "voos_global_3m": "alerta",
+          "taxa_global_12m": "alerta",
+          "voos_global_12m": "alerta",
+          "taxa_rota_ano_anterior": "alerta",
+          "taxa_origem_ano_anterior": "alerta",
+          "voos_origem_ano_anterior": "alerta",
+          "taxa_cia_ano_anterior": "alerta",
+          "voos_cia_ano_anterior": "alerta"
+        },
+        "retreino": {
+          "disparou": true,
+          "motivos": [
+            "PSI de 8.56 em mes_do_ano"
+          ],
+          "desafiante_treino": [
+            "2023-01-01",
+            "2026-01-01"
+          ],
+          "ganho_pr_auc": -0.007644,
+          "ganho_pr_auc_intervalo_95": [
+            -0.015771,
+            -0.00082
+          ],
+          "promovido": false
+        },
+        "meses_em_uso_seguinte": 0
+      },
+      {
+        "mes": "2026-04-01",
+        "tipo": "simulacao",
+        "campeao_treino": [
+          "2023-01-01",
+          "2025-10-01"
+        ],
+        "meses_em_uso": 0,
+        "voos": 61695,
+        "modelo": {
+          "pr_auc": 0.298216,
+          "roc_auc": 0.688054,
+          "brier": 0.127247,
+          "ece": 0.040412,
+          "taxa_real": 0.158651,
+          "taxa_prevista": 0.11824
+        },
+        "baseline": {
+          "pr_auc": 0.245965,
+          "roc_auc": 0.646286,
+          "brier": 0.129041,
+          "ece": 0.015512,
+          "taxa_real": 0.158651,
+          "taxa_prevista": 0.148665
+        },
+        "ganho_pr_auc": 0.052251,
+        "psi": {
+          "cia": 0.0905,
+          "origem": 0.0199,
+          "destino": 0.0198,
+          "hora_prevista_local": 0.0029,
+          "dia_semana": 0.0129,
+          "mes_do_ano": 8.5927,
+          "feriado": 0.0,
+          "vespera_feriado": 0.0,
+          "pos_feriado": 0.0,
+          "ferias_escolares": 0.0,
+          "distancia_km": 0.0119,
+          "duracao_tipica_min": 0.0134,
+          "folga_tipica_min": 0.3129,
+          "partidas_tipicas_origem_hora": 0.0326,
+          "partidas_cia_antes_tipicas": 0.0082,
+          "taxa_rota_hora_3m": 0.135,
+          "voos_rota_hora_3m": 0.1089,
+          "taxa_rota_hora_12m": 0.0208,
+          "voos_rota_hora_12m": 0.0581,
+          "taxa_cia_3m": 5.8765,
+          "voos_cia_3m": 6.5013,
+          "taxa_cia_12m": 6.3968,
+          "voos_cia_12m": 6.379,
+          "taxa_origem_3m": 1.3439,
+          "voos_origem_3m": 1.6461,
+          "taxa_origem_12m": 1.3649,
+          "voos_origem_12m": 0.8813,
+          "taxa_global_3m": 8.0633,
+          "voos_global_3m": 8.5533,
+          "taxa_global_12m": 7.958,
+          "voos_global_12m": 7.8879,
+          "taxa_rota_ano_anterior": 0.1956,
+          "voos_rota_ano_anterior": 0.0545,
+          "taxa_origem_ano_anterior": 0.6851,
+          "voos_origem_ano_anterior": 0.9016,
+          "taxa_cia_ano_anterior": 6.0108,
+          "voos_cia_ano_anterior": 5.0407
+        },
+        "psi_alertas": {
+          "mes_do_ano": "alerta",
+          "folga_tipica_min": "alerta",
+          "taxa_rota_hora_3m": "atenção",
+          "voos_rota_hora_3m": "atenção",
+          "taxa_cia_3m": "alerta",
+          "voos_cia_3m": "alerta",
+          "taxa_cia_12m": "alerta",
+          "voos_cia_12m": "alerta",
+          "taxa_origem_3m": "alerta",
+          "voos_origem_3m": "alerta",
+          "taxa_origem_12m": "alerta",
+          "voos_origem_12m": "alerta",
+          "taxa_global_3m": "alerta",
+          "voos_global_3m": "alerta",
+          "taxa_global_12m": "alerta",
+          "voos_global_12m": "alerta",
+          "taxa_rota_ano_anterior": "atenção",
+          "taxa_origem_ano_anterior": "alerta",
+          "voos_origem_ano_anterior": "alerta",
+          "taxa_cia_ano_anterior": "alerta",
+          "voos_cia_ano_anterior": "alerta"
+        },
+        "retreino": {
+          "disparou": true,
+          "motivos": [
+            "PSI de 8.59 em mes_do_ano"
+          ],
+          "desafiante_treino": [
+            "2023-01-01",
+            "2026-02-01"
+          ],
+          "ganho_pr_auc": -0.004114,
+          "ganho_pr_auc_intervalo_95": [
+            -0.011992,
+            0.002602
+          ],
+          "promovido": false
+        },
+        "meses_em_uso_seguinte": 0
+      },
+      {
+        "mes": "2026-05-01",
+        "tipo": "simulacao",
+        "campeao_treino": [
+          "2023-01-01",
+          "2025-10-01"
+        ],
+        "meses_em_uso": 0,
+        "voos": 63393,
+        "modelo": {
+          "pr_auc": 0.269135,
+          "roc_auc": 0.683798,
+          "brier": 0.108675,
+          "ece": 0.00735,
+          "taxa_real": 0.133217,
+          "taxa_prevista": 0.125866
+        },
+        "baseline": {
+          "pr_auc": 0.234765,
+          "roc_auc": 0.656403,
+          "brier": 0.111535,
+          "ece": 0.022385,
+          "taxa_real": 0.133217,
+          "taxa_prevista": 0.15373
+        },
+        "ganho_pr_auc": 0.03437,
+        "psi": {
+          "cia": 0.0937,
+          "origem": 0.017,
+          "destino": 0.0167,
+          "hora_prevista_local": 0.002,
+          "dia_semana": 0.0138,
+          "mes_do_ano": 8.5487,
+          "feriado": 0.0,
+          "vespera_feriado": 0.0,
+          "pos_feriado": 0.0,
+          "ferias_escolares": 0.0,
+          "distancia_km": 0.0095,
+          "duracao_tipica_min": 0.0102,
+          "folga_tipica_min": 0.3112,
+          "partidas_tipicas_origem_hora": 0.0253,
+          "partidas_cia_antes_tipicas": 0.0091,
+          "taxa_rota_hora_3m": 0.0336,
+          "voos_rota_hora_3m": 0.0924,
+          "taxa_rota_hora_12m": 0.0162,
+          "voos_rota_hora_12m": 0.1011,
+          "taxa_cia_3m": 4.8722,
+          "voos_cia_3m": 6.4643,
+          "taxa_cia_12m": 6.4801,
+          "voos_cia_12m": 6.4055,
+          "taxa_origem_3m": 0.9598,
+          "voos_origem_3m": 0.8974,
+          "taxa_origem_12m": 0.9201,
+          "voos_origem_12m": 0.8936,
+          "taxa_global_3m": 8.5684,
+          "voos_global_3m": 8.5533,
+          "taxa_global_12m": 7.958,
+          "voos_global_12m": 7.8879,
+          "taxa_rota_ano_anterior": 0.2399,
+          "voos_rota_ano_anterior": 0.0537,
+          "taxa_origem_ano_anterior": 1.2702,
+          "voos_origem_ano_anterior": 1.687,
+          "taxa_cia_ano_anterior": 4.9384,
+          "voos_cia_ano_anterior": 5.2158
+        },
+        "psi_alertas": {
+          "mes_do_ano": "alerta",
+          "folga_tipica_min": "alerta",
+          "voos_rota_hora_12m": "atenção",
+          "taxa_cia_3m": "alerta",
+          "voos_cia_3m": "alerta",
+          "taxa_cia_12m": "alerta",
+          "voos_cia_12m": "alerta",
+          "taxa_origem_3m": "alerta",
+          "voos_origem_3m": "alerta",
+          "taxa_origem_12m": "alerta",
+          "voos_origem_12m": "alerta",
+          "taxa_global_3m": "alerta",
+          "voos_global_3m": "alerta",
+          "taxa_global_12m": "alerta",
+          "voos_global_12m": "alerta",
+          "taxa_rota_ano_anterior": "atenção",
+          "taxa_origem_ano_anterior": "alerta",
+          "voos_origem_ano_anterior": "alerta",
+          "taxa_cia_ano_anterior": "alerta",
+          "voos_cia_ano_anterior": "alerta"
+        },
+        "retreino": {
+          "disparou": true,
+          "motivos": [
+            "PSI de 8.55 em mes_do_ano"
+          ],
+          "desafiante_treino": [
+            "2023-01-01",
+            "2026-03-01"
+          ],
+          "ganho_pr_auc": -0.002549,
+          "ganho_pr_auc_intervalo_95": [
+            -0.006937,
+            0.001598
+          ],
+          "promovido": false
+        },
+        "meses_em_uso_seguinte": 0
+      },
+      {
+        "mes": "2026-06-01",
+        "tipo": "simulacao",
+        "campeao_treino": [
+          "2023-01-01",
+          "2025-10-01"
+        ],
+        "meses_em_uso": 0,
+        "voos": 61913,
+        "modelo": {
+          "pr_auc": 0.30259,
+          "roc_auc": 0.675806,
+          "brier": 0.137162,
+          "ece": 0.041813,
+          "taxa_real": 0.173534,
+          "taxa_prevista": 0.131734
+        },
+        "baseline": {
+          "pr_auc": 0.29285,
+          "roc_auc": 0.662682,
+          "brier": 0.13641,
+          "ece": 0.01904,
+          "taxa_real": 0.173534,
+          "taxa_prevista": 0.156206
+        },
+        "ganho_pr_auc": 0.00974,
+        "psi": {
+          "cia": 0.0949,
+          "origem": 0.0167,
+          "destino": 0.0163,
+          "hora_prevista_local": 0.0018,
+          "dia_semana": 0.0131,
+          "mes_do_ano": 8.592,
+          "feriado": 0.0,
+          "vespera_feriado": 0.0,
+          "pos_feriado": 0.0,
+          "ferias_escolares": 0.0,
+          "distancia_km": 0.016,
+          "duracao_tipica_min": 0.0153,
+          "folga_tipica_min": 0.29,
+          "partidas_tipicas_origem_hora": 0.0157,
+          "partidas_cia_antes_tipicas": 0.0094,
+          "taxa_rota_hora_3m": 0.0253,
+          "voos_rota_hora_3m": 0.0572,
+          "taxa_rota_hora_12m": 0.0102,
+          "voos_rota_hora_12m": 0.0784,
+          "taxa_cia_3m": 4.9083,
+          "voos_cia_3m": 6.3804,
+          "taxa_cia_12m": 6.6017,
+          "voos_cia_12m": 6.3778,
+          "taxa_origem_3m": 1.0405,
+          "voos_origem_3m": 0.9036,
+          "taxa_origem_12m": 1.3495,
+          "voos_origem_12m": 0.8912,
+          "taxa_global_3m": 8.5684,
+          "voos_global_3m": 8.5812,
+          "taxa_global_12m": 8.4747,
+          "voos_global_12m": 7.8879,
+          "taxa_rota_ano_anterior": 0.0657,
+          "voos_rota_ano_anterior": 0.0445,
+          "taxa_origem_ano_anterior": 0.7551,
+          "voos_origem_ano_anterior": 0.9767,
+          "taxa_cia_ano_anterior": 6.1267,
+          "voos_cia_ano_anterior": 5.0909
+        },
+        "psi_alertas": {
+          "mes_do_ano": "alerta",
+          "folga_tipica_min": "alerta",
+          "taxa_cia_3m": "alerta",
+          "voos_cia_3m": "alerta",
+          "taxa_cia_12m": "alerta",
+          "voos_cia_12m": "alerta",
+          "taxa_origem_3m": "alerta",
+          "voos_origem_3m": "alerta",
+          "taxa_origem_12m": "alerta",
+          "voos_origem_12m": "alerta",
+          "taxa_global_3m": "alerta",
+          "voos_global_3m": "alerta",
+          "taxa_global_12m": "alerta",
+          "voos_global_12m": "alerta",
+          "taxa_origem_ano_anterior": "alerta",
+          "voos_origem_ano_anterior": "alerta",
+          "taxa_cia_ano_anterior": "alerta",
+          "voos_cia_ano_anterior": "alerta"
+        },
+        "retreino": {
+          "disparou": true,
+          "motivos": [
+            "PSI de 8.59 em mes_do_ano"
+          ],
+          "desafiante_treino": [
+            "2023-01-01",
+            "2026-04-01"
+          ],
+          "ganho_pr_auc": 0.01466,
+          "ganho_pr_auc_intervalo_95": [
+            0.010149,
+            0.019704
+          ],
+          "promovido": true
+        },
+        "meses_em_uso_seguinte": 0
+      },
+      {
+        "mes": "2026-07-01",
+        "tipo": "simulacao",
+        "campeao_treino": [
+          "2023-01-01",
+          "2026-04-01"
+        ],
+        "meses_em_uso": 0,
+        "voos": 67005,
+        "modelo": {
+          "pr_auc": 0.281173,
+          "roc_auc": 0.680864,
+          "brier": 0.116815,
+          "ece": 0.005284,
+          "taxa_real": 0.145273,
+          "taxa_prevista": 0.14866
+        },
+        "baseline": {
+          "pr_auc": 0.251486,
+          "roc_auc": 0.661226,
+          "brier": 0.118984,
+          "ece": 0.015776,
+          "taxa_real": 0.145273,
+          "taxa_prevista": 0.154047
+        },
+        "ganho_pr_auc": 0.029687,
+        "psi": {
+          "cia": 0.0801,
+          "origem": 0.0131,
+          "destino": 0.0129,
+          "hora_prevista_local": 0.0021,
+          "dia_semana": 0.0088,
+          "mes_do_ano": 8.872,
+          "feriado": 0.0,
+          "vespera_feriado": 0.0,
+          "pos_feriado": 0.0,
+          "ferias_escolares": 0.0,
+          "distancia_km": 0.0178,
+          "duracao_tipica_min": 0.0169,
+          "folga_tipica_min": 0.2036,
+          "partidas_tipicas_origem_hora": 0.0077,
+          "partidas_cia_antes_tipicas": 0.0057,
+          "taxa_rota_hora_3m": 0.0366,
+          "voos_rota_hora_3m": 0.0635,
+          "taxa_rota_hora_12m": 0.0071,
+          "voos_rota_hora_12m": 0.0422,
+          "taxa_cia_3m": 5.0303,
+          "voos_cia_3m": 5.1588,
+          "taxa_cia_12m": 6.8305,
+          "voos_cia_12m": 6.3918,
+          "taxa_origem_3m": 0.9707,
+          "voos_origem_3m": 0.0354,
+          "taxa_origem_12m": 0.6314,
+          "voos_origem_12m": 0.8893,
+          "taxa_global_3m": 8.2857,
+          "voos_global_3m": 8.2819,
+          "taxa_global_12m": 8.2973,
+          "voos_global_12m": 8.2732,
+          "taxa_rota_ano_anterior": 0.0984,
+          "voos_rota_ano_anterior": 0.0361,
+          "taxa_origem_ano_anterior": 0.8686,
+          "voos_origem_ano_anterior": 0.9642,
+          "taxa_cia_ano_anterior": 6.2885,
+          "voos_cia_ano_anterior": 6.344
+        },
+        "psi_alertas": {
+          "mes_do_ano": "alerta",
+          "folga_tipica_min": "atenção",
+          "taxa_cia_3m": "alerta",
+          "voos_cia_3m": "alerta",
+          "taxa_cia_12m": "alerta",
+          "voos_cia_12m": "alerta",
+          "taxa_origem_3m": "alerta",
+          "taxa_origem_12m": "alerta",
+          "voos_origem_12m": "alerta",
+          "taxa_global_3m": "alerta",
+          "voos_global_3m": "alerta",
+          "taxa_global_12m": "alerta",
+          "voos_global_12m": "alerta",
+          "taxa_origem_ano_anterior": "alerta",
+          "voos_origem_ano_anterior": "alerta",
+          "taxa_cia_ano_anterior": "alerta",
+          "voos_cia_ano_anterior": "alerta"
+        },
+        "retreino": {
+          "disparou": true,
+          "motivos": [
+            "PSI de 8.87 em mes_do_ano"
+          ],
+          "desafiante_treino": [
+            "2023-01-01",
+            "2026-05-01"
+          ],
+          "ganho_pr_auc": -0.002391,
+          "ganho_pr_auc_intervalo_95": [
+            -0.005822,
+            0.001465
+          ],
+          "promovido": false
+        },
+        "meses_em_uso_seguinte": 0
+      },
+      {
+        "mes": "2026-08-01",
+        "tipo": "simulacao",
+        "campeao_treino": [
+          "2023-01-01",
+          "2026-04-01"
+        ],
+        "meses_em_uso": 0,
+        "voos": 67241,
+        "modelo": {
+          "pr_auc": 0.343883,
+          "roc_auc": 0.720637,
+          "brier": 0.120796,
+          "ece": 0.015642,
+          "taxa_real": 0.157344,
+          "taxa_prevista": 0.141702
+        },
+        "baseline": {
+          "pr_auc": 0.30254,
+          "roc_auc": 0.696523,
+          "brier": 0.123273,
+          "ece": 0.00621,
+          "taxa_real": 0.157344,
+          "taxa_prevista": 0.158653
+        },
+        "ganho_pr_auc": 0.041343,
+        "psi": {
+          "cia": 0.0758,
+          "origem": 0.0126,
+          "destino": 0.0123,
+          "hora_prevista_local": 0.0008,
+          "dia_semana": 0.0167,
+          "mes_do_ano": 7.5529,
+          "feriado": 0.0,
+          "vespera_feriado": 0.0,
+          "pos_feriado": 0.0,
+          "ferias_escolares": 0.0,
+          "distancia_km": 0.0096,
+          "duracao_tipica_min": 0.0081,
+          "folga_tipica_min": 0.1927,
+          "partidas_tipicas_origem_hora": 0.0204,
+          "partidas_cia_antes_tipicas": 0.0086,
+          "taxa_rota_hora_3m": 0.0517,
+          "voos_rota_hora_3m": 0.0902,
+          "taxa_rota_hora_12m": 0.0335,
+          "voos_rota_hora_12m": 0.0787,
+          "taxa_cia_3m": 5.7524,
+          "voos_cia_3m": 6.3399,
+          "taxa_cia_12m": 6.2961,
+          "voos_cia_12m": 6.398,
+          "taxa_origem_3m": 0.7698,
+          "voos_origem_3m": 0.887,
+          "taxa_origem_12m": 0.4193,
+          "voos_origem_12m": 0.8852,
+          "taxa_global_3m": 8.2922,
+          "voos_global_3m": 8.3594,
+          "taxa_global_12m": 8.3132,
+          "voos_global_12m": 8.2732,
+          "taxa_rota_ano_anterior": 0.2719,
+          "voos_rota_ano_anterior": 0.0424,
+          "taxa_origem_ano_anterior": 1.964,
+          "voos_origem_ano_anterior": 1.6523,
+          "taxa_cia_ano_anterior": 5.1182,
+          "voos_cia_ano_anterior": 6.4064
+        },
+        "psi_alertas": {
+          "mes_do_ano": "alerta",
+          "folga_tipica_min": "atenção",
+          "taxa_cia_3m": "alerta",
+          "voos_cia_3m": "alerta",
+          "taxa_cia_12m": "alerta",
+          "voos_cia_12m": "alerta",
+          "taxa_origem_3m": "alerta",
+          "voos_origem_3m": "alerta",
+          "taxa_origem_12m": "alerta",
+          "voos_origem_12m": "alerta",
+          "taxa_global_3m": "alerta",
+          "voos_global_3m": "alerta",
+          "taxa_global_12m": "alerta",
+          "voos_global_12m": "alerta",
+          "taxa_rota_ano_anterior": "alerta",
+          "taxa_origem_ano_anterior": "alerta",
+          "voos_origem_ano_anterior": "alerta",
+          "taxa_cia_ano_anterior": "alerta",
+          "voos_cia_ano_anterior": "alerta"
+        },
+        "retreino": {
+          "disparou": true,
+          "motivos": [
+            "PSI de 7.55 em mes_do_ano"
+          ],
+          "desafiante_treino": [
+            "2023-01-01",
+            "2026-06-01"
+          ],
+          "ganho_pr_auc": 0.005597,
+          "ganho_pr_auc_intervalo_95": [
+            0.001684,
+            0.011608
+          ],
+          "promovido": true
+        },
+        "meses_em_uso_seguinte": 0
+      }
+    ]
+  },
+  "producao": {
+    "meses": []
+  },
+  "variaveis_importantes": [
+    "hora_prevista_local",
+    "taxa_rota_hora_12m",
+    "taxa_rota_hora_3m",
+    "dia_semana",
+    "mes_do_ano"
+  ],
+  "gerado_em": "2026-10-16T16:59:57",
+  "regras": {
+    "ganho_pr_auc_minimo": 0.0,
+    "ece_maximo": 0.05,
+    "psi_alerta": 0.25,
+    "psi_atencao": 0.1,
+    "meses_maximos_sem_retreino": 6,
+    "promocao": "intervalo de 95% do ganho de PR-AUC do desafiante acima de zero"
+  }
+}
