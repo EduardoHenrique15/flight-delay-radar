@@ -1,0 +1,219 @@
+{
+  "voos": 20000,
+  "por_tema": [
+    {
+      "tema": "Histórico da rota neste horário",
+      "shap_medio_abs": 0.2772898984479477,
+      "pontos_medios_abs": 3.168108053541053
+    },
+    {
+      "tema": "Horário do voo",
+      "shap_medio_abs": 0.17839662636882977,
+      "pontos_medios_abs": 1.8221835817429426
+    },
+    {
+      "tema": "Dia da semana",
+      "shap_medio_abs": 0.12043064226858728,
+      "pontos_medios_abs": 1.4949759401938554
+    },
+    {
+      "tema": "Rota e duração do voo",
+      "shap_medio_abs": 0.09561082929841123,
+      "pontos_medios_abs": 1.1488096801993866
+    },
+    {
+      "tema": "Época do ano",
+      "shap_medio_abs": 0.09479184151039653,
+      "pontos_medios_abs": 1.0917177406196736
+    },
+    {
+      "tema": "Aeroporto de origem",
+      "shap_medio_abs": 0.09317567207806667,
+      "pontos_medios_abs": 1.0904517156222429
+    },
+    {
+      "tema": "Movimento no aeroporto",
+      "shap_medio_abs": 0.06756531953518179,
+      "pontos_medios_abs": 0.9147278870532326
+    },
+    {
+      "tema": "Histórico da companhia",
+      "shap_medio_abs": 0.061627628730954225,
+      "pontos_medios_abs": 0.7909222556929517
+    },
+    {
+      "tema": "Companhia",
+      "shap_medio_abs": 0.030271370018082264,
+      "pontos_medios_abs": 0.28596293545378826
+    },
+    {
+      "tema": "Nível geral de atrasos no país",
+      "shap_medio_abs": 0.02685622983221466,
+      "pontos_medios_abs": 0.3354154056068145
+    },
+    {
+      "tema": "Feriados",
+      "shap_medio_abs": 0.024061755674461675,
+      "pontos_medios_abs": 0.3013763859007719
+    },
+    {
+      "tema": "Histórico do aeroporto de origem",
+      "shap_medio_abs": 0.013804678745408009,
+      "pontos_medios_abs": 0.1904610128541468
+    }
+  ],
+  "por_variavel": [
+    {
+      "variavel": "hora_prevista_local",
+      "shap_medio_abs": 0.17839662636882977
+    },
+    {
+      "variavel": "taxa_rota_hora_12m",
+      "shap_medio_abs": 0.16960140992141523
+    },
+    {
+      "variavel": "taxa_rota_hora_3m",
+      "shap_medio_abs": 0.12322244791936178
+    },
+    {
+      "variavel": "dia_semana",
+      "shap_medio_abs": 0.12043064226858728
+    },
+    {
+      "variavel": "mes_do_ano",
+      "shap_medio_abs": 0.09603841212714183
+    },
+    {
+      "variavel": "origem",
+      "shap_medio_abs": 0.09317567207806667
+    },
+    {
+      "variavel": "destino",
+      "shap_medio_abs": 0.08526887927356165
+    },
+    {
+      "variavel": "partidas_tipicas_origem_hora",
+      "shap_medio_abs": 0.04303591280034392
+    },
+    {
+      "variavel": "partidas_cia_antes_tipicas",
+      "shap_medio_abs": 0.03879218243885571
+    },
+    {
+      "variavel": "taxa_cia_3m",
+      "shap_medio_abs": 0.03370739212811053
+    },
+    {
+      "variavel": "cia",
+      "shap_medio_abs": 0.030271370018082264
+    },
+    {
+      "variavel": "voos_cia_ano_anterior",
+      "shap_medio_abs": 0.0242270885049565
+    },
+    {
+      "variavel": "taxa_global_12m",
+      "shap_medio_abs": 0.02018723479726046
+    },
+    {
+      "variavel": "voos_cia_3m",
+      "shap_medio_abs": 0.01954145057377857
+    },
+    {
+      "variavel": "duracao_tipica_min",
+      "shap_medio_abs": 0.017461109174791926
+    },
+    {
+      "variavel": "voos_cia_12m",
+      "shap_medio_abs": 0.016803680519539173
+    },
+    {
+      "variavel": "taxa_cia_ano_anterior",
+      "shap_medio_abs": 0.015626729211048986
+    },
+    {
+      "variavel": "voos_global_12m",
+      "shap_medio_abs": 0.014370612045522068
+    },
+    {
+      "variavel": "voos_rota_hora_3m",
+      "shap_medio_abs": 0.011618367502342911
+    },
+    {
+      "variavel": "voos_global_3m",
+      "shap_medio_abs": 0.0114950336070719
+    },
+    {
+      "variavel": "taxa_origem_ano_anterior",
+      "shap_medio_abs": 0.011059583797008245
+    },
+    {
+      "variavel": "taxa_global_3m",
+      "shap_medio_abs": 0.010750659778538726
+    },
+    {
+      "variavel": "voos_origem_3m",
+      "shap_medio_abs": 0.010543853933395578
+    },
+    {
+      "variavel": "voos_origem_12m",
+      "shap_medio_abs": 0.010132854821203154
+    },
+    {
+      "variavel": "feriado",
+      "shap_medio_abs": 0.009772719434293106
+    },
+    {
+      "variavel": "taxa_cia_12m",
+      "shap_medio_abs": 0.009109537811898437
+    },
+    {
+      "variavel": "voos_origem_ano_anterior",
+      "shap_medio_abs": 0.008776148018574462
+    },
+    {
+      "variavel": "pos_feriado",
+      "shap_medio_abs": 0.007188365103577542
+    },
+    {
+      "variavel": "vespera_feriado",
+      "shap_medio_abs": 0.007100800464796029
+    },
+    {
+      "variavel": "distancia_km",
+      "shap_medio_abs": 0.006503819027528124
+    },
+    {
+      "variavel": "taxa_origem_12m",
+      "shap_medio_abs": 0.005910363336061807
+    },
+    {
+      "variavel": "folga_tipica_min",
+      "shap_medio_abs": 0.005701713919472361
+    },
+    {
+      "variavel": "voos_rota_hora_12m",
+      "shap_medio_abs": 0.005451733221950707
+    },
+    {
+      "variavel": "taxa_rota_ano_anterior",
+      "shap_medio_abs": 0.0050768041162807176
+    },
+    {
+      "variavel": "voos_rota_ano_anterior",
+      "shap_medio_abs": 0.00479075710541684
+    },
+    {
+      "variavel": "taxa_origem_3m",
+      "shap_medio_abs": 0.004219015875130385
+    },
+    {
+      "variavel": "ferias_escolares",
+      "shap_medio_abs": 0.004118133181741482
+    }
+  ],
+  "periodo": [
+    "2026-06-01",
+    "2026-08-01"
+  ]
+}

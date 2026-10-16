@@ -1,10 +1,11 @@
 {
   "divisao": {
+    "intervalo_meses": 1,
     "cortes": [
       {
         "treino": [
           "2023-01-01",
-          "2025-02-01"
+          "2025-01-01"
         ],
         "validacao": [
           "2025-03-01",
@@ -14,7 +15,7 @@
       {
         "treino": [
           "2023-01-01",
-          "2025-05-01"
+          "2025-04-01"
         ],
         "validacao": [
           "2025-06-01",
@@ -24,7 +25,7 @@
       {
         "treino": [
           "2023-01-01",
-          "2025-08-01"
+          "2025-07-01"
         ],
         "validacao": [
           "2025-09-01",
@@ -34,7 +35,7 @@
       {
         "treino": [
           "2023-01-01",
-          "2025-11-01"
+          "2025-10-01"
         ],
         "validacao": [
           "2025-12-01",
@@ -44,7 +45,7 @@
       {
         "treino": [
           "2023-01-01",
-          "2026-02-01"
+          "2026-01-01"
         ],
         "validacao": [
           "2026-03-01",
@@ -52,13 +53,17 @@
         ]
       }
     ],
+    "treino_final": [
+      "2023-01-01",
+      "2026-04-01"
+    ],
     "teste": [
       "2026-06-01",
       "2026-08-01"
     ]
   },
   "baseline": {
-    "gerado_em": "2026-10-11T00:31:08",
+    "gerado_em": "2026-10-16T15:29:05",
     "descricao": "taxa histórica as-of da rota x hora, com recurso a companhia, origem e país",
     "min_voos_historico": 30,
     "validacao_cruzada": {
@@ -138,7 +143,7 @@
           "voos": 189714,
           "pr_auc": 0.17831987426327553,
           "roc_auc": 0.6188667329490483,
-          "brier": 0.11017024100558936,
+          "brier": 0.11017024100558938,
           "ece": 0.03557583397277892,
           "taxa_real": 0.1254256407012661,
           "taxa_prevista": 0.15727703640656118
@@ -151,7 +156,7 @@
           "voos": 194984,
           "pr_auc": 0.1986977301457335,
           "roc_auc": 0.6348341816378309,
-          "brier": 0.11103436115348546,
+          "brier": 0.11103436115348544,
           "ece": 0.025822427873841824,
           "taxa_real": 0.1297388503672096,
           "taxa_prevista": 0.15132525499216282
@@ -177,7 +182,7 @@
           "voos": 193213,
           "pr_auc": 0.30990533395880054,
           "roc_auc": 0.6545740188660628,
-          "brier": 0.15479651416840315,
+          "brier": 0.15479651416840312,
           "ece": 0.05145634046123896,
           "taxa_real": 0.199639775791484,
           "taxa_prevista": 0.14862722231031478
@@ -216,28 +221,28 @@
       "taxa_prevista": 0.15630710556656505,
       "intervalo_95": {
         "pr_auc": [
-          0.2641366392370159,
-          0.30045547598623645
+          0.26746346914065977,
+          0.2981356508372949
         ],
         "roc_auc": [
-          0.6648800993999601,
-          0.6815076073990086
+          0.665589461031572,
+          0.6806985918004296
         ],
         "brier": [
-          0.11946659524127932,
-          0.1319820008970987
+          0.1203179167203251,
+          0.13247459531892575
         ],
         "ece": [
-          0.004942600702431416,
-          0.013827723466663564
+          0.004922509819099519,
+          0.013310009504998156
         ],
         "taxa_real": [
-          0.14826882280021983,
-          0.16792997598174275
+          0.14860835590431193,
+          0.16895426339172187
         ],
         "taxa_prevista": [
-          0.1556976749292474,
-          0.15695631087315523
+          0.15578096934699892,
+          0.15685082685377824
         ]
       },
       "nivel_usado": {
@@ -309,6 +314,953 @@
           "taxa_real": 0.643979057591623
         }
       ]
+    }
+  },
+  "validacao_modelos": {
+    "gerado_em": "2026-10-16T16:07:48",
+    "variaveis": [
+      "cia",
+      "origem",
+      "destino",
+      "hora_prevista_local",
+      "dia_semana",
+      "mes_do_ano",
+      "feriado",
+      "vespera_feriado",
+      "pos_feriado",
+      "ferias_escolares",
+      "distancia_km",
+      "duracao_tipica_min",
+      "folga_tipica_min",
+      "partidas_tipicas_origem_hora",
+      "partidas_cia_antes_tipicas",
+      "taxa_rota_hora_3m",
+      "voos_rota_hora_3m",
+      "taxa_rota_hora_12m",
+      "voos_rota_hora_12m",
+      "taxa_cia_3m",
+      "voos_cia_3m",
+      "taxa_cia_12m",
+      "voos_cia_12m",
+      "taxa_origem_3m",
+      "voos_origem_3m",
+      "taxa_origem_12m",
+      "voos_origem_12m",
+      "taxa_global_3m",
+      "voos_global_3m",
+      "taxa_global_12m",
+      "voos_global_12m",
+      "taxa_rota_ano_anterior",
+      "voos_rota_ano_anterior",
+      "taxa_origem_ano_anterior",
+      "voos_origem_ano_anterior",
+      "taxa_cia_ano_anterior",
+      "voos_cia_ano_anterior"
+    ],
+    "janela_baseline": "12m",
+    "logistica": {
+      "amostra_max": 600000,
+      "min_frequencia_categoria": 200
+    },
+    "lightgbm": {
+      "busca": {
+        "corte": [
+          "2026-03-01",
+          "2026-05-01"
+        ],
+        "resultados": [
+          {
+            "num_leaves": 31,
+            "min_child_samples": 100,
+            "learning_rate": 0.05,
+            "arvores": 324,
+            "pr_auc": 0.266228
+          },
+          {
+            "num_leaves": 31,
+            "min_child_samples": 100,
+            "learning_rate": 0.1,
+            "arvores": 82,
+            "pr_auc": 0.267246
+          },
+          {
+            "num_leaves": 31,
+            "min_child_samples": 1000,
+            "learning_rate": 0.05,
+            "arvores": 320,
+            "pr_auc": 0.267726
+          },
+          {
+            "num_leaves": 31,
+            "min_child_samples": 1000,
+            "learning_rate": 0.1,
+            "arvores": 155,
+            "pr_auc": 0.268039
+          },
+          {
+            "num_leaves": 127,
+            "min_child_samples": 100,
+            "learning_rate": 0.05,
+            "arvores": 219,
+            "pr_auc": 0.268413
+          },
+          {
+            "num_leaves": 127,
+            "min_child_samples": 100,
+            "learning_rate": 0.1,
+            "arvores": 94,
+            "pr_auc": 0.264189
+          },
+          {
+            "num_leaves": 127,
+            "min_child_samples": 1000,
+            "learning_rate": 0.05,
+            "arvores": 188,
+            "pr_auc": 0.266894
+          },
+          {
+            "num_leaves": 127,
+            "min_child_samples": 1000,
+            "learning_rate": 0.1,
+            "arvores": 121,
+            "pr_auc": 0.266234
+          }
+        ]
+      },
+      "parametros": {
+        "num_leaves": 127,
+        "min_child_samples": 100,
+        "learning_rate": 0.05
+      },
+      "arvores_por_corte": [
+        165,
+        16,
+        528,
+        236,
+        219
+      ]
+    },
+    "validacao_cruzada": {
+      "baseline": [
+        {
+          "periodo": [
+            "2025-03-01",
+            "2025-05-01"
+          ],
+          "voos": 189714,
+          "pr_auc": 0.17832,
+          "roc_auc": 0.618867,
+          "brier": 0.11017,
+          "ece": 0.035576,
+          "taxa_real": 0.125426,
+          "taxa_prevista": 0.157277
+        },
+        {
+          "periodo": [
+            "2025-06-01",
+            "2025-08-01"
+          ],
+          "voos": 194984,
+          "pr_auc": 0.198698,
+          "roc_auc": 0.634834,
+          "brier": 0.111034,
+          "ece": 0.025822,
+          "taxa_real": 0.129739,
+          "taxa_prevista": 0.151325
+        },
+        {
+          "periodo": [
+            "2025-09-01",
+            "2025-11-01"
+          ],
+          "voos": 192180,
+          "pr_auc": 0.238296,
+          "roc_auc": 0.656615,
+          "brier": 0.118951,
+          "ece": 0.009334,
+          "taxa_real": 0.144672,
+          "taxa_prevista": 0.15054
+        },
+        {
+          "periodo": [
+            "2025-12-01",
+            "2026-02-01"
+          ],
+          "voos": 193213,
+          "pr_auc": 0.309905,
+          "roc_auc": 0.654574,
+          "brier": 0.154797,
+          "ece": 0.051456,
+          "taxa_real": 0.19964,
+          "taxa_prevista": 0.148627
+        },
+        {
+          "periodo": [
+            "2026-03-01",
+            "2026-05-01"
+          ],
+          "voos": 190875,
+          "pr_auc": 0.232025,
+          "roc_auc": 0.654501,
+          "brier": 0.11697,
+          "ece": 0.015034,
+          "taxa_real": 0.140804,
+          "taxa_prevista": 0.152783
+        }
+      ],
+      "logistica": [
+        {
+          "periodo": [
+            "2025-03-01",
+            "2025-05-01"
+          ],
+          "voos": 189714,
+          "pr_auc": 0.195304,
+          "roc_auc": 0.641288,
+          "brier": 0.106802,
+          "ece": 0.012755,
+          "taxa_real": 0.125426,
+          "taxa_prevista": 0.113391
+        },
+        {
+          "periodo": [
+            "2025-06-01",
+            "2025-08-01"
+          ],
+          "voos": 194984,
+          "pr_auc": 0.206634,
+          "roc_auc": 0.633595,
+          "brier": 0.109844,
+          "ece": 0.011093,
+          "taxa_real": 0.129739,
+          "taxa_prevista": 0.137184
+        },
+        {
+          "periodo": [
+            "2025-09-01",
+            "2025-11-01"
+          ],
+          "voos": 192180,
+          "pr_auc": 0.26131,
+          "roc_auc": 0.669219,
+          "brier": 0.120625,
+          "ece": 0.052388,
+          "taxa_real": 0.144672,
+          "taxa_prevista": 0.19706
+        },
+        {
+          "periodo": [
+            "2025-12-01",
+            "2026-02-01"
+          ],
+          "voos": 193213,
+          "pr_auc": 0.360806,
+          "roc_auc": 0.70285,
+          "brier": 0.147793,
+          "ece": 0.025859,
+          "taxa_real": 0.19964,
+          "taxa_prevista": 0.177323
+        },
+        {
+          "periodo": [
+            "2026-03-01",
+            "2026-05-01"
+          ],
+          "voos": 190875,
+          "pr_auc": 0.254472,
+          "roc_auc": 0.667222,
+          "brier": 0.115651,
+          "ece": 0.020461,
+          "taxa_real": 0.140804,
+          "taxa_prevista": 0.120343
+        }
+      ],
+      "lightgbm": [
+        {
+          "periodo": [
+            "2025-03-01",
+            "2025-05-01"
+          ],
+          "voos": 189714,
+          "pr_auc": 0.18929,
+          "roc_auc": 0.64406,
+          "brier": 0.107702,
+          "ece": 0.025696,
+          "taxa_real": 0.125426,
+          "taxa_prevista": 0.151112
+        },
+        {
+          "periodo": [
+            "2025-06-01",
+            "2025-08-01"
+          ],
+          "voos": 194984,
+          "pr_auc": 0.212827,
+          "roc_auc": 0.645392,
+          "brier": 0.110489,
+          "ece": 0.02923,
+          "taxa_real": 0.129739,
+          "taxa_prevista": 0.151154
+        },
+        {
+          "periodo": [
+            "2025-09-01",
+            "2025-11-01"
+          ],
+          "voos": 192180,
+          "pr_auc": 0.260343,
+          "roc_auc": 0.677163,
+          "brier": 0.121895,
+          "ece": 0.053232,
+          "taxa_real": 0.144672,
+          "taxa_prevista": 0.197904
+        },
+        {
+          "periodo": [
+            "2025-12-01",
+            "2026-02-01"
+          ],
+          "voos": 193213,
+          "pr_auc": 0.377116,
+          "roc_auc": 0.702289,
+          "brier": 0.146599,
+          "ece": 0.028485,
+          "taxa_real": 0.19964,
+          "taxa_prevista": 0.171155
+        },
+        {
+          "periodo": [
+            "2026-03-01",
+            "2026-05-01"
+          ],
+          "voos": 190875,
+          "pr_auc": 0.268413,
+          "roc_auc": 0.683337,
+          "brier": 0.114497,
+          "ece": 0.016805,
+          "taxa_real": 0.140804,
+          "taxa_prevista": 0.123999
+        }
+      ]
+    },
+    "resumo": {
+      "baseline": {
+        "pr_auc_medio": 0.231449,
+        "roc_auc_medio": 0.643878,
+        "brier_medio": 0.122384,
+        "ece_medio": 0.027444
+      },
+      "logistica": {
+        "pr_auc_medio": 0.255705,
+        "roc_auc_medio": 0.662835,
+        "brier_medio": 0.120143,
+        "ece_medio": 0.024511
+      },
+      "lightgbm": {
+        "pr_auc_medio": 0.261598,
+        "roc_auc_medio": 0.670448,
+        "brier_medio": 0.120236,
+        "ece_medio": 0.03069
+      }
+    },
+    "escolha": {
+      "melhor": "lightgbm",
+      "escolhido": "lightgbm",
+      "candidatos": {
+        "baseline": {
+          "pr_auc_medio": 0.231449,
+          "diferenca_para_melhor": 0.030149,
+          "erro_padrao_diferenca": 0.010253,
+          "dentro_de_1_erro_padrao": false
+        },
+        "logistica": {
+          "pr_auc_medio": 0.255705,
+          "diferenca_para_melhor": 0.005893,
+          "erro_padrao_diferenca": 0.004256,
+          "dentro_de_1_erro_padrao": false
+        },
+        "lightgbm": {
+          "pr_auc_medio": 0.261598,
+          "diferenca_para_melhor": 0.0,
+          "erro_padrao_diferenca": 0.0,
+          "dentro_de_1_erro_padrao": true
+        }
+      }
+    },
+    "calibracao": {
+      "logistica": {
+        "por_corte": {
+          "crua": [
+            {
+              "brier": 0.109844,
+              "ece": 0.011093,
+              "taxa_prevista": 0.137184
+            },
+            {
+              "brier": 0.120625,
+              "ece": 0.052388,
+              "taxa_prevista": 0.19706
+            },
+            {
+              "brier": 0.147793,
+              "ece": 0.025859,
+              "taxa_prevista": 0.177323
+            },
+            {
+              "brier": 0.115651,
+              "ece": 0.020461,
+              "taxa_prevista": 0.120343
+            }
+          ],
+          "isotonica": [
+            {
+              "brier": 0.110225,
+              "ece": 0.019216,
+              "taxa_prevista": 0.148955
+            },
+            {
+              "brier": 0.120781,
+              "ece": 0.048601,
+              "taxa_prevista": 0.193269
+            },
+            {
+              "brier": 0.151072,
+              "ece": 0.049834,
+              "taxa_prevista": 0.154377
+            },
+            {
+              "brier": 0.115958,
+              "ece": 0.024159,
+              "taxa_prevista": 0.116646
+            }
+          ],
+          "platt": [
+            {
+              "brier": 0.110152,
+              "ece": 0.0195,
+              "taxa_prevista": 0.148637
+            },
+            {
+              "brier": 0.119713,
+              "ece": 0.045909,
+              "taxa_prevista": 0.190179
+            },
+            {
+              "brier": 0.151155,
+              "ece": 0.049524,
+              "taxa_prevista": 0.154349
+            },
+            {
+              "brier": 0.11595,
+              "ece": 0.024318,
+              "taxa_prevista": 0.116486
+            }
+          ]
+        },
+        "media": {
+          "crua": {
+            "brier": 0.12347825,
+            "ece": 0.027450250000000002
+          },
+          "isotonica": {
+            "brier": 0.12450900000000001,
+            "ece": 0.0354525
+          },
+          "platt": {
+            "brier": 0.1242425,
+            "ece": 0.034812749999999996
+          }
+        },
+        "escolhida": "crua"
+      },
+      "lightgbm": {
+        "por_corte": {
+          "crua": [
+            {
+              "brier": 0.110489,
+              "ece": 0.02923,
+              "taxa_prevista": 0.151154
+            },
+            {
+              "brier": 0.121895,
+              "ece": 0.053232,
+              "taxa_prevista": 0.197904
+            },
+            {
+              "brier": 0.146599,
+              "ece": 0.028485,
+              "taxa_prevista": 0.171155
+            },
+            {
+              "brier": 0.114497,
+              "ece": 0.016805,
+              "taxa_prevista": 0.123999
+            }
+          ],
+          "isotonica": [
+            {
+              "brier": 0.110335,
+              "ece": 0.014249,
+              "taxa_prevista": 0.126276
+            },
+            {
+              "brier": 0.120981,
+              "ece": 0.022195,
+              "taxa_prevista": 0.161254
+            },
+            {
+              "brier": 0.152198,
+              "ece": 0.065393,
+              "taxa_prevista": 0.134247
+            },
+            {
+              "brier": 0.115364,
+              "ece": 0.030074,
+              "taxa_prevista": 0.11073
+            }
+          ],
+          "platt": [
+            {
+              "brier": 0.110494,
+              "ece": 0.01627,
+              "taxa_prevista": 0.125625
+            },
+            {
+              "brier": 0.120817,
+              "ece": 0.036824,
+              "taxa_prevista": 0.178724
+            },
+            {
+              "brier": 0.151447,
+              "ece": 0.063393,
+              "taxa_prevista": 0.136247
+            },
+            {
+              "brier": 0.115398,
+              "ece": 0.029381,
+              "taxa_prevista": 0.111423
+            }
+          ]
+        },
+        "media": {
+          "crua": {
+            "brier": 0.12337000000000001,
+            "ece": 0.031938
+          },
+          "isotonica": {
+            "brier": 0.12471950000000001,
+            "ece": 0.03297775
+          },
+          "platt": {
+            "brier": 0.124539,
+            "ece": 0.036467
+          }
+        },
+        "escolhida": "crua"
+      }
+    }
+  },
+  "modelo_final": {
+    "gerado_em": "2026-10-16T16:23:57",
+    "versao": "1",
+    "decisoes": {
+      "modelo": "lightgbm",
+      "parametros": {
+        "num_leaves": 127,
+        "min_child_samples": 100,
+        "learning_rate": 0.05
+      },
+      "arvores": 219,
+      "arvores_por_corte": [
+        165,
+        16,
+        528,
+        236,
+        219
+      ],
+      "calibracao": "crua",
+      "janela_baseline": 12
+    },
+    "teste": {
+      "periodo": [
+        "2026-06-01",
+        "2026-08-01"
+      ],
+      "voos": 196159,
+      "pr_auc": 0.3116046160575207,
+      "roc_auc": 0.6959982048178153,
+      "brier": 0.12380821320944417,
+      "ece": 0.012427685015731351,
+      "taxa_real": 0.15833074189815405,
+      "taxa_prevista": 0.14590305688242267,
+      "intervalo_95": {
+        "pr_auc": [
+          0.2909503750852681,
+          0.33300112490931305
+        ],
+        "roc_auc": [
+          0.6854439411599799,
+          0.704791343508154
+        ],
+        "brier": [
+          0.11830018486933014,
+          0.1300766600975419
+        ],
+        "ece": [
+          0.004329961792244264,
+          0.021485728349905708
+        ],
+        "taxa_real": [
+          0.14860835590431193,
+          0.16895426339172187
+        ],
+        "taxa_prevista": [
+          0.14182455172802033,
+          0.14972844092939896
+        ]
+      },
+      "ganho_sobre_baseline": {
+        "pr_auc": 0.029452606242958757,
+        "roc_auc": 0.02208785430534066,
+        "brier": -0.00214590231455232,
+        "ece": 0.0069701893160640065
+      },
+      "ganho_sobre_baseline_intervalo_95": {
+        "pr_auc": [
+          0.018707407733069715,
+          0.0411318044260021
+        ],
+        "roc_auc": [
+          0.01520824216959154,
+          0.029258680879024966
+        ],
+        "brier": [
+          -0.0029278385521435634,
+          -0.0013696189806958062
+        ],
+        "ece": [
+          -0.0070891333416483555,
+          0.01157575702620984
+        ]
+      },
+      "lift_10pct": {
+        "fracao": 0.1,
+        "voos": 19616,
+        "precisao": 0.37250203915171287,
+        "lift": 2.3526829640659686
+      },
+      "lift_10pct_baseline": {
+        "fracao": 0.1,
+        "voos": 19616,
+        "precisao": 0.33600122349102773,
+        "lift": 2.12214772357449
+      },
+      "curva_calibracao": [
+        {
+          "faixa": [
+            0.0,
+            0.1
+          ],
+          "voos": 69297,
+          "prevista_media": 0.06752843202986238,
+          "taxa_real": 0.0725572535607602
+        },
+        {
+          "faixa": [
+            0.1,
+            0.2
+          ],
+          "voos": 83613,
+          "prevista_media": 0.14253593035587975,
+          "taxa_real": 0.15160321959503906
+        },
+        {
+          "faixa": [
+            0.2,
+            0.3
+          ],
+          "voos": 30929,
+          "prevista_media": 0.24019832615750586,
+          "taxa_real": 0.2689385366484529
+        },
+        {
+          "faixa": [
+            0.3,
+            0.4
+          ],
+          "voos": 8975,
+          "prevista_media": 0.3404735368599737,
+          "taxa_real": 0.3646796657381616
+        },
+        {
+          "faixa": [
+            0.4,
+            0.5
+          ],
+          "voos": 2639,
+          "prevista_media": 0.4391711278486298,
+          "taxa_real": 0.4892004547176961
+        },
+        {
+          "faixa": [
+            0.5,
+            0.6
+          ],
+          "voos": 695,
+          "prevista_media": 0.5355538951440176,
+          "taxa_real": 0.6676258992805756
+        },
+        {
+          "faixa": [
+            0.6,
+            0.7
+          ],
+          "voos": 11,
+          "prevista_media": 0.6178772016562762,
+          "taxa_real": 0.7272727272727273
+        }
+      ],
+      "segmentos": {
+        "companhia": [
+          {
+            "companhia": "TAM",
+            "voos": 69097,
+            "pr_auc": 0.397343,
+            "roc_auc": 0.722376,
+            "brier": 0.148602,
+            "ece": 0.033583,
+            "taxa_real": 0.206984,
+            "taxa_prevista": 0.173401,
+            "pr_auc_baseline": 0.369334
+          },
+          {
+            "companhia": "AZU",
+            "voos": 65365,
+            "pr_auc": 0.197632,
+            "roc_auc": 0.6284,
+            "brier": 0.110153,
+            "ece": 0.008412,
+            "taxa_real": 0.129641,
+            "taxa_prevista": 0.13793,
+            "pr_auc_baseline": 0.177755
+          },
+          {
+            "companhia": "GLO",
+            "voos": 58981,
+            "pr_auc": 0.25243,
+            "roc_auc": 0.692826,
+            "brier": 0.111711,
+            "ece": 0.016991,
+            "taxa_real": 0.136976,
+            "taxa_prevista": 0.120792,
+            "pr_auc_baseline": 0.2321
+          },
+          {
+            "companhia": "ACN",
+            "voos": 2648,
+            "pr_auc": 0.088233,
+            "roc_auc": 0.545068,
+            "brier": 0.084259,
+            "ece": 0.108934,
+            "taxa_real": 0.073263,
+            "taxa_prevista": 0.182197,
+            "pr_auc_baseline": 0.089866
+          }
+        ],
+        "aeroporto_origem": [
+          {
+            "aeroporto_origem": "SBGR",
+            "voos": 24280,
+            "pr_auc": 0.435037,
+            "roc_auc": 0.619524,
+            "brier": 0.204453,
+            "ece": 0.045129,
+            "taxa_real": 0.305272,
+            "taxa_prevista": 0.260497,
+            "pr_auc_baseline": 0.40688
+          },
+          {
+            "aeroporto_origem": "SBSP",
+            "voos": 23410,
+            "pr_auc": 0.397165,
+            "roc_auc": 0.709911,
+            "brier": 0.164978,
+            "ece": 0.07018,
+            "taxa_real": 0.226912,
+            "taxa_prevista": 0.156732,
+            "pr_auc_baseline": 0.339645
+          },
+          {
+            "aeroporto_origem": "SBBR",
+            "voos": 14232,
+            "pr_auc": 0.168605,
+            "roc_auc": 0.660517,
+            "brier": 0.083458,
+            "ece": 0.005482,
+            "taxa_real": 0.095138,
+            "taxa_prevista": 0.094128,
+            "pr_auc_baseline": 0.13589
+          },
+          {
+            "aeroporto_origem": "SBCF",
+            "voos": 13322,
+            "pr_auc": 0.193931,
+            "roc_auc": 0.627961,
+            "brier": 0.105246,
+            "ece": 0.028077,
+            "taxa_real": 0.121904,
+            "taxa_prevista": 0.149981,
+            "pr_auc_baseline": 0.169462
+          },
+          {
+            "aeroporto_origem": "SBKP",
+            "voos": 12814,
+            "pr_auc": 0.186338,
+            "roc_auc": 0.611468,
+            "brier": 0.111549,
+            "ece": 0.014789,
+            "taxa_real": 0.130404,
+            "taxa_prevista": 0.143032,
+            "pr_auc_baseline": 0.165296
+          },
+          {
+            "aeroporto_origem": "SBGL",
+            "voos": 10378,
+            "pr_auc": 0.17126,
+            "roc_auc": 0.618468,
+            "brier": 0.091145,
+            "ece": 0.009149,
+            "taxa_real": 0.103874,
+            "taxa_prevista": 0.11258,
+            "pr_auc_baseline": 0.15017
+          },
+          {
+            "aeroporto_origem": "SBRF",
+            "voos": 7957,
+            "pr_auc": 0.194129,
+            "roc_auc": 0.665362,
+            "brier": 0.097485,
+            "ece": 0.024232,
+            "taxa_real": 0.113234,
+            "taxa_prevista": 0.137466,
+            "pr_auc_baseline": 0.178876
+          },
+          {
+            "aeroporto_origem": "SBRJ",
+            "voos": 7279,
+            "pr_auc": 0.208375,
+            "roc_auc": 0.692054,
+            "brier": 0.091024,
+            "ece": 0.013691,
+            "taxa_real": 0.106471,
+            "taxa_prevista": 0.09278,
+            "pr_auc_baseline": 0.147717
+          },
+          {
+            "aeroporto_origem": "SBSV",
+            "voos": 7159,
+            "pr_auc": 0.174785,
+            "roc_auc": 0.64703,
+            "brier": 0.092075,
+            "ece": 0.012033,
+            "taxa_real": 0.105601,
+            "taxa_prevista": 0.112263,
+            "pr_auc_baseline": 0.165762
+          },
+          {
+            "aeroporto_origem": "SBPA",
+            "voos": 6892,
+            "pr_auc": 0.268793,
+            "roc_auc": 0.686042,
+            "brier": 0.114355,
+            "ece": 0.017567,
+            "taxa_real": 0.140017,
+            "taxa_prevista": 0.123422,
+            "pr_auc_baseline": 0.231187
+          }
+        ],
+        "faixa_horaria": [
+          {
+            "faixa_horaria": "tarde (12h-17h)",
+            "voos": 66964,
+            "pr_auc": 0.28592,
+            "roc_auc": 0.647463,
+            "brier": 0.142753,
+            "ece": 0.01378,
+            "taxa_real": 0.181993,
+            "taxa_prevista": 0.168654,
+            "pr_auc_baseline": 0.26393
+          },
+          {
+            "faixa_horaria": "manhã (6h-11h)",
+            "voos": 63790,
+            "pr_auc": 0.258373,
+            "roc_auc": 0.694998,
+            "brier": 0.110296,
+            "ece": 0.020697,
+            "taxa_real": 0.134864,
+            "taxa_prevista": 0.114186,
+            "pr_auc_baseline": 0.24402
+          },
+          {
+            "faixa_horaria": "noite (18h-23h)",
+            "voos": 45987,
+            "pr_auc": 0.394432,
+            "roc_auc": 0.702872,
+            "brier": 0.142527,
+            "ece": 0.014003,
+            "taxa_real": 0.195968,
+            "taxa_prevista": 0.187239,
+            "pr_auc_baseline": 0.347078
+          },
+          {
+            "faixa_horaria": "madrugada (0h-5h)",
+            "voos": 19418,
+            "pr_auc": 0.146353,
+            "roc_auc": 0.675184,
+            "brier": 0.058532,
+            "ece": 0.009969,
+            "taxa_real": 0.064682,
+            "taxa_prevista": 0.073745,
+            "pr_auc_baseline": 0.111525
+          }
+        ],
+        "mes": [
+          {
+            "mes": "2026-08",
+            "voos": 67241,
+            "pr_auc": 0.343883,
+            "roc_auc": 0.720637,
+            "brier": 0.120796,
+            "ece": 0.015642,
+            "taxa_real": 0.157344,
+            "taxa_prevista": 0.141702,
+            "pr_auc_baseline": 0.30254
+          },
+          {
+            "mes": "2026-07",
+            "voos": 67005,
+            "pr_auc": 0.281173,
+            "roc_auc": 0.680864,
+            "brier": 0.116815,
+            "ece": 0.005284,
+            "taxa_real": 0.145273,
+            "taxa_prevista": 0.14866,
+            "pr_auc_baseline": 0.251486
+          },
+          {
+            "mes": "2026-06",
+            "voos": 61913,
+            "pr_auc": 0.317249,
+            "roc_auc": 0.68504,
+            "brier": 0.134649,
+            "ece": 0.026052,
+            "taxa_real": 0.173534,
+            "taxa_prevista": 0.147481,
+            "pr_auc_baseline": 0.29285
+          }
+        ]
+      }
     }
   }
 }

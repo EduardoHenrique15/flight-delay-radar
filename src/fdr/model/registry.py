@@ -91,8 +91,9 @@ def perfil_de_referencia(dados: pd.DataFrame) -> dict:
             valores = serie.dropna().to_numpy(dtype=float)
             limites = np.unique(np.quantile(valores, np.linspace(0, 1, FAIXAS_PERFIL + 1)))
             internos = limites[1:-1]
-            contagem = np.bincount(np.searchsorted(internos, valores, side="right"),
-                                   minlength=len(internos) + 1)  # fmt: skip
+            contagem = np.bincount(
+                np.searchsorted(internos, valores, side="right"), minlength=len(internos) + 1
+            )
             perfil[coluna] = {
                 "tipo": "numerica",
                 "ausentes": ausentes,

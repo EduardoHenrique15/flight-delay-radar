@@ -8,12 +8,14 @@ Etapas:
             da calibração (sem tocar no teste); grava models/metrics.json
   train     treino final com as escolhas da validação e teste usado uma única vez; grava
             models/model.txt, metadata.json, reference_profile.json e metrics.json
+  explain   explicação do modelo (SHAP por tema) e gráficos em docs/img/
 
 Uso: python -m fdr.pipeline --stage data
      python -m fdr.pipeline --stage features
      python -m fdr.pipeline --stage baseline
      python -m fdr.pipeline --stage validacao
      python -m fdr.pipeline --stage train
+     python -m fdr.pipeline --stage explain
 """
 
 import argparse
@@ -98,10 +100,19 @@ def etapa_treino() -> None:
     final.main()
 
 
+def etapa_explicacao() -> None:
+    from fdr.model import explain
+
+    print("Explicação do modelo (SHAP por tema) e gráficos")
+    explain.main()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Pipeline do Flight Delay Radar.")
     parser.add_argument(
-        "--stage", choices=["data", "features", "baseline", "validacao", "train"], required=True
+        "--stage",
+        choices=["data", "features", "baseline", "validacao", "train", "explain"],
+        required=True,
     )
     parser.add_argument("--forcar", action="store_true", help="recarrega todos os CSVs")
     args = parser.parse_args()
@@ -115,6 +126,8 @@ def main() -> None:
         etapa_validacao()
     elif args.stage == "train":
         etapa_treino()
+    elif args.stage == "explain":
+        etapa_explicacao()
     print("Pronto.")
 
 
