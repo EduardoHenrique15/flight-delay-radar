@@ -3,7 +3,14 @@
 import numpy as np
 import pytest
 
-from fdr.model.evaluate import curva_calibracao, ece, intervalos_bootstrap, metricas
+from fdr.model.evaluate import (
+    curva_calibracao,
+    ece,
+    intervalos_bootstrap,
+    intervalos_bootstrap_pareado,
+    lift_no_topo,
+    metricas,
+)
 
 
 def test_ece_zero_quando_a_previsao_bate_com_a_taxa_real():
@@ -46,3 +53,23 @@ def test_bootstrap_por_dia_e_reprodutivel_e_contem_a_estimativa():
         baixo, alto = a[nome]
         assert baixo <= pontual[nome] <= alto or nome == "ece"
         assert baixo < alto
+
+
+def test_lift_no_topo_conta_os_atrasos_dos_voos_de_maior_risco():
+    p = np.linspace(0, 1, 100)
+    y = (p >= 0.9).astype(int)  # só os 10 de maior risco atrasam
+    resultado = lift_no_topo(y, p, fracao=0.10)
+    assert resultado["voos"] == 10
+    assert resultado["precisao"] == pytest.approx(1.0)
+    assert resultado["lift"] == pytest.approx(10.0)
+
+
+def test_bootstrap_pareado_de_um_modelo_contra_ele_mesmo_da_zero():
+    gerador = np.random.default_rng(2)
+    dias = np.repeat(np.arange(40), 50)
+    p = gerador.uniform(size=len(dias))
+    y = (gerador.uniform(size=len(dias)) < p).astype(int)
+    intervalos = intervalos_bootstrap_pareado(y, p, p, dias, amostras=30)
+    assert all(baixo == alto == 0 for baixo, alto in intervalos.values())
+    melhor = intervalos_bootstrap_pareado(y, p, np.full(len(p), 0.5), dias, amostras=30)
+    assert melhor["roc_auc"][0] > 0  # o modelo com sinal ganha do chute constante

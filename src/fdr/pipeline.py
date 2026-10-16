@@ -6,11 +6,14 @@ Etapas:
   baseline  avaliação do baseline no tempo; grava models/metrics.json
   validacao regressão logística e LightGBM na validação cruzada no tempo, escolha do modelo e
             da calibração (sem tocar no teste); grava models/metrics.json
+  train     treino final com as escolhas da validação e teste usado uma única vez; grava
+            models/model.txt, metadata.json, reference_profile.json e metrics.json
 
 Uso: python -m fdr.pipeline --stage data
      python -m fdr.pipeline --stage features
      python -m fdr.pipeline --stage baseline
      python -m fdr.pipeline --stage validacao
+     python -m fdr.pipeline --stage train
 """
 
 import argparse
@@ -88,10 +91,17 @@ def etapa_validacao() -> None:
     train.main()
 
 
+def etapa_treino() -> None:
+    from fdr.model import final
+
+    print("Modelo final: treino com as escolhas da validação e teste usado uma única vez")
+    final.main()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Pipeline do Flight Delay Radar.")
     parser.add_argument(
-        "--stage", choices=["data", "features", "baseline", "validacao"], required=True
+        "--stage", choices=["data", "features", "baseline", "validacao", "train"], required=True
     )
     parser.add_argument("--forcar", action="store_true", help="recarrega todos os CSVs")
     args = parser.parse_args()
@@ -103,6 +113,8 @@ def main() -> None:
         etapa_baseline()
     elif args.stage == "validacao":
         etapa_validacao()
+    elif args.stage == "train":
+        etapa_treino()
     print("Pronto.")
 
 
