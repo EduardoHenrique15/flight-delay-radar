@@ -6,7 +6,7 @@ travada (Fase 3, parte 2). O que ela faz, em ordem:
 
 1. Ajusta os hiperparâmetros do LightGBM (num_leaves, min_child_samples, learning_rate) na
    validação principal, o último corte antes do teste. O número de árvores sai da parada
-   antecipada num mês reservado do fim do treino, e não da validação, para a métrica da
+   antecipada nos 3 últimos meses do treino, e não da validação, para a métrica da
    validação continuar limpa.
 2. Treina baseline, regressão logística e LightGBM em cada um dos cortes da validação cruzada
    no tempo e mede PR-AUC, ROC-AUC, Brier e ECE em cada janela de validação.
@@ -91,7 +91,10 @@ PARAMETROS_FIXOS = {
     "verbosity": -1,
 }
 MAX_ARVORES = 3000
-PACIENCIA = 50  # rodadas sem melhora na parada antecipada
+# Parada antecipada nos últimos meses do treino. Com 1 mês só e paciência de 50, o número de
+# árvores variou de 7 a 485 entre as janelas (validação de 16/10/2026): o sinal era instável.
+MESES_PARADA = 3
+PACIENCIA = 150  # rodadas sem melhora na parada antecipada
 
 CALIBRACOES = ("crua", "isotonica", "platt")
 EMPATE_BRIER = 1e-4  # diferenças menores que isso no Brier são empate; desempata o ECE
@@ -156,11 +159,14 @@ def treinar_lightgbm(
     parametros: dict,
     max_arvores: int = MAX_ARVORES,
 ) -> lgb.Booster:
-    """Treina nos meses de treino menos o último, que fica reservado para a parada antecipada."""
+    """Treina nos meses de treino menos os MESES_PARADA últimos, reservados para a parada
+    antecipada (o número de árvores)."""
     meses = dados["mes"].to_numpy()
-    inicio, ultimo = np.datetime64(treino[0]), np.datetime64(treino[1])
-    ajuste = (meses >= inicio) & (meses < ultimo)
-    parada = meses == ultimo
+    inicio, fim = np.datetime64(treino[0]), np.datetime64(treino[1])
+    janela = np.unique(meses[(meses >= inicio) & (meses <= fim)])
+    corte_parada = janela[-MESES_PARADA] if len(janela) > MESES_PARADA else janela[-1]
+    ajuste = (meses >= inicio) & (meses < corte_parada)
+    parada = (meses >= corte_parada) & (meses <= fim)
     alvo = dados[ALVO].to_numpy()
     base_ajuste = lgb.Dataset(
         matriz(dados, ajuste),

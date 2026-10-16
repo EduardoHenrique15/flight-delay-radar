@@ -164,3 +164,19 @@ def test_validacao_e_reprodutivel(validacao):
     primeira = next(r for r in resultado["lightgbm"]["busca"]["resultados"] if r["num_leaves"] == 7)
     assert de_novo["lightgbm"]["busca"]["resultados"][0] == primeira
     assert de_novo["validacao_cruzada"]["logistica"] == resultado["validacao_cruzada"]["logistica"]
+
+
+def test_parada_antecipada_usa_os_ultimos_meses_do_treino(monkeypatch):
+    dados = dados_sinteticos(por_mes=100)
+    tamanhos = {}
+    original = train.lgb.train
+
+    def espiar(parametros, base, **kwargs):
+        tamanhos["ajuste"] = len(base.label)
+        tamanhos["parada"] = len(kwargs["valid_sets"][0].label)
+        return original(parametros, base, **kwargs)
+
+    monkeypatch.setattr(train.lgb, "train", espiar)
+    parametros = {"num_leaves": 7, "min_child_samples": 20, "learning_rate": 0.1}
+    train.treinar_lightgbm(dados, (date(2023, 1, 1), date(2023, 12, 1)), parametros, 20)
+    assert tamanhos == {"ajuste": 9 * 100, "parada": train.MESES_PARADA * 100}
