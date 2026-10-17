@@ -7,13 +7,16 @@ tolerância numérica. Colunas a mais (o nome junto do código, por exemplo) nã
 Nas perguntas que os dados não respondem, o certo é recusar.
 
 O Gemini só é chamado com a autorização do Eduardo, em lotes de 11 perguntas, um por dia (a
-cota gratuita é de cerca de 20 pedidos por dia, e uma nova tentativa gasta mais um).
+cota gratuita é de cerca de 20 pedidos por dia, e uma nova tentativa gasta mais um). Entre uma
+pergunta e outra há uma pausa de 15 s, porque o plano gratuito também limita os pedidos por
+minuto (o lote 1 levou um erro 429 na 11ª pergunta sem a pausa).
 
 Uso:
     python -m fdr.assistant.eval --referencia      # só confere os SQLs de referência (sem LLM)
     python -m fdr.assistant.eval --lote 1          # perguntas 1 a 11 (precisa de GEMINI_API_KEY)
     python -m fdr.assistant.eval --lote 2          # perguntas 12 a 22
     python -m fdr.assistant.eval --lote 3          # perguntas 23 a 31
+    python -m fdr.assistant.eval --lote 1 --refazer 11   # refaz só a 11 no último arquivo do lote 1
     python -m fdr.assistant.eval --demo            # grava as respostas de demonstração
 """
 
@@ -38,6 +41,7 @@ ARQUIVO_PERGUNTAS = RAIZ / "eval" / "questions.yaml"
 PASTA_RESULTADOS = RAIZ / "eval" / "results"
 TAMANHO_LOTE = 11  # 3 lotes; com as novas tentativas, cada lote fica abaixo de ~20 pedidos
 TOLERANCIA = 1e-4
+PAUSA_S = 15.0  # no máximo 4 pedidos por minuto
 
 
 def ler_perguntas(caminho: Path = ARQUIVO_PERGUNTAS) -> list[dict]:
@@ -90,9 +94,13 @@ def mesmo_resultado(gerado: pd.DataFrame, referencia: pd.DataFrame) -> bool:
     return True
 
 
-def avaliar(assistente: Assistente, perguntas: list[dict], referencia_con) -> list[dict]:
+def avaliar(
+    assistente: Assistente, perguntas: list[dict], referencia_con, pausa_s: float = 0.0
+) -> list[dict]:
     resultados = []
-    for item in perguntas:
+    for posicao, item in enumerate(perguntas):
+        if posicao and pausa_s:
+            time.sleep(pausa_s)
         inicio = time.perf_counter()
         resposta = assistente.responder(item["pergunta"])
         latencia = time.perf_counter() - inicio
@@ -146,6 +154,15 @@ def resumo(resultados: list[dict]) -> dict:
     }
 
 
+def substituir(saida: dict, refeitos: list[dict], data: str) -> dict:
+    """Troca os resultados refeitos no arquivo do lote, recalcula o resumo e registra o que foi
+    refeito e quando (as outras perguntas continuam com o resultado original)."""
+    novos = {r["id"]: r for r in refeitos}
+    resultados = [novos.get(r["id"], r) for r in saida["resultados"]]
+    refeitas = saida.get("refeitas", []) + [{"id": i, "data": data} for i in novos]
+    return {**saida, "resumo": resumo(resultados), "resultados": resultados, "refeitas": refeitas}
+
+
 def assistente_para_avaliacao(llm: ModeloLinguagem, banco: Path, pasta: Path) -> Assistente:
     """Sem cache (cada pergunta vai ao modelo) e sem os limites do app (o lote é o limite)."""
     return Assistente(
@@ -176,7 +193,12 @@ def main() -> None:
     grupo.add_argument("--referencia", action="store_true", help="confere os SQLs de referência")
     grupo.add_argument("--lote", type=int, choices=[1, 2, 3], help="lote de 11 perguntas")
     grupo.add_argument("--demo", action="store_true", help="grava as respostas de demonstração")
+    parser.add_argument(
+        "--refazer", type=int, nargs="+", metavar="ID", help="com --lote: refaz só estas perguntas"
+    )
     args = parser.parse_args()
+    if args.refazer and not args.lote:
+        parser.error("--refazer precisa de --lote")
     perguntas = ler_perguntas()
     con = guard.conectar(BANCO_APP)
 
@@ -194,18 +216,34 @@ def main() -> None:
     if not chave:
         raise SystemExit("Defina GEMINI_API_KEY no terminal antes de rodar a avaliação.")
     lote = perguntas[(args.lote - 1) * TAMANHO_LOTE : args.lote * TAMANHO_LOTE]
+    hoje = date.today().isoformat()
+    anteriores = sorted(PASTA_RESULTADOS.glob(f"*-lote{args.lote}.json"))
+    if args.refazer:
+        if not anteriores:
+            raise SystemExit(f"Nenhum resultado do lote {args.lote} para refazer.")
+        lote = [q for q in lote if q["id"] in set(args.refazer)]
+        if not lote:
+            raise SystemExit(f"Nenhuma dessas perguntas está no lote {args.lote}.")
     llm = Gemini(chave)
     with tempfile.TemporaryDirectory() as pasta:
-        resultados = avaliar(assistente_para_avaliacao(llm, BANCO_APP, Path(pasta)), lote, con)
-    saida = {
-        "data": date.today().isoformat(),
-        "modelo": llm.modelo,
-        "lote": args.lote,
-        "resumo": resumo(resultados),
-        "resultados": resultados,
-    }
+        assistente = assistente_para_avaliacao(llm, BANCO_APP, Path(pasta))
+        resultados = avaliar(assistente, lote, con, pausa_s=PAUSA_S)
+    if args.refazer:
+        arquivo = anteriores[-1]
+        anterior = json.loads(arquivo.read_text(encoding="utf-8"))
+        if anterior["modelo"] != llm.modelo:
+            raise SystemExit(f"O lote foi feito com {anterior['modelo']}, não com {llm.modelo}.")
+        saida = substituir(anterior, resultados, hoje)
+    else:
+        arquivo = PASTA_RESULTADOS / f"{hoje}-lote{args.lote}.json"
+        saida = {
+            "data": hoje,
+            "modelo": llm.modelo,
+            "lote": args.lote,
+            "resumo": resumo(resultados),
+            "resultados": resultados,
+        }
     PASTA_RESULTADOS.mkdir(parents=True, exist_ok=True)
-    arquivo = PASTA_RESULTADOS / f"{date.today().isoformat()}-lote{args.lote}.json"
     texto = json.dumps(saida, ensure_ascii=False, indent=2, default=str)
     arquivo.write_text(texto + "\n", encoding="utf-8")
     for r in resultados:

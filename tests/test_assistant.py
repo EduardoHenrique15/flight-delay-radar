@@ -218,10 +218,11 @@ def test_cliente_gemini_monta_o_pedido_e_le_o_json_sem_rede(monkeypatch):
     assert enviado["model"] == "modelo-teste"
     assert enviado["config"].response_mime_type == "application/json"
     assert enviado["config"].temperature == 0
+    assert enviado["config"].automatic_function_calling.disable
 
     def recusar(**_):
         raise errors.ClientError(429, {"error": {"message": "cota"}})
 
     monkeypatch.setattr(gemini._cliente.models, "generate_content", recusar)
-    with pytest.raises(ErroLLM, match="429"):
+    with pytest.raises(ErroLLM, match="429.*limite de pedidos"):
         gemini.gerar("sistema", "Pergunta: oi")

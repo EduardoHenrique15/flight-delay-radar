@@ -105,3 +105,43 @@ def test_avaliacao_com_llm_falso(banco, tmp_path):
         avaliacao.ler_perguntas = perguntas_reais
     gravada = json.loads(destino.read_text(encoding="utf-8"))
     assert list(gravada) == [normalizar("Quantos voos a Gol fez?")]
+
+
+def test_refazer_troca_so_as_perguntas_refeitas():
+    def registro(i, categoria, acerto):
+        return {
+            "id": i,
+            "categoria": categoria,
+            "acerto": acerto,
+            "sql_gerado": "select 1",
+            "origem": "modelo",
+            "tentativas": 1,
+            "latencia_s": 1.0,
+        }
+
+    saida = {
+        "data": "2026-10-17",
+        "modelo": "m",
+        "lote": 1,
+        "resultados": [registro(1, "simples", True), registro(2, "agregacao", False)],
+    }
+    nova = avaliacao.substituir(saida, [registro(2, "agregacao", True)], "2026-10-18")
+    assert [r["acerto"] for r in nova["resultados"]] == [True, True]
+    assert nova["resumo"]["acerto_execucao"] == 1.0
+    assert nova["refeitas"] == [{"id": 2, "data": "2026-10-18"}]
+    assert nova["data"] == "2026-10-17"  # a data original do lote fica
+    assert saida["resultados"][1]["acerto"] is False  # o original não muda
+
+
+def test_pausa_entre_perguntas(banco, tmp_path, monkeypatch):
+    pausas = []
+    monkeypatch.setattr(avaliacao.time, "sleep", pausas.append)
+    perguntas = [
+        {"id": i, "categoria": "recusa", "pergunta": f"Preço {i}?", "recusar": True}
+        for i in (1, 2, 3)
+    ]
+    recusa = {"pode_responder": False, "explicacao": "Sem preços.", "sql": ""}
+    llm = LLMFalso({normalizar(p["pergunta"]): [recusa] for p in perguntas})
+    assistente = avaliacao.assistente_para_avaliacao(llm, banco, tmp_path)
+    avaliacao.avaliar(assistente, perguntas, guard.conectar(banco), pausa_s=15)
+    assert pausas == [15, 15]  # nenhuma antes da primeira

@@ -15,7 +15,8 @@ from datetime import date
 from pathlib import Path
 from typing import Protocol
 
-MODELO_PADRAO = "gemini-2.5-flash"
+# O gemini-2.5-flash não aceita mais contas novas (erro 404 em 17/10/2026).
+MODELO_PADRAO = "gemini-3.8-flash"
 
 # A resposta estruturada que o modelo precisa devolver (JSON).
 ESQUEMA_RESPOSTA = {
@@ -75,9 +76,15 @@ class Gemini:
                     temperature=0,
                     response_mime_type="application/json",
                     response_json_schema=ESQUEMA_RESPOSTA,
+                    # Sem ferramentas: desligar evita o aviso do SDK sobre chamada automática.
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
                 ),
             )
         except errors.APIError as erro:
+            if erro.code == 429:
+                raise ErroLLM(
+                    "O Gemini recusou o pedido (429): limite de pedidos do plano gratuito."
+                ) from erro
             raise ErroLLM(f"O Gemini recusou o pedido ({erro.code}).") from erro
         try:
             return _validar_resposta(json.loads(resposta.text or ""))
