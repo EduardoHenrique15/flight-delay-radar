@@ -226,3 +226,39 @@ def test_cliente_gemini_monta_o_pedido_e_le_o_json_sem_rede(monkeypatch):
     monkeypatch.setattr(gemini._cliente.models, "generate_content", recusar)
     with pytest.raises(ErroLLM, match="429.*limite de pedidos"):
         gemini.gerar("sistema", "Pergunta: oi")
+
+
+def test_gemini_tenta_de_novo_quando_o_servidor_esta_sobrecarregado(monkeypatch):
+    """503 uma vez: espera e tenta de novo. 503 duas vezes: desiste com ErroLLM."""
+    from types import SimpleNamespace
+
+    from google.genai import errors
+
+    from fdr.assistant import llm
+    from fdr.assistant.llm import ErroLLM, Gemini
+
+    esperas = []
+    monkeypatch.setattr(llm.time, "sleep", esperas.append)
+    gemini = Gemini("chave-falsa", modelo="modelo-teste")
+    respostas = [
+        errors.ServerError(503, {"error": {"message": "sobrecarregado"}}),
+        SimpleNamespace(text='{"pode_responder": true, "sql": "select 1", "explicacao": "x"}'),
+    ]
+
+    def responder(**_):
+        resposta = respostas.pop(0)
+        if isinstance(resposta, Exception):
+            raise resposta
+        return resposta
+
+    monkeypatch.setattr(gemini._cliente.models, "generate_content", responder)
+    assert gemini.gerar("sistema", "Pergunta: oi")["sql"] == "select 1"
+    assert esperas == [llm.ESPERA_ERRO_PASSAGEIRO_S]
+
+    def sempre_503(**_):
+        raise errors.ServerError(503, {"error": {"message": "sobrecarregado"}})
+
+    monkeypatch.setattr(gemini._cliente.models, "generate_content", sempre_503)
+    with pytest.raises(ErroLLM, match="503"):
+        gemini.gerar("sistema", "Pergunta: oi")
+    assert len(esperas) == 2  # uma espera só por pergunta
