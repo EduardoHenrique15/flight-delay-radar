@@ -197,7 +197,7 @@ with interface.pagina_protegida():
         "atrasar mais de 15 minutos, usando só o histórico publicado até 2 meses antes do voo.",
         icone="aviao",
         meta=[
-            ("Modelo", "LightGBM calibrado"),
+            ("Modelo", "LightGBM"),
             ("Voos de", f"{inicio:%d/%m/%Y} a {fim:%d/%m/%Y}"),
             ("Histórico", "Até 2 meses antes"),
         ],
