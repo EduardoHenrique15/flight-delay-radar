@@ -14,6 +14,8 @@ __pycache__/
 data/raw/
 data/cache/
 warehouse.duckdb
+# Banco do assistente: o app o recria a partir de data/marts/ (fdr.painel.garantir_banco_app)
+data/app.duckdb
 *.duckdb.wal
 
 # dbt

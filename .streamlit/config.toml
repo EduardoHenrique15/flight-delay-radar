@@ -1,0 +1,15 @@
+# Tema do app: fundo escuro e acento âmbar (aviação e pontualidade). Os segredos (chave do
+# Gemini) ficam em .streamlit/secrets.toml, que não vai para o git.
+[theme]
+base = "dark"
+primaryColor = "#F5A524"
+backgroundColor = "#0B1220"
+secondaryBackgroundColor = "#152033"
+textColor = "#E6EAF2"
+font = "sans serif"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

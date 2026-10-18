@@ -26,8 +26,14 @@ Variáveis do modelo:
 
 Colunas só para análise, fora do modelo (COLUNAS_SO_ANALISE): a malha realizada do mês.
 
+Previsão no app (paridade com o treino): `criar_tabelas_asof` monta as tabelas de histórico para
+meses futuros, que o fdr.previsao exporta, e `consulta_variaveis` é a MESMA consulta do treino,
+aplicada aos voos que o usuário escolhe. O teste de paridade compara as duas saídas.
+
 Uso: python -m fdr.features.build
 """
+
+from datetime import date
 
 import duckdb
 
@@ -75,15 +81,57 @@ ALVO = "atrasado_15"
 
 BASE = "nacional and regular and atrasado_15 is not null"
 
+# Tabelas que as variáveis consultam, além de dim_date e dim_routes. São as que o app precisa
+# para calcular as variáveis de um voo futuro (fdr.previsao).
+TABELAS_ASOF = (
+    "meses_alvo",
+    *(f"hist_{nome}" for nome in GRAOS),
+    *(f"sazonal_{nome}" for nome in GRAOS_SAZONAIS),
+    "programacao_tipica",
+    "duracao_cia_rota",
+    "duracao_rota",
+)
 
-def _criar_meses_alvo(con: duckdb.DuckDBPyConnection, defasagem: int) -> None:
+# De onde vêm os voos: os realizados da base do modelo (treino) ou os escolhidos no app
+# (tabela voos_previsao, com as mesmas colunas e o alvo vazio).
+FONTE_TREINO = """
+    select f.*, d.dia_semana
+    from fct_flights f
+    left join dim_date d on d.data = f.data_prevista_local
+    where f.nacional and f.regular and f.atrasado_15 is not null
+"""
+FONTE_PREVISAO = """
+    select v.*, d.dia_semana
+    from voos_previsao v
+    left join dim_date d on d.data = v.data_prevista_local
+"""
+
+
+def _criar_meses_alvo(
+    con: duckdb.DuckDBPyConnection, defasagem: int, meses: list[date] | None = None
+) -> None:
+    """Sem `meses`: os meses dos voos do warehouse, com corte em M - defasagem. Com `meses`
+    (previsão de meses futuros): o corte é M - defasagem ou o último mês publicado, o que vier
+    antes."""
     if not 1 <= defasagem <= 12:
         raise ValueError("A defasagem precisa ficar entre 1 e 12 meses.")
-    con.execute(f"""
+    if meses is None:
+        con.execute(f"""
+            create or replace temp table meses_alvo as
+            select distinct mes as mes_alvo, mes - to_months({int(defasagem)}) as mes_corte
+            from fct_flights
+        """)
+        return
+    con.execute(
+        f"""
         create or replace temp table meses_alvo as
-        select distinct mes as mes_alvo, mes - to_months({int(defasagem)}) as mes_corte
-        from fct_flights
-    """)
+        select mes_alvo,
+               least(mes_alvo - to_months({int(defasagem)}),
+                     (select max(mes) from fct_flights)) as mes_corte
+        from (select unnest(?::date[]) as mes_alvo)
+        """,
+        [list(meses)],
+    )
 
 
 def _criar_historicos(con: duckdb.DuckDBPyConnection) -> None:
@@ -220,22 +268,23 @@ def _sazonal(nome: str, apelido: str) -> str:
     )
 
 
-def construir(con: duckdb.DuckDBPyConnection, defasagem: int = DEFASAGEM_PUBLICACAO_MESES) -> int:
-    """Cria a tabela features_voos no banco e devolve o número de linhas."""
-    _criar_meses_alvo(con, defasagem)
+def criar_tabelas_asof(
+    con: duckdb.DuckDBPyConnection,
+    defasagem: int = DEFASAGEM_PUBLICACAO_MESES,
+    meses: list[date] | None = None,
+) -> None:
+    """Cria as tabelas temporárias de TABELAS_ASOF (veja _criar_meses_alvo sobre `meses`)."""
+    _criar_meses_alvo(con, defasagem, meses)
     _criar_historicos(con)
     _criar_sazonais(con)
     _criar_programacao_tipica(con)
     _criar_duracoes(con)
-    con.execute(f"""
-        create or replace table {TABELA} as
-        with base as (
-            select f.*, d.dia_semana
-            from fct_flights f
-            left join dim_date d on d.data = f.data_prevista_local
-            where f.nacional and f.regular and f.atrasado_15 is not null
-        ),
 
+
+def consulta_variaveis(fonte: str = FONTE_TREINO, com_analise: bool = True) -> str:
+    """A consulta das variáveis sobre as tabelas de criar_tabelas_asof. Com `com_analise`, inclui
+    as colunas só de análise (a malha realizada do mês, que um voo futuro ainda não tem)."""
+    cte_analise = """
         partidas_programadas as (
             -- Malha realizada do mês: só para análise (sai junto com os atrasos do mês).
             select origem, data_prevista_local, hora_prevista_local, count(*) as partidas
@@ -243,7 +292,20 @@ def construir(con: duckdb.DuckDBPyConnection, defasagem: int = DEFASAGEM_PUBLICA
             where regular and partida_prevista is not null
             group by all
         ),
-
+"""
+    colunas_analise = """,
+            -- só para análise (fora do modelo)
+            coalesce(p.partidas, 0) as partidas_programadas_origem_hora,
+            f.duracao_prevista_min"""
+    join_analise = """
+        left join partidas_programadas p
+          on p.origem = f.origem and p.data_prevista_local = f.data_prevista_local
+         and p.hora_prevista_local = f.hora_prevista_local"""
+    if not com_analise:
+        cte_analise = colunas_analise = join_analise = ""
+    return f"""
+        with base as ({fonte}),
+{cte_analise}
         chaves_cia as (
             select distinct mes, origem, cia, dia_semana, hora_prevista_local from base
         ),
@@ -298,16 +360,10 @@ def construir(con: duckdb.DuckDBPyConnection, defasagem: int = DEFASAGEM_PUBLICA
             ca.partidas as partidas_cia_antes_tipicas,
             -- duração típica e folga da programação (as-of), da companhia na rota ou da rota
             coalesce(dc.duracao_tipica_min, dr.duracao_tipica_min) as duracao_tipica_min,
-            coalesce(dc.folga_tipica_min, dr.folga_tipica_min) as folga_tipica_min,
-            -- só para análise (fora do modelo)
-            coalesce(p.partidas, 0) as partidas_programadas_origem_hora,
-            f.duracao_prevista_min
+            coalesce(dc.folga_tipica_min, dr.folga_tipica_min) as folga_tipica_min{colunas_analise}
         from base f
         left join dim_date d on d.data = f.data_prevista_local
-        left join dim_routes r on r.origem = f.origem and r.destino = f.destino
-        left join partidas_programadas p
-          on p.origem = f.origem and p.data_prevista_local = f.data_prevista_local
-         and p.hora_prevista_local = f.hora_prevista_local
+        left join dim_routes r on r.origem = f.origem and r.destino = f.destino{join_analise}
         left join hist_rota_hora hr
           on hr.mes_alvo = f.mes and hr.origem = f.origem and hr.destino = f.destino
          and hr.hora_prevista_local = f.hora_prevista_local
@@ -329,7 +385,13 @@ def construir(con: duckdb.DuckDBPyConnection, defasagem: int = DEFASAGEM_PUBLICA
          and dc.destino = f.destino
         left join duracao_rota dr
           on dr.mes_alvo = f.mes and dr.origem = f.origem and dr.destino = f.destino
-    """)
+    """
+
+
+def construir(con: duckdb.DuckDBPyConnection, defasagem: int = DEFASAGEM_PUBLICACAO_MESES) -> int:
+    """Cria a tabela features_voos no banco e devolve o número de linhas."""
+    criar_tabelas_asof(con, defasagem)
+    con.execute(f"create or replace table {TABELA} as {consulta_variaveis()}")
     return con.execute(f"select count(*) from {TABELA}").fetchone()[0]
 
 

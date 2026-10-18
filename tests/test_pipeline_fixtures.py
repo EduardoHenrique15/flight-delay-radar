@@ -2,15 +2,13 @@
 de data/fixtures/vra/, em pastas temporárias, sem tocar nos dados reais."""
 
 import json
-import os
-import subprocess
-import sys
+from datetime import date
 
 import duckdb
 import numpy as np
 import pytest
 
-from fdr.config import ARQUIVO_AEROPORTOS_FIXTURE, PASTA_FIXTURES_VRA
+from fdr.config import PASTA_FIXTURES_VRA
 
 
 def linhas_de_dados(pasta) -> int:
@@ -22,28 +20,9 @@ def linhas_de_dados(pasta) -> int:
 
 
 @pytest.fixture(scope="module")
-def pipeline(tmp_path_factory):
-    pasta = tmp_path_factory.mktemp("pipeline")
-    ambiente = {
-        **os.environ,
-        "FDR_PASTA_VRA": str(PASTA_FIXTURES_VRA),
-        "FDR_ARQUIVO_AEROPORTOS": str(ARQUIVO_AEROPORTOS_FIXTURE),
-        "FDR_WAREHOUSE": str(pasta / "warehouse.duckdb"),
-        "FDR_PASTA_MARTS": str(pasta / "marts"),
-        "FDR_BANCO_APP": str(pasta / "app.duckdb"),
-    }
-    for etapa in ("data", "features"):
-        resultado = subprocess.run(
-            [sys.executable, "-m", "fdr.pipeline", "--stage", etapa],
-            env=ambiente,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-        )
-        assert resultado.returncode == 0, resultado.stdout[-3000:] + resultado.stderr[-3000:]
-    con = duckdb.connect(ambiente["FDR_WAREHOUSE"], read_only=True)
-    yield con, pasta
+def pipeline(amostra_pipeline):
+    con = duckdb.connect(str(amostra_pipeline / "warehouse.duckdb"), read_only=True)
+    yield con, amostra_pipeline
     con.close()
 
 
@@ -200,3 +179,57 @@ def test_modelo_le_todas_as_variaveis_da_tabela(pipeline):
     assert set(train.VARIAVEIS) <= set(dados.columns)
     assert len(dados) == con.execute("select count(*) from features_voos").fetchone()[0]
     assert np.isfinite(train.matriz(dados)[:, train.VARIAVEIS.index("hora_prevista_local")]).all()
+
+
+@pytest.fixture(scope="module")
+def previsor_julho(pipeline):
+    """As tabelas da previsão exportadas para julho de 2026, um mês que já tem voos."""
+    from fdr import previsao
+    from fdr.model.registry import ModeloAtraso
+
+    con, pasta = pipeline
+    previsao.exportar(con, pasta / "previsao", alvos=[date(2026, 7, 1)])
+    return previsao.Previsor(pasta / "previsao", ModeloAtraso.carregar())
+
+
+def test_previsao_calcula_as_mesmas_variaveis_do_treino(pipeline, previsor_julho):
+    """Paridade: para os voos de julho, as variáveis calculadas no app (só com os Parquet da
+    previsão) saem iguais às da tabela de treino."""
+    from fdr import previsao
+    from fdr.model import train
+
+    con, _ = pipeline
+    treino = train.carregar(con)
+    treino = treino[treino["mes"] == "2026-07-01"].reset_index(drop=True)
+    voos = [
+        previsao.Voo(v.cia, v.origem, v.destino, v.data_prevista.date(), int(v.hora_prevista_local))
+        for v in treino.itertuples()
+    ]
+    app = previsor_julho.variaveis(voos)
+    assert len(app) == len(treino) > 100
+    for coluna in train.VARIAVEIS:
+        if coluna in train.CATEGORICAS:
+            assert app[coluna].astype(str).tolist() == treino[coluna].astype(str).tolist()
+        else:
+            np.testing.assert_allclose(
+                app[coluna].to_numpy(), treino[coluna].to_numpy(), rtol=1e-6, err_msg=coluna
+            )
+
+
+def test_previsao_de_um_voo(previsor_julho):
+    from fdr import previsao
+
+    rota = previsor_julho.rotas().iloc[0]
+    cias = previsor_julho.companhias_na_rota(rota.origem, rota.destino, date(2026, 7, 15))
+    assert cias
+    voos = [previsao.Voo(cia, rota.origem, rota.destino, date(2026, 7, 15), 10) for cia in cias]
+    resultados = previsor_julho.prever(voos)
+    assert len(resultados) == len(cias)
+    for r in resultados:
+        assert 0 < r["probabilidade"] < 1
+        assert r["faixa"] in {"baixa", "média", "alta"}
+        assert not r["historico_defasado"]  # julho usa maio, já publicado
+    with pytest.raises(ValueError, match="fora do período"):
+        previsor_julho.variaveis(
+            [previsao.Voo(cias[0], rota.origem, rota.destino, date(2026, 8, 1), 10)]
+        )

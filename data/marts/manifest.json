@@ -1,0 +1,32 @@
+{
+  "gerado_em": "2026-10-16T15:27:24",
+  "primeiro_mes": "2024-09-01",
+  "ultimo_mes": "2026-08-01",
+  "meses": 24,
+  "tabelas": {
+    "voos": {
+      "arquivo": "voos.parquet",
+      "linhas": 2014816
+    },
+    "pontualidade_mensal": {
+      "arquivo": "pontualidade_mensal.parquet",
+      "linhas": 21502
+    },
+    "atraso_rota_hora": {
+      "arquivo": "atraso_rota_hora.parquet",
+      "linhas": 77327
+    },
+    "aeroportos": {
+      "arquivo": "aeroportos.parquet",
+      "linhas": 684
+    },
+    "companhias": {
+      "arquivo": "companhias.parquet",
+      "linhas": 173
+    },
+    "rotas": {
+      "arquivo": "rotas.parquet",
+      "linhas": 6115
+    }
+  }
+}

@@ -88,7 +88,7 @@ def exportar(
             linhas = con.execute(f"select count(*) from ({recorte})").fetchone()[0]
             tabelas[nome] = {"arquivo": destino.name, "linhas": linhas}
 
-    _gerar_banco_app(pasta_marts, banco_app, list(CONSULTAS))
+    gerar_banco_app(pasta_marts, banco_app, list(CONSULTAS))
 
     manifest = {
         "gerado_em": datetime.now().isoformat(timespec="seconds"),
@@ -104,7 +104,7 @@ def exportar(
     return manifest
 
 
-def _gerar_banco_app(pasta_marts: Path, banco_app: Path, nomes: list[str]) -> None:
+def gerar_banco_app(pasta_marts: Path, banco_app: Path, nomes: list[str]) -> None:
     """Recria o banco do assistente só com as tabelas exportadas (PROJETO.md, seção 8.2)."""
     banco_app.unlink(missing_ok=True)
     with duckdb.connect(str(banco_app)) as app:

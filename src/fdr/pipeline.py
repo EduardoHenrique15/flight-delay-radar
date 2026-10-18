@@ -2,6 +2,7 @@
 
 Etapas:
   data      carga dos CSVs e das referências -> dbt build (modelos e testes) -> exportação
+            (marts do app e tabelas da previsão)
   features  tabela de variáveis do modelo, com a regra contra vazamento (features_voos)
   baseline  avaliação do baseline no tempo; grava models/metrics.json
   validacao regressão logística e LightGBM na validação cruzada no tempo, escolha do modelo e
@@ -74,6 +75,11 @@ def etapa_dados(forcar: bool = False) -> None:
     print(f"    De {manifest['primeiro_mes']} a {manifest['ultimo_mes']}:")
     for nome, info in manifest["tabelas"].items():
         print(f"    {nome:<20} {info['linhas']:>9,} linhas")
+    from fdr import previsao
+
+    with duckdb.connect(str(WAREHOUSE), read_only=True) as con:
+        previsto = previsao.exportar(con)
+    print(f"    previsão do app: meses {previsto['meses'][0]} a {previsto['meses'][-1]}")
 
 
 def etapa_features() -> None:

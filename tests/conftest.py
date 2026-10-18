@@ -1,7 +1,39 @@
 """Fixtures compartilhadas pelos testes."""
 
+import os
+import subprocess
+import sys
+
 import duckdb
 import pytest
+
+from fdr.config import ARQUIVO_AEROPORTOS_FIXTURE, PASTA_FIXTURES_VRA
+
+
+@pytest.fixture(scope="session")
+def amostra_pipeline(tmp_path_factory):
+    """Roda o pipeline (data e features) na amostra de data/fixtures/vra/, numa pasta temporária,
+    e devolve a pasta: warehouse.duckdb, marts/ (com marts/previsao/) e app.duckdb."""
+    pasta = tmp_path_factory.mktemp("pipeline")
+    ambiente = {
+        **os.environ,
+        "FDR_PASTA_VRA": str(PASTA_FIXTURES_VRA),
+        "FDR_ARQUIVO_AEROPORTOS": str(ARQUIVO_AEROPORTOS_FIXTURE),
+        "FDR_WAREHOUSE": str(pasta / "warehouse.duckdb"),
+        "FDR_PASTA_MARTS": str(pasta / "marts"),
+        "FDR_BANCO_APP": str(pasta / "app.duckdb"),
+    }
+    for etapa in ("data", "features"):
+        resultado = subprocess.run(
+            [sys.executable, "-m", "fdr.pipeline", "--stage", etapa],
+            env=ambiente,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        assert resultado.returncode == 0, resultado.stdout[-3000:] + resultado.stderr[-3000:]
+    return pasta
 
 
 @pytest.fixture
