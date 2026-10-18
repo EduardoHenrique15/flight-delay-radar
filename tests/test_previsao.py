@@ -22,7 +22,8 @@ def test_somar_meses(mes, meses, esperado):
 
 def test_faixas():
     assert previsao.faixa(0.05) == "baixa"
-    assert previsao.faixa(0.10) == "média"
+    assert previsao.faixa(0.149) == "baixa"
+    assert previsao.faixa(0.15) == "média"
     assert previsao.faixa(0.249) == "média"
     assert previsao.faixa(0.25) == "alta"
 

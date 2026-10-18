@@ -1,12 +1,22 @@
-# Tema do app: fundo escuro e acento âmbar (aviação e pontualidade). Os segredos (chave do
-# Gemini) ficam em .streamlit/secrets.toml, que não vai para o git.
+# Tema do app: sinalização de aeroporto. Fundo cinza-claro de concreto, faixas pretas, amarelo de
+# placa e a tipografia condensada de transporte (Barlow). As cores dos gráficos e o CSS estão em
+# src/fdr/interface.py. Os segredos (chave do Gemini) ficam em .streamlit/secrets.toml, que não
+# vai para o git.
 [theme]
-base = "dark"
-primaryColor = "#F5A524"
-backgroundColor = "#0B1220"
-secondaryBackgroundColor = "#152033"
-textColor = "#E6EAF2"
-font = "sans serif"
+base = "light"
+primaryColor = "#14161a"
+backgroundColor = "#eceef1"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#14161a"
+linkColor = "#1d5fbf"
+borderColor = "#d4d8de"
+showWidgetBorder = true
+baseRadius = "2px"
+font = "'Barlow':https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap"
+headingFont = "'Barlow Semi Condensed':https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+headingFontSizes = ["2rem", "1.25rem", "1rem"]
+chartCategoricalColors = ["#1d5fbf", "#c98500"]
 
 [server]
 headless = true

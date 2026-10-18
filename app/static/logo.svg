@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="270" height="32" viewBox="0 0 270 32" fill="none">
+  <rect width="32" height="32" rx="3" fill="#ffc72c"/>
+  <path d="M7 23a9 9 0 0 1 18 0" stroke="#14161a" stroke-width="2.4" stroke-linecap="square"/>
+  <path d="M11.5 23a4.5 4.5 0 0 1 9 0" stroke="#14161a" stroke-width="2.4" stroke-linecap="square"/>
+  <path d="M16 23 24 9" stroke="#14161a" stroke-width="2.4" stroke-linecap="square"/>
+  <rect x="21.6" y="6.6" width="5" height="5" fill="#14161a"/>
+  <text x="44" y="22.5" font-family="'Barlow Semi Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif" font-size="17" font-weight="700" letter-spacing="1.2" fill="#ffffff">FLIGHT DELAY RADAR</text>
+</svg>

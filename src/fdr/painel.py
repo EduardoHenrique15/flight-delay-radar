@@ -14,6 +14,7 @@ Os caminhos são lidos de fdr.config na hora da chamada, para os testes poderem 
 """
 
 import json
+import re
 from datetime import date
 from pathlib import Path
 
@@ -70,6 +71,11 @@ def nome_mes(mes: date) -> str:
     return f"{MESES_PT[mes.month - 1]}/{mes.year}"
 
 
+def mes_curto(mes: date) -> str:
+    """Ex.: "ago/26" (eixos dos gráficos)."""
+    return f"{MESES_PT[mes.month - 1]}/{mes.year % 100:02d}"
+
+
 def porcentagem(valor: float | None, casas: int = 1) -> str:
     if valor is None or pd.isna(valor):
         return "—"
@@ -98,7 +104,7 @@ def resumo_ultimo_mes(con: duckdb.DuckDBPyConnection) -> dict:
     ).fetchone()
     cia = con.execute(
         f"""
-        select coalesce(c.nome, v.cia), avg(v.atrasado_15::int) as taxa
+        select coalesce(c.nome, v.cia), avg(v.atrasado_15::int) as taxa, v.cia
         from voos v left join companhias c using (cia)
         where v.mes = ? and {BASE}
         group by all having count(*) >= {MIN_VOOS_DESTAQUE}
@@ -109,7 +115,7 @@ def resumo_ultimo_mes(con: duckdb.DuckDBPyConnection) -> dict:
     aeroporto = con.execute(
         f"""
         select coalesce(a.iata, v.origem), avg(v.atrasado_15::int) as taxa,
-               coalesce(a.nome, v.origem)
+               coalesce(a.cidade, a.nome, v.origem), v.origem
         from voos v left join aeroportos a on a.icao = v.origem
         where v.mes = ? and {BASE}
         group by all having count(*) >= {MIN_VOOS_DESTAQUE}
@@ -121,9 +127,115 @@ def resumo_ultimo_mes(con: duckdb.DuckDBPyConnection) -> dict:
         "mes": mes,
         "voos_nacionais_realizados": int(voos),
         "taxa_atraso": float(taxa) if taxa is not None else None,
-        "cia_mais_pontual": cia,
-        "aeroporto_mais_atraso": aeroporto,  # (código IATA, taxa, nome)
+        "cia_mais_pontual": cia,  # (nome, taxa, código ICAO)
+        "aeroporto_mais_atraso": aeroporto,  # (código IATA, taxa, cidade, código ICAO)
     }
+
+
+def serie_mensal(
+    con: duckdb.DuckDBPyConnection,
+    cia: str | None = None,
+    origem: str | None = None,
+    meses: int = 12,
+) -> pd.DataFrame:
+    """Os últimos meses: voos nacionais realizados e taxa de atraso (para as minilinhas e a
+    variação contra o mês anterior)."""
+    condicoes, parametros = ["tipo_linha = 'N'"], []
+    for coluna, valor in (("cia", cia), ("origem", origem)):
+        if valor:
+            condicoes.append(f"{coluna} = ?")
+            parametros.append(valor)
+    return (
+        con.execute(
+            f"""
+        select mes, count(*) filter (where situacao = 'REALIZADO') as voos,
+               avg(atrasado_15::int) filter (where atrasado_15 is not null) as taxa_atraso
+        from voos where {" and ".join(condicoes)}
+        group by mes order by mes desc limit {int(meses)}
+        """,
+            parametros,
+        )
+        .df()
+        .sort_values("mes", ignore_index=True)
+    )
+
+
+# Códigos IATA das companhias, como aparecem nos painéis dos aeroportos (G3 1032). As outras
+# ficam com o código ICAO da ANAC.
+CODIGOS_IATA = {"GLO": "G3", "AZU": "AD", "TAM": "LA", "ACN": "2F", "PTB": "2Z", "PAM": "7M"}
+
+
+def voos_tipicos(con: duckdb.DuckDBPyConnection, mes: date, rotas: int = 8) -> pd.DataFrame:
+    """As rotas mais movimentadas do mês, cada uma com a companhia, a hora e o número de voo
+    mais comuns."""
+    return con.execute(
+        f"""
+        with combinacoes as (
+            select origem, destino, cia, hora_prevista as hora, count(*) as voos
+            from voos where mes = ? and {BASE}
+            group by all
+        ),
+        mais_voadas as (
+            select origem, destino, sum(voos) as total from combinacoes
+            group by all order by total desc limit {int(rotas)}
+        ),
+        escolhidas as (
+            select c.origem, c.destino, c.cia, c.hora, m.total
+            from combinacoes c join mais_voadas m using (origem, destino)
+            qualify row_number() over (partition by c.origem, c.destino order by c.voos desc) = 1
+        ),
+        contagem_numeros as (
+            select origem, destino, cia, hora_prevista as hora, numero_voo, count(*) as vezes
+            from voos where mes = ? and {BASE}
+            group by origem, destino, cia, hora_prevista, numero_voo
+        ),
+        numeros as (
+            select * from contagem_numeros
+            qualify row_number() over (
+                partition by origem, destino, cia, hora order by vezes desc, numero_voo
+            ) = 1
+        )
+        select e.*, n.numero_voo
+        from escolhidas e left join numeros n using (origem, destino, cia, hora)
+        order by e.hora, e.origem
+        """,
+        [mes, mes],
+    ).df()
+
+
+def rotas_com_atraso(
+    con: duckdb.DuckDBPyConnection, mes: date, origem: str, minimo: int = 60, limite: int = 7
+) -> pd.DataFrame:
+    """As rotas que partem de um aeroporto com a maior taxa de atraso no mês (como no Misery Map
+    do FlightAware: escolher um aeroporto mostra para onde os voos dele mais atrasam)."""
+    return con.execute(
+        f"""
+        select v.destino, coalesce(a.iata, v.destino) as iata,
+               coalesce(a.cidade, a.nome, v.destino) as cidade, count(*) as voos,
+               avg(v.atrasado_15::int) as taxa_atraso
+        from voos v left join aeroportos a on a.icao = v.destino
+        where v.mes = ? and v.origem = ? and {BASE}
+        group by all having count(*) >= ?
+        order by taxa_atraso desc limit {int(limite)}
+        """,
+        [mes, origem, minimo],
+    ).df()
+
+
+def mapa_aeroportos(con: duckdb.DuckDBPyConnection, mes: date, minimo: int = 50) -> pd.DataFrame:
+    """Partidas e taxa de atraso por aeroporto de origem no mês, com as coordenadas."""
+    return con.execute(
+        f"""
+        select v.origem as icao, coalesce(a.iata, v.origem) as iata, a.nome, a.cidade, a.uf,
+               a.latitude, a.longitude, count(*) as voos,
+               avg(v.atrasado_15::int) as taxa_atraso
+        from voos v join aeroportos a on a.icao = v.origem
+        where v.mes = ? and {BASE} and a.latitude is not null
+        group by all having count(*) >= ?
+        order by voos desc
+        """,
+        [mes, minimo],
+    ).df()
 
 
 # Pontualidade -----------------------------------------------------------------------------------
@@ -171,7 +283,7 @@ def ranking_companhias(con, inicio, fim, origem=None, destino=None) -> pd.DataFr
     filtro, parametros = _filtro(inicio, fim, None, origem, destino)
     return con.execute(
         f"""
-        select coalesce(c.nome, v.cia) as companhia, count(*) as voos,
+        select v.cia, coalesce(c.nome, v.cia) as companhia, count(*) as voos,
                avg(v.atrasado_15::int) as taxa_atraso
         from voos v left join companhias c using (cia)
         where {filtro}
@@ -208,6 +320,15 @@ def evolucao_mensal(con, inicio, fim, cia=None, origem=None, destino=None) -> pd
         """,
         parametros,
     ).df()
+
+
+def cadastro_aeroportos(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
+    """Todos os aeroportos, com o código IATA, a cidade e um rótulo curto para os filtros."""
+    return con.execute("""
+        select icao, coalesce(iata, icao) as iata, coalesce(cidade, nome, icao) as cidade, nome,
+               coalesce(iata, icao) || ' · ' || coalesce(cidade, nome, icao) as rotulo
+        from aeroportos
+    """).df()
 
 
 def destinos(con, origem: str) -> pd.DataFrame:
@@ -282,7 +403,8 @@ def descrever_retreino(retreino: dict) -> str:
     """O que aconteceu com a regra de retreino no mês, em uma frase."""
     if not retreino["disparou"]:
         return "Sem retreino: nenhuma regra disparou."
-    motivos = "; ".join(retreino["motivos"])
+    # Os motivos vêm do monitoramento com ponto decimal ("ECE de 10.3%"): no app, vírgula.
+    motivos = re.sub(r"(\d)\.(\d)", r"\1,\2", "; ".join(retreino["motivos"]))
     if retreino.get("adiado"):
         return f"Regra disparou ({motivos}), mas o retreino foi adiado: {retreino['adiado']}."
     baixo, alto = retreino["ganho_pr_auc_intervalo_95"]

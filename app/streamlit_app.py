@@ -21,12 +21,13 @@ interface.configurar_pagina()
 PAGINAS = Path(__file__).parent / "paginas"
 navegacao = st.navigation(
     [
-        st.Page(PAGINAS / "inicio.py", title="Início", icon=":material/flight_takeoff:"),
-        st.Page(PAGINAS / "pontualidade.py", title="Pontualidade", icon=":material/schedule:"),
-        st.Page(PAGINAS / "previsao.py", title="Previsão", icon=":material/insights:"),
-        st.Page(PAGINAS / "monitoramento.py", title="Monitoramento", icon=":material/monitoring:"),
-        st.Page(PAGINAS / "assistente.py", title="Pergunte aos dados", icon=":material/chat:"),
-        st.Page(PAGINAS / "sobre.py", title="Sobre o modelo", icon=":material/info:"),
-    ]
+        st.Page(PAGINAS / "inicio.py", title="Visão geral", default=True),
+        st.Page(PAGINAS / "pontualidade.py", title="Pontualidade"),
+        st.Page(PAGINAS / "previsao.py", title="Previsão"),
+        st.Page(PAGINAS / "monitoramento.py", title="Monitoramento"),
+        st.Page(PAGINAS / "assistente.py", title="Pergunte aos dados"),
+        st.Page(PAGINAS / "sobre.py", title="Sobre o modelo"),
+    ],
+    position="top",
 )
 navegacao.run()

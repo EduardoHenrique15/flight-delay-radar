@@ -36,8 +36,8 @@ TABELAS = (*build.TABELAS_ASOF, "dim_date", "dim_routes")
 ARQUIVO_MANIFEST = "manifest.json"
 
 # Faixas da probabilidade de atraso mostradas no app. A taxa média de atraso da base é de cerca
-# de 15% (docs/modelo.md).
-LIMITE_MEDIA = 0.10
+# de 15% (docs/modelo.md): abaixo dela o risco é baixo; acima de 25%, alto.
+LIMITE_MEDIA = 0.15
 LIMITE_ALTA = 0.25
 
 
