@@ -1,4 +1,4 @@
-"""Dados do app Streamlit (PROJETO.md, seção 10), sem depender do Streamlit: dá para testar e
+"""Dados do app Streamlit, sem depender do Streamlit: dá para testar e
 reaproveitar fora do app.
 
 O app lê só o que vai para o deploy:

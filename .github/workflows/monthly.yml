@@ -1,0 +1,111 @@
+name: Atualização mensal
+
+# Baixa o VRA, roda o pipeline e o monitoramento e abre um pull request com os arquivos do app
+# (docs/deploy.md, seção "Atualização mensal"). Nunca faz push na main e nunca chama o Gemini.
+
+on:
+  schedule:
+    # Dia 20 de cada mês, 09:17 UTC. A ANAC publica cada mês com cerca de 2 meses de defasagem.
+    - cron: "17 9 20 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: atualizacao-mensal
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Instalar dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e .
+
+      # Os CSVs do VRA não vão para o git: ficam no cache entre uma execução e outra, e só os
+      # meses novos ou alterados são baixados.
+      - name: Restaurar os dados brutos
+        uses: actions/cache/restore@v4
+        with:
+          path: data/raw
+          key: dados-brutos-${{ github.run_id }}
+          restore-keys: dados-brutos-
+
+      - name: Baixar o VRA da ANAC
+        id: baixar
+        run: python -m fdr.ingest.download_vra
+
+      - name: Baixar a referência de aeroportos (OurAirports)
+        run: |
+          mkdir -p data/raw/referencia
+          test -f data/raw/referencia/airports.csv || curl -fsSL -o data/raw/referencia/airports.csv \
+            https://davidmegginson.github.io/ourairports-data/airports.csv
+
+      - name: Guardar os dados brutos
+        if: always() && steps.baixar.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: data/raw
+          key: dados-brutos-${{ github.run_id }}
+
+      - name: Verificar se há mês novo
+        id: verificar
+        run: python -m fdr.monitoring.resumo verificar | tee -a "$GITHUB_OUTPUT"
+
+      - name: Pipeline de dados (carga, dbt build com testes e exportação)
+        if: steps.verificar.outputs.novo == 'true'
+        run: python -m fdr.pipeline --stage data
+
+      - name: Variáveis do modelo
+        if: steps.verificar.outputs.novo == 'true'
+        run: python -m fdr.pipeline --stage features
+
+      - name: Monitoramento, regra de retreino e campeão contra desafiante
+        if: steps.verificar.outputs.novo == 'true'
+        run: python -m fdr.pipeline --stage monitor
+
+      - name: Abrir o pull request
+        if: steps.verificar.outputs.novo == 'true'
+        run: |
+          mes=$(python -c "import json; print(json.load(open('data/marts/manifest.json'))['ultimo_mes'][:7])")
+          ramo="atualizacao/$mes"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$ramo"
+          git add data/marts models monitoring
+          git commit -m "Atualização mensal: dados até $mes"
+          git push -u origin "$ramo"
+          python -m fdr.monitoring.resumo pr --desde "${{ steps.verificar.outputs.desde }}" > corpo.md
+          gh pr create --base main --head "$ramo" --title "Atualização mensal: dados até $mes" \
+            --body-file corpo.md
+
+      - name: Abrir uma issue se algo falhar
+        if: failure()
+        run: |
+          cat > issue.md <<EOF
+          A atualização mensal falhou. Veja o log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          - Se falhou no download, o site da ANAC pode ter bloqueado o acesso automático. Baixe os
+            meses novos à mão, coloque em data/raw/vra/ e rode o pipeline localmente
+            (docs/deploy.md, seção "Atualização mensal").
+          - Se falhou no dbt build, algum teste de qualidade dos dados não passou: o mês novo
+            precisa ser conferido antes de entrar no app.
+          EOF
+          gh issue create --title "Atualização mensal falhou ($(date +%Y-%m-%d))" --body-file issue.md

@@ -1,4 +1,4 @@
-"""Avaliação do assistente (PROJETO.md, seção 8.4) com as perguntas de eval/questions.yaml.
+"""Avaliação do assistente com as perguntas de eval/questions.yaml.
 
 Métrica principal: acerto por execução. O resultado do SQL gerado precisa trazer o mesmo
 conteúdo do SQL de referência: o mesmo número de linhas e, para cada coluna da referência, uma

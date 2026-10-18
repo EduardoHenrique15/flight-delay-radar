@@ -1,6 +1,6 @@
 """Modelo de linguagem do assistente: o Gemini (SDK oficial google-genai) e um modelo falso para
 os testes, mais o cache em disco e o controle de uso (cota de cerca de 20 pedidos por dia no
-plano gratuito; PROJETO.md, seção 8.3).
+plano gratuito).
 
 A chave vem de GEMINI_API_KEY (variável de ambiente, ou os secrets do Streamlit, que o app
 repassa). Ela nunca é gravada nem impressa. O modelo pode ser trocado em GEMINI_MODEL.

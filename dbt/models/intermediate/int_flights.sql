@@ -1,6 +1,6 @@
 -- Todos os voos, sem duplicatas, com o atraso calculado e o motivo de quarentena (se houver).
 -- int_flights_clean e int_quarantine dividem esta tabela; os números de referência de agosto de
--- 2026 são conferidos aqui, antes da quarentena (PROJETO.md, seção 3.1).
+-- 2026 são conferidos aqui, antes da quarentena (docs/dados.md).
 
 with sem_duplicatas as (
 

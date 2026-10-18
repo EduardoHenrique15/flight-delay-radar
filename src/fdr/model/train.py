@@ -1,5 +1,5 @@
-"""Modelos com aprendizado: regressão logística e LightGBM, avaliados no tempo (PROJETO.md, 6.4
-e 6.5).
+"""Modelos com aprendizado: regressão logística e LightGBM, avaliados no tempo
+(docs/decisoes/005-escolha-do-modelo.md).
 
 Esta etapa usa só os meses de treino e validação. O teste fica intocado até a escolha estar
 travada (Fase 3, parte 2). O que ela faz, em ordem:
@@ -44,7 +44,7 @@ from fdr.model import baseline
 from fdr.model.evaluate import ece, metricas
 from fdr.model.splits import Divisao, definir_divisao
 
-# Variáveis do modelo (PROJETO.md, seção 6.2). Todas conhecidas antes do voo.
+# Variáveis do modelo (docs/modelo.md). Todas conhecidas antes do voo.
 CATEGORICAS = ("cia", "origem", "destino")
 CALENDARIO = ("hora_prevista_local", "dia_semana", "mes_do_ano")
 BINARIAS = ("feriado", "vespera_feriado", "pos_feriado", "ferias_escolares")
@@ -189,7 +189,7 @@ def prever_lightgbm(modelo: lgb.Booster, dados: pd.DataFrame) -> np.ndarray:
 
 
 def criar_logistica() -> Pipeline:
-    """One-hot nas categorias e no calendário; números padronizados (PROJETO.md, seção 6.5)."""
+    """One-hot nas categorias e no calendário; números padronizados."""
     contagens = [c for c in HISTORICO if c.startswith("voos_")]
     contagens += [c for c in CONTINUAS if c.startswith("partidas_")]
     taxas = [c for c in HISTORICO if c.startswith("taxa_")]

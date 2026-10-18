@@ -1,4 +1,4 @@
-"""Caminhos e constantes do projeto. Os valores vêm do docs/PROJETO.md e do docs/dados.md.
+"""Caminhos e constantes do projeto. Os valores vêm do docs/dados.md, do docs/modelo.md e dos ADRs.
 
 Os caminhos de dados podem ser trocados por variáveis de ambiente (FDR_PASTA_VRA,
 FDR_ARQUIVO_AEROPORTOS, FDR_WAREHOUSE, FDR_PASTA_MARTS, FDR_BANCO_APP). Os testes e o CI usam
@@ -26,7 +26,7 @@ URL_AEROPORTOS = "https://davidmegginson.github.io/ourairports-data/airports.csv
 WAREHOUSE = _caminho("FDR_WAREHOUSE", PASTA_DADOS / "warehouse.duckdb")
 PASTA_DBT = RAIZ / "dbt"
 
-# O que vai para o deploy: marts em Parquet e o banco do assistente (PROJETO.md, seção 2).
+# O que vai para o deploy: marts em Parquet e o banco do assistente.
 PASTA_MARTS = _caminho("FDR_PASTA_MARTS", PASTA_DADOS / "marts")
 BANCO_APP = _caminho("FDR_BANCO_APP", PASTA_DADOS / "app.duckdb")
 MESES_DEPLOY = 24
@@ -42,7 +42,7 @@ INICIO_JANELA = (2022, 1)
 # Defasagem de publicação da ANAC em meses, medida na Fase 0 (docs/dados.md, seção 4.2).
 DEFASAGEM_PUBLICACAO_MESES = 2
 
-# Modelo (PROJETO.md, seção 6; docs/decisoes/003-regra-as-of.md).
+# Modelo (docs/modelo.md; docs/decisoes/003-regra-as-of.md).
 # Os exemplos de treino começam em jan/2023: 2022 serve só de histórico para as variáveis.
 INICIO_TREINO = (2023, 1)
 MESES_TESTE = 3  # os 3 últimos meses, usados uma única vez
@@ -73,7 +73,7 @@ COLUNAS_VRA = (
     "Código Justificativa",
 )
 
-# Assistente texto->SQL (PROJETO.md, seção 8): respostas gravadas de demonstração (versionadas),
+# Assistente texto->SQL (docs/decisoes/007): respostas gravadas de demonstração (versionadas),
 # cache das respostas aprovadas e contagem de uso (fora do git).
 ARQUIVO_DEMO_ASSISTENTE = PASTA_DADOS / "demo" / "assistant_cache.json"
 ARQUIVO_CACHE_ASSISTENTE = PASTA_DADOS / "cache" / "assistente.json"

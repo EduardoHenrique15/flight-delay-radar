@@ -1,4 +1,4 @@
-"""Pergunta em português -> SQL -> travas -> execução -> resposta (PROJETO.md, seção 8.1).
+"""Pergunta em português -> SQL -> travas -> execução -> resposta.
 
 Ordem de busca de uma resposta:
 1. o cache de respostas já aprovadas (sem gastar cota);

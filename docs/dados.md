@@ -242,7 +242,10 @@ Nada disso bloqueia o projeto, porque o modelo usa só `N` com DI = `0`.
    variáveis de "hora do dia", a tabela de voos ganha `hora_prevista_local` (seção 5.2). O atraso
    não muda, porque previsto e real estão no mesmo fuso.
 
-## 8. Diferenças em relação ao `PROJETO.md` (versão 2.1)
+## 8. Diferenças em relação à especificação inicial (versão 2.1)
+
+A especificação inicial é o documento de planejamento do projeto, que não está no repositório.
+A coluna Seção indica a seção dela.
 
 | Seção | O que dizia | O que os dados mostraram | Ajuste |
 | --- | --- | --- | --- |

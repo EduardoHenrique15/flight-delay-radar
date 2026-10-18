@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Para rodar à mão, por exemplo nos PRs da atualização mensal: os PRs abertos pelo token do
+  # GitHub Actions não disparam outros workflows.
+  workflow_dispatch:
 
 permissions:
   contents: read

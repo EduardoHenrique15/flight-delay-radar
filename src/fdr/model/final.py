@@ -1,4 +1,4 @@
-"""Treino final e teste, usado uma única vez (PROJETO.md, seção 6.5; Fase 3, parte 2).
+"""Treino final e teste, usado uma única vez (docs/decisoes/005-escolha-do-modelo.md).
 
 As decisões vêm travadas da validação (models/metrics.json, seção "validacao_modelos"): o modelo
 escolhido pela regra de 1 erro-padrão, os hiperparâmetros, a calibração e o número de árvores

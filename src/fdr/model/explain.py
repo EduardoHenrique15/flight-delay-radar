@@ -1,4 +1,4 @@
-"""Explicação do modelo com SHAP (PROJETO.md, seção 6.7).
+"""Explicação do modelo com SHAP (docs/modelo.md).
 
 Usa o TreeSHAP do próprio LightGBM (`predict(..., pred_contrib=True)`): é o mesmo algoritmo do
 TreeExplainer da biblioteca shap, sem acrescentar uma dependência pesada ao deploy.

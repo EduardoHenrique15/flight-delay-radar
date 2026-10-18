@@ -17,7 +17,7 @@ flags:
 vars:
   # Alvo principal (A15) e faixas descritivas, em minutos.
   limiar_atraso_min: 15
-  # Faixa de atraso aceita; fora dela o voo vai para a quarentena (PROJETO.md, seção 5.2).
+  # Faixa de atraso aceita; fora dela o voo vai para a quarentena (docs/dados.md).
   atraso_min_minimo: -120
   atraso_min_maximo: 1440
   # Tolerância para partida prevista depois do fim do mês do arquivo (docs/dados.md, decisão 3).

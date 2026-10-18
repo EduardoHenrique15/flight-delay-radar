@@ -1,4 +1,4 @@
-"""Flight Delay Radar: o app (PROJETO.md, seção 10).
+"""Flight Delay Radar: o app (docs/deploy.md).
 
 Uso local:  streamlit run app/streamlit_app.py
 No Streamlit Community Cloud, este é o arquivo principal (docs/deploy.md).

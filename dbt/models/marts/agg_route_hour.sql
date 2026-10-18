@@ -1,6 +1,6 @@
 -- Atrasos por mês, rota e hora prevista de partida (hora local da origem), só na base do modelo (voos nacionais
 -- regulares realizados com os dois horários). Alimenta o baseline e as variáveis históricas,
--- sempre filtrado por um mês de corte (regra as-of, PROJETO.md, seção 6.3).
+-- sempre filtrado por um mês de corte (regra as-of, docs/decisoes/003-regra-as-of.md).
 
 select
     mes,

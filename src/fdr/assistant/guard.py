@@ -1,4 +1,4 @@
-"""Travas do SQL gerado pelo modelo (PROJETO.md, seção 8.2). Duas camadas independentes:
+"""Travas do SQL gerado pelo modelo (docs/decisoes/007). Duas camadas independentes:
 
 1. Análise do SQL com o sqlglot, antes de executar: uma instrução só, só SELECT/WITH, só as
    tabelas permitidas, nenhuma função de arquivo ou rede, nada de ATTACH/COPY/INSTALL/LOAD/

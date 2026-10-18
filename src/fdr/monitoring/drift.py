@@ -4,7 +4,7 @@ treino (models/reference_profile.json, gerado por fdr.model.registry).
 PSI = soma, em cada faixa, de (atual - esperado) * ln(atual / esperado), com as frações de voos.
 Faixas: os decis do treino (números) ou as categorias mais comuns (categorias), e uma faixa
 para os ausentes. Leitura usual: abaixo de 0,10 estável; de 0,10 a 0,25 atenção; 0,25 ou mais,
-mudança grande (PROJETO.md, Fase 4).
+mudança grande (docs/decisoes/006-regra-de-retreino.md).
 
 Faixas com menos de MIN_VOOS_FAIXA voos, no esperado e no atual, entram em "outras" (categorias)
 ou não pesam (números): com poucos voos, a fração oscila por acaso e o PSI dispara à toa.

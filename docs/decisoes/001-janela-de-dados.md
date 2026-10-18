@@ -9,7 +9,7 @@
 
 O modelo aprende com o histórico de atrasos. Se o histórico tiver um período em que a aviação
 funcionou de um jeito muito diferente do normal, o modelo aprende padrões que não se repetem.
-A especificação (`docs/PROJETO.md`, seção 3.3) propôs começar em janeiro de 2022 por causa da
+A especificação inicial do projeto (documento de planejamento, não publicado) propôs começar em janeiro de 2022 por causa da
 pandemia. Este ADR confere a proposta com os dados.
 
 ![Voos nacionais regulares e atrasos por mês, 2019 a 2026](img/volume_mensal.png)

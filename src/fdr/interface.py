@@ -1,5 +1,5 @@
 """Peças comuns às páginas do app Streamlit: recursos em cache, estilo, gráficos e tratamento de
-erros (PROJETO.md, seção 10.2).
+erros.
 
 - Dados com `st.cache_data` e recursos (conexões, modelo, assistente) com `st.cache_resource`.
 - Toda página roda dentro de `pagina_protegida`: um erro vira uma mensagem clara para o usuário

@@ -1,5 +1,5 @@
 # Perguntas da avaliação do assistente, com o SQL de referência escrito à mão
-# (PROJETO.md, seção 8.4). "recusar: true" marca as perguntas que os dados não respondem.
+# (docs/decisoes/007-texto-para-sql-com-travas.md). "recusar: true" marca as perguntas que os dados não respondem.
 # "demo: true" marca as que viram respostas de demonstração (modo sem chave).
 
 - id: 1

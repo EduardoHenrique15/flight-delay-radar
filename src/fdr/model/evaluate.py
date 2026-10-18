@@ -1,4 +1,4 @@
-"""Métricas de avaliação (PROJETO.md, seção 6.6): PR-AUC, ROC-AUC, Brier, ECE e calibração,
+"""Métricas de avaliação (docs/modelo.md): PR-AUC, ROC-AUC, Brier, ECE e calibração,
 com intervalo de confiança por bootstrap reamostrando DIAS inteiros (voos do mesmo dia são
 correlacionados: chuva, pane, congestionamento afetam muitos voos juntos)."""
 

@@ -1,8 +1,8 @@
 """Exporta os marts para o app: Parquet em data/marts/ e o banco do assistente em data/app.duckdb.
 
-Só os últimos meses publicados vão para o deploy (PROJETO.md, seção 3.3), e a tabela de voos vai
-enxuta: sem o hash do voo, sem colunas sempre vazias e com tipos menores. Com isso, 24 meses
-ficam em cerca de 9 MB, longe do limite de 50 MB por arquivo do GitHub.
+Só os últimos meses publicados vão para o deploy (docs/decisoes/008-sem-api-separada.md), e a
+tabela de voos vai enxuta: sem o hash do voo, sem colunas sempre vazias e com tipos menores. Com
+isso, 24 meses ficam em cerca de 9 MB, longe do limite de 50 MB por arquivo do GitHub.
 
 Uso: python -m fdr.export [--meses 24]
 """
@@ -105,7 +105,7 @@ def exportar(
 
 
 def gerar_banco_app(pasta_marts: Path, banco_app: Path, nomes: list[str]) -> None:
-    """Recria o banco do assistente só com as tabelas exportadas (PROJETO.md, seção 8.2)."""
+    """Recria o banco do assistente só com as tabelas exportadas (docs/decisoes/007)."""
     banco_app.unlink(missing_ok=True)
     with duckdb.connect(str(banco_app)) as app:
         for nome in nomes:

@@ -1,4 +1,4 @@
-"""Baseline: a taxa histórica de atraso, sem aprendizado (PROJETO.md, seção 6.5).
+"""Baseline: a taxa histórica de atraso, sem aprendizado (docs/modelo.md).
 
 A probabilidade de um voo atrasar é a taxa de atraso da mesma rota no mesmo horário, no histórico
 as-of (até o mês de corte). Se a rota x hora tiver menos de MIN_VOOS_HISTORICO voos no histórico,

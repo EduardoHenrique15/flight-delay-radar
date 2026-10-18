@@ -1,4 +1,4 @@
-"""Pergunte aos dados: o assistente texto->SQL (PROJETO.md, seção 8; docs/decisoes/007).
+"""Pergunte aos dados: o assistente texto->SQL (docs/decisoes/007-texto-para-sql-com-travas.md).
 
 Sem a chave do Gemini, ou sem cota, ele responde com as respostas gravadas de demonstração.
 """

@@ -1,5 +1,5 @@
 -- Teste de regressão: o pipeline reproduz os números de referência de agosto de 2026
--- (PROJETO.md, seção 3.1), com tolerância de 0,1 p.p. Só roda se agosto de 2026 estiver carregado.
+-- (docs/dados.md), com tolerância de 0,1 p.p. Só roda se agosto de 2026 estiver carregado.
 -- Recorte: voos realizados com os dois horários, sem duplicatas, antes da quarentena.
 
 with base as (
