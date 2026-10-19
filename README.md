@@ -126,6 +126,8 @@ tests/        testes (pytest), rodados no CI a cada push
 
 ## Autor
 
-Eduardo Henrique de Sá · [GitHub](https://github.com/EduardoHenrique15)
+Eduardo Henrique de Sá · [LinkedIn](https://www.linkedin.com/in/eduardo-henrique15/) · [GitHub](https://github.com/EduardoHenrique15)
+
+Aberto a vagas em Ciência de Dados, Machine Learning e IA.
 
 Licença MIT. Os dados são da ANAC (dados abertos) e do OurAirports.

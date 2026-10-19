@@ -191,6 +191,26 @@ with interface.pagina_protegida():
         limites=True,
     )
 
+    interface.secao("Quem fez")
+    with interface.quadro("autor"):
+        interface.html_bruto(
+            '<div class="fdr-autor"><div class="iniciais">EH</div><div>'
+            f'<div class="nome">{interface._e(interface.AUTOR)}</div>'
+            '<div class="texto">Projeto pessoal, de ponta a ponta: o download dos dados da ANAC, '
+            "o warehouse com testes de qualidade, o modelo validado no tempo, o monitoramento "
+            "com regra de retreino, o assistente com IA e este app.</div>"
+            '<div class="vaga"><i></i>Aberto a vagas em Ciência de Dados, Machine Learning e '
+            "IA</div></div></div>"
+        )
+        with st.container(key="placas_contato"):
+            contato = st.columns(2, gap="small")
+            contato[0].page_link(
+                interface.LINKEDIN, label="Falar comigo no LinkedIn", icon=":material/north_east:"
+            )
+            contato[1].page_link(
+                interface.GITHUB, label="Outros projetos no GitHub", icon=":material/north_east:"
+            )
+
     interface.secao("Para saber mais")
     with st.container(key="placas"):
         colunas = st.columns(4, gap="small")

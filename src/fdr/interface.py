@@ -32,6 +32,8 @@ log = logging.getLogger("fdr.app")
 
 REPOSITORIO = "https://github.com/eduardohenrique15/flight-delay-radar"
 AUTOR = "Eduardo Henrique de Sá"
+LINKEDIN = "https://www.linkedin.com/in/eduardo-henrique15/"
+GITHUB = "https://github.com/EduardoHenrique15"
 PASTA_ESTATICA = config.RAIZ / "app" / "static"
 
 # Identidade visual ------------------------------------------------------------------------------
@@ -395,24 +397,70 @@ button[data-variant="pills"] p {{ font-weight: 600; }}
 }}
 
 /* Placas de direção: amarelas, com a seta preta num círculo branco */
-.st-key-placas .stElementContainer:has(.stPageLink), .st-key-placas .stPageLink,
-.st-key-placas .stPageLink > div, .st-key-placas .stPageLink a {{ width: 100% !important; }}
-.st-key-placas [data-testid="stPageLink"] a {{
+[class*="st-key-placas"] .stElementContainer:has(.stPageLink),
+[class*="st-key-placas"] .stPageLink, [class*="st-key-placas"] .stPageLink > div,
+[class*="st-key-placas"] .stPageLink a {{ width: 100% !important; }}
+[class*="st-key-placas"] [data-testid="stPageLink"] a {{
     background: {AMARELO}; border-radius: 3px; padding: 14px 18px; width: 100%; display: flex;
     align-items: center; gap: 4px; border: none; min-height: 60px;
     transition: transform 0.12s, box-shadow 0.12s;
 }}
-.st-key-placas [data-testid="stPageLink"] a:hover {{
+[class*="st-key-placas"] [data-testid="stPageLink"] a:hover {{
     transform: translateY(-2px); box-shadow: 0 6px 0 {PRETO}; background: {AMARELO};
 }}
-.st-key-placas [data-testid="stPageLink"] p {{
+[class*="st-key-placas"] [data-testid="stPageLink"] p {{
     color: {PRETO} !important; font-family: {FONTE_TITULO}; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.05em; font-size: 1.08rem;
 }}
-.st-key-placas [data-testid="stIconMaterial"] {{
+[class*="st-key-placas"] [data-testid="stIconMaterial"] {{
     color: {PRETO}; background: #ffffff; border-radius: 50%; width: 32px; height: 32px;
     display: inline-flex; align-items: center; justify-content: center; font-size: 22px;
     margin-right: 8px; flex: none;
+}}
+
+/* Número de impacto (Visão geral): uma placa amarela com o total de horas de atraso */
+.fdr-impacto {{ display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px;
+    align-items: center; background: {AMARELO}; color: {PRETO}; border-radius: 3px;
+    padding: 22px 28px; margin: 1.6rem 0 0 0; }}
+.fdr-impacto .numero {{ font-family: {FONTE_NUMEROS}; font-size: 4.2rem; font-weight: 700;
+    line-height: 0.95; letter-spacing: -0.01em; white-space: nowrap; }}
+.fdr-impacto .numero span {{ display: block; font-size: 1rem; letter-spacing: 0.14em;
+    text-transform: uppercase; margin-top: 6px; }}
+.fdr-impacto .texto {{ font-size: 1.08rem; line-height: 1.55; max-width: 44rem; }}
+@media (max-width: 760px) {{
+    .fdr-impacto {{ grid-template-columns: 1fr; gap: 10px; padding: 18px 20px; }}
+    .fdr-impacto .numero {{ font-size: 3rem; }}
+}}
+
+/* Calendário de atrasos (Pontualidade) */
+.fdr-ano {{ font-family: {FONTE_TITULO}; font-weight: 700; font-size: 0.95rem;
+    letter-spacing: 0.1em; color: {TINTA}; margin: 0.6rem 0 -0.6rem 0; }}
+.fdr-piores {{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }}
+.fdr-piores span {{ display: inline-flex; align-items: baseline; gap: 8px; padding: 5px 10px;
+    border: 2px solid {PRETO}; border-radius: 2px; font-size: 0.88rem; background: {SUPERFICIE}; }}
+.fdr-piores b {{ font-family: {FONTE_NUMEROS}; font-size: 1rem; }}
+.fdr-piores-titulo {{ font-family: {FONTE_TITULO}; font-size: 0.76rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: {TEXTO}; margin-top: 10px; }}
+
+/* Quem fez (Sobre o modelo) */
+.fdr-autor {{ display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 22px;
+    align-items: center; }}
+.fdr-autor .iniciais {{ width: 84px; height: 84px; border-radius: 3px; background: {PRETO};
+    color: {AMARELO}; display: flex; align-items: center; justify-content: center;
+    font-family: {FONTE_TITULO}; font-weight: 700; font-size: 2rem; letter-spacing: 0.04em; }}
+.fdr-autor .nome {{ font-family: {FONTE_TITULO}; font-size: 1.6rem; font-weight: 700;
+    color: {TINTA}; text-transform: uppercase; letter-spacing: 0.03em; }}
+.fdr-autor .texto {{ font-size: 0.98rem; color: {TEXTO}; line-height: 1.55; margin-top: 4px;
+    max-width: 46rem; }}
+.fdr-autor .vaga {{ display: inline-flex; align-items: center; gap: 8px; margin-top: 10px;
+    font-family: {FONTE_TITULO}; font-weight: 700; font-size: 0.82rem; letter-spacing: 0.08em;
+    text-transform: uppercase; color: {PRETO}; background: {AMARELO}; padding: 4px 10px;
+    border-radius: 2px; }}
+.fdr-autor .vaga i {{ width: 8px; height: 8px; background: #0b6b2e; display: inline-block; }}
+@media (max-width: 760px) {{
+    .fdr-autor {{ grid-template-columns: 1fr; gap: 12px; }}
+    .fdr-autor .iniciais {{ width: 56px; height: 56px; font-size: 1.4rem; }}
+    .fdr-autor .nome {{ font-size: 1.3rem; }}
 }}
 
 /* Cartão de embarque (Previsão) */
@@ -607,6 +655,13 @@ button[data-variant="pills"] p {{ font-weight: 600; }}
 .fdr-rodape a {{ color: #ffffff !important; text-decoration: none; display: block;
     font-size: 0.9rem; line-height: 1.9; }}
 .fdr-rodape a:hover {{ color: {AMARELO} !important; }}
+.fdr-rodape .contato {{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }}
+.fdr-rodape .contato a {{ display: inline-block; border: 1px solid {AMARELO};
+    color: {AMARELO} !important; padding: 4px 12px; border-radius: 2px;
+    font-family: {FONTE_TITULO}; font-weight: 700; font-size: 0.82rem; letter-spacing: 0.08em;
+    text-transform: uppercase; line-height: 1.6; }}
+.fdr-rodape .contato a:hover {{ background: {AMARELO}; color: {PRETO} !important; }}
+.fdr-rodape .vaga {{ color: #ffffff; font-weight: 600; }}
 @media (max-width: 760px) {{ .fdr-rodape-grade {{ grid-template-columns: 1fr; gap: 20px; }} }}
 </style>
 """
@@ -817,6 +872,27 @@ def painel_de_partidas(partidas: list[Partida], dia: str, legenda: list[tuple[st
     )
 
 
+def cor_da_taxa(
+    taxa: float, minimo: float, maximo: float, rampa: list[str] = RAMPA, alfa: int = 225
+) -> list[int]:
+    """A taxa de atraso na rampa âmbar, em RGBA para o pydeck (mais escuro = mais atraso)."""
+    posicao = 0.0 if maximo <= minimo else min(max((taxa - minimo) / (maximo - minimo), 0.0), 1.0)
+    hexa = rampa[min(int(posicao * len(rampa)), len(rampa) - 1)]
+    return [int(hexa[i : i + 2], 16) for i in (1, 3, 5)] + [alfa]
+
+
+def legenda_do_mapa(minimo: float, maximo: float, tamanho: str, rampa: list[str] = RAMPA) -> str:
+    """A legenda dos mapas: a rampa de cor da taxa de atraso e o que o tamanho representa."""
+    return (
+        f'<div class="fdr-legenda-mapa"><span class="rampa">{_e(painel.porcentagem(minimo, 0))}'
+        f'<i style="background:linear-gradient(90deg, {", ".join(rampa)})"></i>'
+        f"{_e(painel.porcentagem(maximo, 0))} com atraso</span>"
+        f'<span class="tamanho"><b style="width:8px;height:8px"></b>'
+        f'<b style="width:16px;height:16px"></b><b style="width:26px;height:26px"></b>'
+        f"{_e(tamanho)}</span></div>"
+    )
+
+
 def ranking(
     linhas: list[tuple[str, str, float, str]],
     maximo: float,
@@ -917,7 +993,11 @@ def rodape() -> None:
         f'<div class="marca"><span>{pictograma("partidas")}</span>Flight Delay Radar</div>'
         f"<p>Pontualidade dos voos nacionais com os dados públicos da ANAC, previsão de atraso "
         f"com LightGBM validada no tempo, monitoramento mês a mês e um assistente que responde "
-        f"em SQL. Projeto de {_e(AUTOR)}.</p></div>"
+        f"em SQL.</p><p>Projeto de {_e(AUTOR)}. "
+        f'<span class="vaga">Aberto a vagas em Ciência de Dados, Machine Learning e IA.</span>'
+        f'</p><div class="contato"><a href="{_e(LINKEDIN)}" target="_blank" rel="noopener">'
+        f'LinkedIn</a><a href="{_e(GITHUB)}" target="_blank" rel="noopener">GitHub</a></div>'
+        f"</div>"
         f"<div><h4>Projeto</h4>{lista(links_projeto)}</div>"
         f"<div><h4>Dados</h4>{lista(links_dados)}</div></div></div>",
         unsafe_allow_html=True,

@@ -15,13 +15,6 @@ TEXTOS_FAIXA = {"baixa": "No horário", "média": "Atenção", "alta": "Risco de
 SITUACOES_FAIXA = {"baixa": "bom", "média": "atencao", "alta": "critico"}
 
 
-def cor_da_taxa(taxa: float, minimo: float, maximo: float) -> list[int]:
-    """A taxa de atraso na rampa âmbar (mais escuro = mais atraso)."""
-    posicao = 0.0 if maximo <= minimo else min(max((taxa - minimo) / (maximo - minimo), 0.0), 1.0)
-    hexa = interface.RAMPA[min(int(posicao * len(interface.RAMPA)), len(interface.RAMPA) - 1)]
-    return [int(hexa[i : i + 2], 16) for i in (1, 3, 5)] + [225]
-
-
 def variacao_relativa(serie) -> tuple[str, str, str] | None:
     """Variação percentual do último mês contra o anterior (mais voos não é bom nem ruim)."""
     if len(serie) < 2 or not serie.iloc[-2]:
@@ -155,6 +148,24 @@ with interface.pagina_protegida():
             f"mais pontual, com <b>{e(painel.porcentagem(taxa_cia))}</b>."
         )
 
+    # O tamanho do problema: as horas de atraso somadas no mês.
+    impacto = interface.dados("impacto_do_mes", resumo["mes"])
+    if impacto["voos_atrasados"]:
+        e = interface._e
+        horas = impacto["horas"]
+        mediana = (
+            f" Metade deles atrasou mais de {painel.numero(impacto['mediana_min'])} minutos."
+            if impacto["mediana_min"] is not None
+            else ""
+        )
+        interface.html_bruto(
+            f'<div class="fdr-impacto"><div class="numero">{e(painel.numero(horas))}'
+            f'<span>horas de atraso</span></div><div class="texto">Foi o que somaram, na '
+            f"partida, os <b>{e(painel.numero(impacto['voos_atrasados']))} voos nacionais</b> que "
+            f"saíram com mais de 15 minutos de atraso em {e(mes)}: o equivalente a "
+            f"<b>{e(painel.numero(horas / 24))} dias</b> de espera.{e(mediana)}</div></div>"
+        )
+
     # Painel de partidas: voos típicos das rotas mais movimentadas, com a chance prevista.
     previsor = interface.previsor()
     inicio_previsao, fim_previsao = previsor.periodo()
@@ -202,7 +213,7 @@ with interface.pagina_protegida():
     aeroportos = interface.dados("mapa_aeroportos", resumo["mes"])
     minimo, maximo = aeroportos["taxa_atraso"].quantile([0.05, 0.95])
     pontos = aeroportos.assign(
-        cor=[cor_da_taxa(t, minimo, maximo) for t in aeroportos["taxa_atraso"]],
+        cor=[interface.cor_da_taxa(t, minimo, maximo) for t in aeroportos["taxa_atraso"]],
         raio=[2300 * math.sqrt(v) for v in aeroportos["voos"]],
         taxa_texto=[painel.porcentagem(t) for t in aeroportos["taxa_atraso"]],
         voos_texto=[painel.numero(v) for v in aeroportos["voos"]],
@@ -248,14 +259,7 @@ with interface.pagina_protegida():
             selection_mode="single-object",
             key="mapa_aeroportos",
         )
-        interface.html_bruto(
-            f'<div class="fdr-legenda-mapa"><span class="rampa">'
-            f"{interface._e(painel.porcentagem(minimo, 0))}<i></i>"
-            f"{interface._e(painel.porcentagem(maximo, 0))} com atraso</span>"
-            '<span class="tamanho"><b style="width:8px;height:8px"></b>'
-            '<b style="width:16px;height:16px"></b><b style="width:26px;height:26px"></b>'
-            "mais partidas</span></div>"
-        )
+        interface.html_bruto(interface.legenda_do_mapa(minimo, maximo, "mais partidas"))
     with lado:
         escolhidos = []
         if evento is not None:

@@ -132,6 +132,23 @@ def resumo_ultimo_mes(con: duckdb.DuckDBPyConnection) -> dict:
     }
 
 
+def impacto_do_mes(con: duckdb.DuckDBPyConnection, mes: date) -> dict:
+    """Quanto os atrasos somaram no mês: voos nacionais que partiram mais de 15 minutos depois do
+    previsto, as horas de atraso na partida somadas e a mediana dos minutos de atraso deles."""
+    voos, minutos, mediana = con.execute(
+        f"""
+        select count(*), sum(atraso_partida_min), median(atraso_partida_min)
+        from voos where mes = ? and {BASE} and atrasado_15
+        """,
+        [mes],
+    ).fetchone()
+    return {
+        "voos_atrasados": int(voos),
+        "horas": float(minutos or 0) / 60,
+        "mediana_min": float(mediana) if mediana is not None else None,
+    }
+
+
 def serie_mensal(
     con: duckdb.DuckDBPyConnection,
     cia: str | None = None,
@@ -289,6 +306,43 @@ def ranking_companhias(con, inicio, fim, origem=None, destino=None) -> pd.DataFr
         where {filtro}
         group by all having count(*) >= {MIN_VOOS_RANKING}
         order by taxa_atraso
+        """,
+        parametros,
+    ).df()
+
+
+def calendario(con, inicio, fim, cia=None, origem=None, destino=None) -> pd.DataFrame:
+    """Taxa de atraso dia a dia (data prevista da partida) no período."""
+    filtro, parametros = _filtro(inicio, fim, cia, origem, destino)
+    return con.execute(
+        f"""
+        select v.data_prevista as data, count(*) as voos, avg(v.atrasado_15::int) as taxa_atraso
+        from voos v where {filtro}
+        group by all order by data
+        """,
+        parametros,
+    ).df()
+
+
+def mapa_rotas(
+    con, inicio, fim, cia=None, origem=None, destino=None, limite: int = 150, minimo: int = 30
+) -> pd.DataFrame:
+    """As rotas mais voadas do período (até `limite`), com as coordenadas das duas pontas e a
+    taxa de atraso. Rotas com menos de `minimo` voos ficam de fora."""
+    filtro, parametros = _filtro(inicio, fim, cia, origem, destino)
+    return con.execute(
+        f"""
+        select v.origem, v.destino, o.iata as iata_origem, d.iata as iata_destino,
+               o.cidade as cidade_origem, d.cidade as cidade_destino,
+               o.longitude as lon_origem, o.latitude as lat_origem,
+               d.longitude as lon_destino, d.latitude as lat_destino,
+               count(*) as voos, avg(v.atrasado_15::int) as taxa_atraso
+        from voos v
+        join aeroportos o on o.icao = v.origem
+        join aeroportos d on d.icao = v.destino
+        where {filtro} and o.latitude is not null and d.latitude is not null
+        group by all having count(*) >= {int(minimo)}
+        order by voos desc limit {int(limite)}
         """,
         parametros,
     ).df()

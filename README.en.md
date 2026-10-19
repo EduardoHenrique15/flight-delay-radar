@@ -128,6 +128,8 @@ tests/        tests (pytest), run in CI on every push
 
 ## Author
 
-Eduardo Henrique de Sá · [GitHub](https://github.com/EduardoHenrique15)
+Eduardo Henrique de Sá · [LinkedIn](https://www.linkedin.com/in/eduardo-henrique15/) · [GitHub](https://github.com/EduardoHenrique15)
+
+Open to roles in Data Science, Machine Learning and AI.
 
 MIT License. Data from ANAC (open data) and OurAirports.

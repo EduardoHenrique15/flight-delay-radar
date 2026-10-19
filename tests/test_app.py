@@ -69,6 +69,8 @@ def test_inicio_mostra_os_numeros_do_ultimo_mes(dados_do_app):
     app = abrir("paginas/inicio.py")
     assert "Voos nacionais realizados" in texto(app)
     assert "Dados da ANAC até jul/2026" in texto(app)
+    assert "horas de atraso" in texto(app)
+    assert "linkedin.com/in/eduardo-henrique15" in texto(app)  # o contato no rodapé
 
 
 def test_pontualidade_resume_o_recorte(dados_do_app):
@@ -76,6 +78,8 @@ def test_pontualidade_resume_o_recorte(dados_do_app):
     sem_erros(app)
     assert "partiram com mais de 15 minutos de atraso" in texto(app)
     assert "Média das companhias do ranking" in texto(app)
+    assert "Os piores dias do período" in texto(app)
+    assert app.get("deck_gl_json_chart")  # o mapa de rotas
 
 
 def test_monitoramento_mostra_a_linha_do_tempo(dados_do_app):
