@@ -88,17 +88,20 @@
 - id: 16
   categoria: agregacao
   pergunta: >-
-    Quais as 5 companhias com mais voos atrasados mais de 1 hora em julho de 2026?
+    Quais as 5 companhias com mais voos nacionais atrasados mais de 1 hora em julho de 2026?
   sql: >-
     SELECT cia, sum(atrasados_60) AS atrasados FROM pontualidade_mensal
-    WHERE mes = DATE '2026-07-01' GROUP BY cia ORDER BY atrasados DESC LIMIT 5
+    WHERE tipo_linha = 'N' AND mes = DATE '2026-07-01'
+    GROUP BY cia ORDER BY atrasados DESC LIMIT 5
 - id: 17
   categoria: agregacao
   pergunta: >-
-    Qual o atraso médio de partida, em minutos, dos voos realizados da Gol em agosto de 2026?
+    Qual o atraso médio de partida, em minutos, dos voos nacionais realizados da
+    Gol em agosto de 2026?
   sql: >-
     SELECT avg(atraso_partida_min) FROM voos
-    WHERE cia = 'GLO' AND situacao = 'REALIZADO' AND mes = DATE '2026-08-01'
+    WHERE cia = 'GLO' AND tipo_linha = 'N' AND situacao = 'REALIZADO'
+    AND mes = DATE '2026-08-01'
 - id: 18
   categoria: agregacao
   pergunta: >-

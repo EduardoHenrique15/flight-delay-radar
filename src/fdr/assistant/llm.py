@@ -21,6 +21,10 @@ MODELO_PADRAO = "gemini-3.8-flash"
 # Servidor sobrecarregado (500/503): espera e tenta mais uma vez antes de desistir.
 ERROS_PASSAGEIROS = {500, 503}
 ESPERA_ERRO_PASSAGEIRO_S = 5.0
+# Limite de pedidos por minuto (429): na avaliação, espera o tempo que o Google pede e tenta mais
+# uma vez. O limite do dia não adianta esperar: só volta no dia seguinte.
+ESPERA_LIMITE_POR_MINUTO_S = 60.0
+ESPERA_MAXIMA_S = 120.0
 
 # A resposta estruturada que o modelo precisa devolver (JSON).
 ESQUEMA_RESPOSTA = {
@@ -36,6 +40,31 @@ ESQUEMA_RESPOSTA = {
 
 class ErroLLM(RuntimeError):
     """O modelo não respondeu ou respondeu fora do formato."""
+
+
+class CotaEsgotada(ErroLLM):
+    """429: o limite do plano gratuito acabou. `diaria` diz se foi o limite do dia (só volta no
+    dia seguinte) ou o do minuto."""
+
+    def __init__(self, mensagem: str, diaria: bool):
+        super().__init__(mensagem)
+        self.diaria = diaria
+
+
+def _detalhes(erro) -> str:
+    return json.dumps(getattr(erro, "details", None), default=str)
+
+
+def cota_diaria(erro) -> bool:
+    """O 429 do Google diz qual limite estourou (ex.: ...PerDayPerProjectPerModel)."""
+    return "PerDay" in _detalhes(erro)
+
+
+def espera_sugerida(erro) -> float:
+    """O tempo que o Google pede para esperar (RetryInfo, ex.: "37s"), com um teto."""
+    achado = re.search(r'"retryDelay":\s*"(\d+(?:\.\d+)?)s"', _detalhes(erro))
+    espera = float(achado.group(1)) + 1 if achado else ESPERA_LIMITE_POR_MINUTO_S
+    return min(espera, ESPERA_MAXIMA_S)
 
 
 class ModeloLinguagem(Protocol):
@@ -60,13 +89,19 @@ def _validar_resposta(bruta: dict) -> dict:
 
 
 class Gemini:
-    """Cliente do Gemini com resposta estruturada (JSON) e temperatura zero."""
+    """Cliente do Gemini com resposta estruturada (JSON) e temperatura zero.
 
-    def __init__(self, chave: str, modelo: str | None = None):
+    `esperar_limite_por_minuto`: no 429 do limite por minuto, espera e tenta mais uma vez. Só a
+    avaliação usa; no app, a pessoa não fica um minuto esperando a resposta."""
+
+    def __init__(
+        self, chave: str, modelo: str | None = None, esperar_limite_por_minuto: bool = False
+    ):
         from google import genai  # importado só aqui: os testes não precisam do SDK
 
         self._cliente = genai.Client(api_key=chave)
         self.modelo = modelo or os.environ.get("GEMINI_MODEL") or MODELO_PADRAO
+        self.esperar_limite_por_minuto = esperar_limite_por_minuto
 
     def gerar(self, sistema: str, mensagem: str) -> dict:
         from google.genai import errors, types
@@ -90,8 +125,15 @@ class Gemini:
                     time.sleep(ESPERA_ERRO_PASSAGEIRO_S)
                     continue
                 if erro.code == 429:
-                    raise ErroLLM(
-                        "O Gemini recusou o pedido (429): limite de pedidos do plano gratuito."
+                    diaria = cota_diaria(erro)
+                    if not diaria and self.esperar_limite_por_minuto and tentativa == 1:
+                        time.sleep(espera_sugerida(erro))
+                        continue
+                    limite = "do dia" if diaria else "por minuto"
+                    raise CotaEsgotada(
+                        f"O Gemini recusou o pedido (429): limite de pedidos {limite} do plano "
+                        "gratuito.",
+                        diaria,
                     ) from erro
                 raise ErroLLM(f"O Gemini recusou o pedido ({erro.code}).") from erro
         try:

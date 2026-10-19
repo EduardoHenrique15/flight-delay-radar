@@ -262,3 +262,71 @@ def test_gemini_tenta_de_novo_quando_o_servidor_esta_sobrecarregado(monkeypatch)
     with pytest.raises(ErroLLM, match="503"):
         gemini.gerar("sistema", "Pergunta: oi")
     assert len(esperas) == 2  # uma espera só por pergunta
+
+
+def test_gemini_distingue_o_limite_do_minuto_e_o_do_dia(monkeypatch):
+    """Limite por minuto: na avaliação espera o tempo pedido e tenta de novo; no app, não espera.
+    Limite do dia: desiste na hora, sem esperar."""
+    from types import SimpleNamespace
+
+    from google.genai import errors
+
+    from fdr.assistant import llm
+    from fdr.assistant.llm import CotaEsgotada, Gemini
+
+    def erro_429(limite, espera="37s"):
+        return errors.ClientError(
+            429,
+            {
+                "error": {
+                    "message": "cota",
+                    "details": [
+                        {"violations": [{"quotaId": f"GenerateRequests{limite}-FreeTier"}]},
+                        {"retryDelay": espera},
+                    ],
+                }
+            },
+        )
+
+    ok = SimpleNamespace(text='{"pode_responder": true, "sql": "select 1", "explicacao": "x"}')
+    esperas = []
+    monkeypatch.setattr(llm.time, "sleep", esperas.append)
+
+    def sequencia(*respostas):
+        fila = list(respostas)
+
+        def responder(**_):
+            resposta = fila.pop(0)
+            if isinstance(resposta, Exception):
+                raise resposta
+            return resposta
+
+        return responder
+
+    avaliacao = Gemini("chave-falsa", modelo="m", esperar_limite_por_minuto=True)
+    monkeypatch.setattr(
+        avaliacao._cliente.models,
+        "generate_content",
+        sequencia(erro_429("PerMinutePerProjectPerModel"), ok),
+    )
+    assert avaliacao.gerar("sistema", "Pergunta: oi")["sql"] == "select 1"
+    assert esperas == [38.0]
+
+    monkeypatch.setattr(
+        avaliacao._cliente.models,
+        "generate_content",
+        sequencia(erro_429("PerDayPerProjectPerModel")),
+    )
+    with pytest.raises(CotaEsgotada, match="do dia") as dia:
+        avaliacao.gerar("sistema", "Pergunta: oi")
+    assert dia.value.diaria
+    assert esperas == [38.0]  # não espera pelo limite do dia
+
+    app = Gemini("chave-falsa", modelo="m")
+    monkeypatch.setattr(
+        app._cliente.models, "generate_content", sequencia(erro_429("PerMinutePerProjectPerModel"))
+    )
+    with pytest.raises(CotaEsgotada, match="por minuto") as minuto:
+        app.gerar("sistema", "Pergunta: oi")
+    assert not minuto.value.diaria
+    assert esperas == [38.0]  # o app não espera

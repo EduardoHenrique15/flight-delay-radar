@@ -9,7 +9,10 @@ Nas perguntas que os dados não respondem, o certo é recusar.
 O Gemini só é chamado com a autorização do Eduardo, em lotes de 11 perguntas, um por dia (a
 cota gratuita é de cerca de 20 pedidos por dia, e uma nova tentativa gasta mais um). Entre uma
 pergunta e outra há uma pausa de 15 s, porque o plano gratuito também limita os pedidos por
-minuto (o lote 1 levou um erro 429 na 11ª pergunta sem a pausa).
+minuto (o lote 1 levou um erro 429 na 11ª pergunta sem a pausa). Se ainda assim vier o 429 do
+limite por minuto, a pergunta espera o tempo que o Google pede e é feita de novo. Se vier o do
+limite do dia, a avaliação para, grava o que já respondeu e mostra o comando para rodar as
+perguntas que faltaram no dia seguinte (com --refazer).
 
 Uso:
     python -m fdr.assistant.eval --referencia      # só confere os SQLs de referência (sem LLM)
@@ -34,7 +37,7 @@ import yaml
 
 from fdr.assistant import guard, schema
 from fdr.assistant.agent import Assistente
-from fdr.assistant.llm import Cache, ControleDeUso, Gemini, ModeloLinguagem
+from fdr.assistant.llm import Cache, ControleDeUso, CotaEsgotada, Gemini, ModeloLinguagem
 from fdr.config import ARQUIVO_DEMO_ASSISTENTE, BANCO_APP, RAIZ
 
 ARQUIVO_PERGUNTAS = RAIZ / "eval" / "questions.yaml"
@@ -94,9 +97,31 @@ def mesmo_resultado(gerado: pd.DataFrame, referencia: pd.DataFrame) -> bool:
     return True
 
 
+class VigiaDaCota:
+    """Repassa os pedidos ao modelo e anota quando o limite do dia acaba, para a avaliação parar
+    em vez de gastar as perguntas que faltam em erros 429."""
+
+    def __init__(self, llm: ModeloLinguagem):
+        self.llm = llm
+        self.esgotada = False
+
+    def gerar(self, sistema: str, mensagem: str) -> dict:
+        try:
+            return self.llm.gerar(sistema, mensagem)
+        except CotaEsgotada as erro:
+            self.esgotada = self.esgotada or erro.diaria
+            raise
+
+
 def avaliar(
-    assistente: Assistente, perguntas: list[dict], referencia_con, pausa_s: float = 0.0
+    assistente: Assistente,
+    perguntas: list[dict],
+    referencia_con,
+    pausa_s: float = 0.0,
+    vigia: VigiaDaCota | None = None,
 ) -> list[dict]:
+    """Os resultados das perguntas, na ordem. Se o limite do dia acabar (`vigia`), para ali: a
+    pergunta recusada e as seguintes ficam de fora, para rodar no dia seguinte com --refazer."""
     resultados = []
     for posicao, item in enumerate(perguntas):
         if posicao and pausa_s:
@@ -104,6 +129,8 @@ def avaliar(
         inicio = time.perf_counter()
         resposta = assistente.responder(item["pergunta"])
         latencia = time.perf_counter() - inicio
+        if vigia is not None and vigia.esgotada:
+            break
         registro = {
             "id": item["id"],
             "categoria": item["categoria"],
@@ -155,10 +182,13 @@ def resumo(resultados: list[dict]) -> dict:
 
 
 def substituir(saida: dict, refeitos: list[dict], data: str) -> dict:
-    """Troca os resultados refeitos no arquivo do lote, recalcula o resumo e registra o que foi
-    refeito e quando (as outras perguntas continuam com o resultado original)."""
+    """Troca os resultados refeitos no arquivo do lote (e acrescenta os que faltavam, quando o
+    lote parou no limite do dia), recalcula o resumo e registra o que foi refeito e quando (as
+    outras perguntas continuam com o resultado original)."""
     novos = {r["id"]: r for r in refeitos}
-    resultados = [novos.get(r["id"], r) for r in saida["resultados"]]
+    resultados = sorted(
+        ({r["id"]: r for r in saida["resultados"]} | novos).values(), key=lambda r: r["id"]
+    )
     refeitas = saida.get("refeitas", []) + [{"id": i, "data": data} for i in novos]
     return {**saida, "resumo": resumo(resultados), "resultados": resultados, "refeitas": refeitas}
 
@@ -224,10 +254,17 @@ def main() -> None:
         lote = [q for q in lote if q["id"] in set(args.refazer)]
         if not lote:
             raise SystemExit(f"Nenhuma dessas perguntas está no lote {args.lote}.")
-    llm = Gemini(chave)
+    llm = Gemini(chave, esperar_limite_por_minuto=True)
+    vigia = VigiaDaCota(llm)
     with tempfile.TemporaryDirectory() as pasta:
-        assistente = assistente_para_avaliacao(llm, BANCO_APP, Path(pasta))
-        resultados = avaliar(assistente, lote, con, pausa_s=PAUSA_S)
+        assistente = assistente_para_avaliacao(vigia, BANCO_APP, Path(pasta))
+        resultados = avaliar(assistente, lote, con, pausa_s=PAUSA_S, vigia=vigia)
+    faltam = [q["id"] for q in lote if q["id"] not in {r["id"] for r in resultados}]
+    if not resultados:
+        raise SystemExit(
+            "O limite de pedidos do dia do Gemini acabou antes da primeira pergunta. Nada foi "
+            "gravado; rode de novo amanhã (a cota volta por volta das 4h ou 5h de Brasília)."
+        )
     if args.refazer:
         arquivo = anteriores[-1]
         anterior = json.loads(arquivo.read_text(encoding="utf-8"))
@@ -251,6 +288,12 @@ def main() -> None:
         print(f"{r['id']:>3} {situacao:<6} {r['origem']:<12} {r['pergunta'][:60]}")
     print(json.dumps(saida["resumo"], ensure_ascii=False, indent=2))
     print(f"Gravado: {arquivo.relative_to(RAIZ)}.")
+    if faltam:
+        ids = " ".join(str(i) for i in faltam)
+        print(
+            f"O limite de pedidos do dia acabou. Faltaram as perguntas {ids}. Amanhã, rode:\n"
+            f"    python -m fdr.assistant.eval --lote {args.lote} --refazer {ids}"
+        )
 
 
 if __name__ == "__main__":

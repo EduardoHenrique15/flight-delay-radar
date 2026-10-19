@@ -107,18 +107,19 @@ def test_avaliacao_com_llm_falso(banco, tmp_path):
     assert list(gravada) == [normalizar("Quantos voos a Gol fez?")]
 
 
-def test_refazer_troca_so_as_perguntas_refeitas():
-    def registro(i, categoria, acerto):
-        return {
-            "id": i,
-            "categoria": categoria,
-            "acerto": acerto,
-            "sql_gerado": "select 1",
-            "origem": "modelo",
-            "tentativas": 1,
-            "latencia_s": 1.0,
-        }
+def registro(i, categoria, acerto):
+    return {
+        "id": i,
+        "categoria": categoria,
+        "acerto": acerto,
+        "sql_gerado": "select 1",
+        "origem": "modelo",
+        "tentativas": 1,
+        "latencia_s": 1.0,
+    }
 
+
+def test_refazer_troca_so_as_perguntas_refeitas():
     saida = {
         "data": "2026-10-17",
         "modelo": "m",
@@ -145,3 +146,39 @@ def test_pausa_entre_perguntas(banco, tmp_path, monkeypatch):
     assistente = avaliacao.assistente_para_avaliacao(llm, banco, tmp_path)
     avaliacao.avaliar(assistente, perguntas, guard.conectar(banco), pausa_s=15)
     assert pausas == [15, 15]  # nenhuma antes da primeira
+
+
+def test_para_quando_o_limite_do_dia_acaba(banco, tmp_path):
+    """A 2ª pergunta leva o 429 do dia: a avaliação para ali, sem gastar a 3ª em outro erro."""
+    from fdr.assistant.llm import CotaEsgotada
+
+    perguntas = [
+        {"id": i, "categoria": "recusa", "pergunta": f"Preço {i}?", "recusar": True}
+        for i in (1, 2, 3)
+    ]
+    recusa = {"pode_responder": False, "explicacao": "Sem preços.", "sql": ""}
+    chamadas = []
+
+    class LLMComCota:
+        def gerar(self, sistema, mensagem):
+            chamadas.append(mensagem)
+            if len(chamadas) == 2:
+                raise CotaEsgotada("limite do dia", diaria=True)
+            return recusa
+
+    vigia = avaliacao.VigiaDaCota(LLMComCota())
+    assistente = avaliacao.assistente_para_avaliacao(vigia, banco, tmp_path)
+    resultados = avaliacao.avaliar(assistente, perguntas, guard.conectar(banco), vigia=vigia)
+    assert [r["id"] for r in resultados] == [1]
+    assert len(chamadas) == 2
+
+
+def test_refazer_acrescenta_as_perguntas_que_faltaram():
+    saida = {
+        "data": "2026-10-18",
+        "resumo": {},
+        "resultados": [registro(1, "agregacao", True), registro(3, "agregacao", False)],
+    }
+    nova = avaliacao.substituir(saida, [registro(2, "agregacao", True)], "2026-10-19")
+    assert [r["id"] for r in nova["resultados"]] == [1, 2, 3]
+    assert nova["resumo"]["perguntas"] == 3
