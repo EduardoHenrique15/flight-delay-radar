@@ -11,6 +11,9 @@ O banco do assistente (data/app.duckdb) não é versionado: `garantir_banco_app`
 dos Parquet quando falta ou quando os Parquet são mais novos.
 
 Os caminhos são lidos de fdr.config na hora da chamada, para os testes poderem trocá-los.
+
+Números, datas e nomes de meses e dias seguem o idioma da sessão (fdr.idioma): 12,5% e 1.234 em
+português; 12.5% e 1,234 em inglês.
 """
 
 import json
@@ -21,7 +24,7 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
-from fdr import config
+from fdr import config, idioma
 from fdr.export import CONSULTAS, gerar_banco_app
 
 TABELAS = tuple(CONSULTAS)
@@ -30,8 +33,14 @@ TABELAS = tuple(CONSULTAS)
 BASE = "tipo_linha = 'N' and atrasado_15 is not null"
 MIN_VOOS_DESTAQUE = 1000  # companhia e aeroporto do mês na página inicial
 MIN_VOOS_RANKING = 300  # companhias no ranking da página de pontualidade
-DIAS_SEMANA = ("seg", "ter", "qua", "qui", "sex", "sáb", "dom")
-MESES_PT = ("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez")
+DIAS_SEMANA = idioma.PorIdioma(
+    pt=("seg", "ter", "qua", "qui", "sex", "sáb", "dom"),
+    en=("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
+)
+MESES = idioma.PorIdioma(
+    pt=("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"),
+    en=("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
+)
 
 
 def _sql_path(caminho: Path) -> str:
@@ -68,26 +77,48 @@ def manifest(pasta: Path | None = None) -> dict:
 
 
 def nome_mes(mes: date) -> str:
-    return f"{MESES_PT[mes.month - 1]}/{mes.year}"
+    """Ex.: "ago/2026" ou "Aug 2026"."""
+    separador = " " if idioma.ingles() else "/"
+    return f"{MESES[mes.month - 1]}{separador}{mes.year}"
 
 
 def mes_curto(mes: date) -> str:
-    """Ex.: "ago/26" (eixos dos gráficos)."""
-    return f"{MESES_PT[mes.month - 1]}/{mes.year % 100:02d}"
+    """Ex.: "ago/26" ou "Aug '26" (eixos dos gráficos)."""
+    separador = " '" if idioma.ingles() else "/"
+    return f"{MESES[mes.month - 1]}{separador}{mes.year % 100:02d}"
+
+
+def data(dia: date) -> str:
+    """Ex.: "20/10/2026" ou "Oct 20, 2026"."""
+    if idioma.ingles():
+        return f"{MESES[dia.month - 1]} {dia.day}, {dia.year}"
+    return f"{dia:%d/%m/%Y}"
+
+
+def dia_e_mes(dia: date) -> str:
+    """Ex.: "20/10" ou "Oct 20"."""
+    return f"{MESES[dia.month - 1]} {dia.day}" if idioma.ingles() else f"{dia:%d/%m}"
+
+
+def _no_idioma(texto: str) -> str:
+    """Troca o ponto decimal e a vírgula de milhar do Python pelos do português."""
+    if idioma.ingles():
+        return texto
+    return texto.replace(",", "_").replace(".", ",").replace("_", ".")
 
 
 def porcentagem(valor: float | None, casas: int = 1) -> str:
     if valor is None or pd.isna(valor):
         return "—"
-    return f"{valor:.{casas}%}".replace(".", ",")
+    return _no_idioma(f"{valor:.{casas}%}")
 
 
 def decimal(valor: float, casas: int = 3, sinal: bool = False) -> str:
-    return f"{valor:{'+' if sinal else ''}.{casas}f}".replace(".", ",")
+    return _no_idioma(f"{valor:{'+' if sinal else ''}.{casas}f}")
 
 
 def numero(valor: float) -> str:
-    return f"{valor:,.0f}".replace(",", ".")
+    return _no_idioma(f"{valor:,.0f}")
 
 
 # Página inicial ---------------------------------------------------------------------------------
@@ -415,27 +446,29 @@ def destinos(con, origem: str) -> pd.DataFrame:
 
 
 # Nome de cada variável do modelo para o usuário (as que aparecem no monitoramento).
-NOMES_VARIAVEIS = {
-    "hora_prevista_local": "Hora do voo",
-    "dia_semana": "Dia da semana",
-    "mes_do_ano": "Mês do ano",
-    "cia": "Companhia",
-    "origem": "Aeroporto de origem",
-    "destino": "Destino",
-    "taxa_rota_hora_3m": "Atraso da rota no horário (3 meses)",
-    "taxa_rota_hora_12m": "Atraso da rota no horário (12 meses)",
-    "voos_rota_hora_3m": "Voos da rota no horário (3 meses)",
-    "voos_rota_hora_12m": "Voos da rota no horário (12 meses)",
-    "taxa_cia_3m": "Atraso da companhia (3 meses)",
-    "taxa_cia_12m": "Atraso da companhia (12 meses)",
-    "taxa_origem_3m": "Atraso do aeroporto (3 meses)",
-    "taxa_origem_12m": "Atraso do aeroporto (12 meses)",
-    "partidas_tipicas_origem_hora": "Movimento típico no aeroporto",
-    "partidas_cia_antes_tipicas": "Voos da companhia antes no dia",
-    "folga_tipica_min": "Folga da programação",
-    "duracao_tipica_min": "Duração típica do voo",
-    "distancia_km": "Distância",
-}
+NOMES_VARIAVEIS = idioma.Traduzidos(
+    {
+        "hora_prevista_local": "Hora do voo",
+        "dia_semana": "Dia da semana",
+        "mes_do_ano": "Mês do ano",
+        "cia": "Companhia",
+        "origem": "Aeroporto de origem",
+        "destino": "Destino",
+        "taxa_rota_hora_3m": "Atraso da rota no horário (3 meses)",
+        "taxa_rota_hora_12m": "Atraso da rota no horário (12 meses)",
+        "voos_rota_hora_3m": "Voos da rota no horário (3 meses)",
+        "voos_rota_hora_12m": "Voos da rota no horário (12 meses)",
+        "taxa_cia_3m": "Atraso da companhia (3 meses)",
+        "taxa_cia_12m": "Atraso da companhia (12 meses)",
+        "taxa_origem_3m": "Atraso do aeroporto (3 meses)",
+        "taxa_origem_12m": "Atraso do aeroporto (12 meses)",
+        "partidas_tipicas_origem_hora": "Movimento típico no aeroporto",
+        "partidas_cia_antes_tipicas": "Voos da companhia antes no dia",
+        "folga_tipica_min": "Folga da programação",
+        "duracao_tipica_min": "Duração típica do voo",
+        "distancia_km": "Distância",
+    }
+)
 
 
 # Monitoramento ----------------------------------------------------------------------------------
@@ -470,16 +503,42 @@ def meses_monitorados(historico: dict) -> pd.DataFrame:
 
 def descrever_retreino(retreino: dict) -> str:
     """O que aconteceu com a regra de retreino no mês, em uma frase."""
+    t = idioma.t
     if not retreino["disparou"]:
-        return "Sem retreino: nenhuma regra disparou."
-    # Os motivos vêm do monitoramento com ponto decimal ("ECE de 10.3%"): no app, vírgula.
-    motivos = re.sub(r"(\d)\.(\d)", r"\1,\2", "; ".join(retreino["motivos"]))
+        return t("Sem retreino: nenhuma regra disparou.")
+    # Os motivos vêm do monitoramento em português e com ponto decimal ("ECE de 10.3%").
+    motivos = "; ".join(traduzir_motivo(m) for m in retreino["motivos"])
+    if not idioma.ingles():
+        motivos = re.sub(r"(\d)\.(\d)", r"\1,\2", motivos)
     if retreino.get("adiado"):
-        return f"Regra disparou ({motivos}), mas o retreino foi adiado: {retreino['adiado']}."
+        return t(
+            "Regra disparou ({motivos}), mas o retreino foi adiado: {adiado}.",
+            motivos=motivos,
+            adiado=t(retreino["adiado"]),
+        )
     baixo, alto = retreino["ganho_pr_auc_intervalo_95"]
-    ganho = (
-        f"ganho de PR-AUC do desafiante: {retreino['ganho_pr_auc']:+.3f} "
-        f"(IC 95%: {baixo:+.3f} a {alto:+.3f})"
-    ).replace(".", ",")
-    decisao = "desafiante promovido" if retreino["promovido"] else "campeão mantido"
-    return f"Retreino ({motivos}): {ganho}, {decisao}."
+    ganho = t(
+        "ganho de PR-AUC do desafiante: {ganho} (IC 95%: {baixo} a {alto})",
+        ganho=decimal(retreino["ganho_pr_auc"], sinal=True),
+        baixo=decimal(baixo, sinal=True),
+        alto=decimal(alto, sinal=True),
+    )
+    decisao = t("desafiante promovido") if retreino["promovido"] else t("campeão mantido")
+    return t(
+        "Retreino ({motivos}): {ganho}, {decisao}.", motivos=motivos, ganho=ganho, decisao=decisao
+    )
+
+
+def traduzir_motivo(motivo: str) -> str:
+    """Um motivo de retreino do history.json no idioma da sessão. Os motivos têm números no
+    meio ("ECE de 10.3% (máximo 5%)"): a chave da tradução troca cada número por {0}, {1}...
+    ("ECE de {0} (máximo {1})")."""
+    if not idioma.ingles():
+        return motivo
+    numeros = re.findall(NUMERO_NO_TEXTO, motivo)
+    contador = iter(range(len(numeros)))
+    molde = re.sub(NUMERO_NO_TEXTO, lambda _: f"{{{next(contador)}}}", motivo)
+    return idioma.t(molde).format(*numeros)
+
+
+NUMERO_NO_TEXTO = r"\d+(?:\.\d+)?%?"

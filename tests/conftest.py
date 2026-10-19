@@ -6,7 +6,9 @@ import sys
 
 import duckdb
 import pytest
+import streamlit as st
 
+from fdr import config
 from fdr.config import ARQUIVO_AEROPORTOS_FIXTURE, PASTA_FIXTURES_VRA
 
 
@@ -87,3 +89,15 @@ def banco(tmp_path):
                    300.0 as distancia_km from voos group by all
         """)
     return caminho
+
+
+@pytest.fixture
+def dados_do_app(amostra_pipeline, tmp_path, monkeypatch):
+    """O app lendo os marts da amostra; o banco do assistente é recriado numa pasta temporária."""
+    monkeypatch.setattr(config, "PASTA_MARTS", amostra_pipeline / "marts")
+    monkeypatch.setattr(config, "BANCO_APP", tmp_path / "app.duckdb")
+    st.cache_data.clear()
+    st.cache_resource.clear()
+    yield
+    st.cache_data.clear()
+    st.cache_resource.clear()

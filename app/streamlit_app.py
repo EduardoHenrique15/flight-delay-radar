@@ -15,19 +15,20 @@ if str(SRC) not in sys.path:
 import streamlit as st  # noqa: E402
 
 from fdr import interface  # noqa: E402
+from fdr.idioma import t  # noqa: E402
 
 interface.configurar_pagina()
 
 PAGINAS = Path(__file__).parent / "paginas"
 navegacao = st.navigation(
     [
-        st.Page(PAGINAS / "inicio.py", title="Visão geral", default=True),
-        st.Page(PAGINAS / "pontualidade.py", title="Pontualidade"),
-        st.Page(PAGINAS / "previsao.py", title="Previsão"),
-        st.Page(PAGINAS / "buscar_voo.py", title="Buscar voo"),
-        st.Page(PAGINAS / "monitoramento.py", title="Monitoramento"),
-        st.Page(PAGINAS / "assistente.py", title="Pergunte aos dados"),
-        st.Page(PAGINAS / "sobre.py", title="Sobre o modelo"),
+        st.Page(PAGINAS / "inicio.py", title=t("Visão geral"), default=True),
+        st.Page(PAGINAS / "pontualidade.py", title=t("Pontualidade")),
+        st.Page(PAGINAS / "previsao.py", title=t("Previsão")),
+        st.Page(PAGINAS / "buscar_voo.py", title=t("Buscar voo")),
+        st.Page(PAGINAS / "monitoramento.py", title=t("Monitoramento")),
+        st.Page(PAGINAS / "assistente.py", title=t("Pergunte aos dados")),
+        st.Page(PAGINAS / "sobre.py", title=t("Sobre o modelo")),
     ],
     position="top",
 )

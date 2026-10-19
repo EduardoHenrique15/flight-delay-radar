@@ -13,6 +13,7 @@ import pydeck as pdk
 import streamlit as st
 
 from fdr import interface, painel
+from fdr.idioma import t
 
 MIN_VOOS_CELULA = 30  # células do mapa de calor com menos voos ficam apagadas
 LARGURA_EIXO_Y = 46  # a mesma largura do eixo nos dois gráficos de horário, para alinhá-los
@@ -33,11 +34,11 @@ def recorte(cia: str | None, origem: str | None, destino: str | None, cias) -> s
 
     partes = []
     if cia:
-        partes.append(f" da {cias.set_index('cia').at[cia, 'nome']}")
+        partes.append(t(" da {cia}", cia=cias.set_index("cia").at[cia, "nome"]))
     if origem:
-        partes.append(f" saindo de {aeroporto(origem)}")
+        partes.append(t(" saindo de {aeroporto}", aeroporto=aeroporto(origem)))
     if destino:
-        partes.append(f" para {aeroporto(destino)}")
+        partes.append(t(" para {aeroporto}", aeroporto=aeroporto(destino)))
     return "".join(partes)
 
 
@@ -61,8 +62,8 @@ def grafico_por_hora(por_hora: pd.Series, horas: list[int]) -> alt.LayerChart:
             ),
         ),
         tooltip=[
-            alt.Tooltip("hora:O", title="Hora"),
-            alt.Tooltip("taxa_atraso:Q", title="Taxa de atraso", format=".1%"),
+            alt.Tooltip("hora:O", title=t("Hora")),
+            alt.Tooltip("taxa_atraso:Q", title=t("Taxa de atraso"), format=".1%"),
         ],
     )
     barras = base.mark_bar(width={"band": 0.72}).encode(
@@ -83,7 +84,7 @@ def mapa_de_calor(calor: pd.DataFrame, horas: list[int]) -> alt.Chart:
         .encode(
             x=alt.X(
                 "hora:O",
-                title="Hora prevista da partida (hora local)",
+                title=t("Hora prevista da partida (hora local)"),
                 scale=alt.Scale(domain=horas),
                 axis=alt.Axis(
                     labelAngle=0, labelExpr="datum.value + 'h'", labelOverlap="parity", domain=False
@@ -97,15 +98,15 @@ def mapa_de_calor(calor: pd.DataFrame, horas: list[int]) -> alt.Chart:
             ),
             color=alt.Color(
                 "taxa_atraso:Q",
-                title="Taxa de atraso",
+                title=t("Taxa de atraso"),
                 scale=alt.Scale(range=interface.RAMPA),
                 legend=alt.Legend(format="%", gradientLength=220, orient="bottom"),
             ),
             tooltip=[
-                alt.Tooltip("dia_semana:N", title="Dia"),
-                alt.Tooltip("hora:O", title="Hora"),
-                alt.Tooltip("taxa_atraso:Q", title="Taxa de atraso", format=".1%"),
-                alt.Tooltip("voos:Q", title="Voos", format=",.0f"),
+                alt.Tooltip("dia_semana:N", title=t("Dia")),
+                alt.Tooltip("hora:O", title=t("Hora")),
+                alt.Tooltip("taxa_atraso:Q", title=t("Taxa de atraso"), format=".1%"),
+                alt.Tooltip("voos:Q", title=t("Voos"), format=",.0f"),
             ],
         )
     )
@@ -120,7 +121,7 @@ def calendario_do_ano(dias: pd.DataFrame, ano: int, maximo: float, legenda: bool
     """Um ano do calendário de atrasos, como o calendário de contribuições do GitHub: uma coluna
     por semana, uma linha por dia da semana. Os piores dias do período têm a borda preta."""
     do_ano = dias[dias["ano"] == ano]
-    inicios = {semana_do_ano(date(ano, m, 1)): painel.MESES_PT[m - 1] for m in range(1, 13)}
+    inicios = {semana_do_ano(date(ano, m, 1)): painel.MESES[m - 1] for m in range(1, 13)}
     rotulos = "{" + ", ".join(f"'{s}': '{m}'" for s, m in inicios.items()) + "}"
     base = alt.Chart(do_ano).encode(
         x=alt.X(
@@ -138,18 +139,18 @@ def calendario_do_ano(dias: pd.DataFrame, ano: int, maximo: float, legenda: bool
             "dia_semana:N",
             sort=list(painel.DIAS_SEMANA),
             title=None,
-            axis=alt.Axis(values=["seg", "qua", "sex"]),
+            axis=alt.Axis(values=[painel.DIAS_SEMANA[d] for d in (0, 2, 4)]),
         ),
         tooltip=[
-            alt.Tooltip("rotulo:N", title="Dia"),
-            alt.Tooltip("taxa_atraso:Q", title="Taxa de atraso", format=".1%"),
-            alt.Tooltip("voos:Q", title="Voos", format=",.0f"),
+            alt.Tooltip("rotulo:N", title=t("Dia")),
+            alt.Tooltip("taxa_atraso:Q", title=t("Taxa de atraso"), format=".1%"),
+            alt.Tooltip("voos:Q", title=t("Voos"), format=",.0f"),
         ],
     )
     celulas = base.mark_rect(stroke=interface.SUPERFICIE, strokeWidth=1.5, cornerRadius=2).encode(
         color=alt.Color(
             "taxa_atraso:Q",
-            title="Taxa de atraso",
+            title=t("Taxa de atraso"),
             scale=alt.Scale(range=interface.RAMPA, domain=[0, maximo], clamp=True),
             legend=alt.Legend(format="%", gradientLength=220, orient="bottom") if legenda else None,
         )
@@ -217,7 +218,7 @@ def mapa_de_rotas(rotas: pd.DataFrame) -> pdk.Deck:
         map_style=pdk.map_styles.CARTO_LIGHT,
         tooltip={
             "html": "<b style='font-size:15px'>{rota}</b><br/>{cidade_origem} → {cidade_destino}"
-            "<br/>{voos_texto} voos · {taxa_texto} com atraso",
+            "<br/>" + t("{voos_texto} voos · {taxa_texto} com atraso"),
             "style": {
                 "fontFamily": "Barlow, sans-serif",
                 "fontSize": "13px",
@@ -234,54 +235,67 @@ with interface.pagina_protegida():
     cias = interface.dados("companhias")
     aeroportos = interface.dados("aeroportos")
     interface.cabecalho(
-        "Pontualidade",
-        "Quem atrasa, onde e quando",
-        "Voos nacionais realizados. Um voo atrasou quando partiu mais de 15 minutos depois do "
-        "horário previsto. Escolha o período, a companhia e a rota.",
+        t("Pontualidade"),
+        t("Quem atrasa, onde e quando"),
+        t(
+            "Voos nacionais realizados. Um voo atrasou quando partiu mais de 15 minutos depois "
+            "do horário previsto. Escolha o período, a companhia e a rota."
+        ),
         icone="relogio",
         meta=[
-            ("Critério", "Partida > 15 min"),
-            ("Base", "Voos nacionais"),
-            ("Meses disponíveis", f"{painel.nome_mes(meses[0])} a {painel.nome_mes(meses[-1])}"),
+            (t("Critério"), t("Partida > 15 min")),
+            (t("Base"), t("Voos nacionais")),
+            (
+                t("Meses disponíveis"),
+                t(
+                    "{inicio} a {fim}",
+                    inicio=painel.nome_mes(meses[0]),
+                    fim=painel.nome_mes(meses[-1]),
+                ),
+            ),
         ],
     )
 
     with interface.quadro("filtros"):
         inicio, fim = st.select_slider(
-            "Período",
+            t("Período"),
             options=meses,
             value=(meses[max(len(meses) - 12, 0)], meses[-1]),
             format_func=painel.nome_mes,
+            key="periodo",  # com chave, a escolha não se perde quando o idioma muda o rótulo
         )
         filtros = st.columns(3)
         cia = filtros[0].selectbox(
-            "Companhia",
+            t("Companhia"),
             [None, *cias["cia"]],
-            format_func=lambda c: "Todas" if c is None else cias.set_index("cia").at[c, "nome"],
+            format_func=lambda c: t("Todas") if c is None else cias.set_index("cia").at[c, "nome"],
+            key="filtro_cia",
         )
         origem = filtros[1].selectbox(
-            "Aeroporto de origem",
+            t("Aeroporto de origem"),
             [None, *aeroportos["icao"]],
             format_func=lambda a: (
-                "Todos" if a is None else aeroportos.set_index("icao").at[a, "rotulo"]
+                t("Todos") if a is None else aeroportos.set_index("icao").at[a, "rotulo"]
             ),
+            key="filtro_origem",
         )
         destino = None
         if origem:
             destinos = interface.dados("destinos", origem)
             destino = filtros[2].selectbox(
-                "Destino",
+                t("Destino"),
                 [None, *destinos["icao"]],
                 format_func=lambda a: (
-                    "Todos" if a is None else destinos.set_index("icao").at[a, "rotulo"]
+                    t("Todos") if a is None else destinos.set_index("icao").at[a, "rotulo"]
                 ),
+                key="filtro_destino",
             )
         else:
-            filtros[2].selectbox("Destino", ["Escolha a origem primeiro"], disabled=True)
+            filtros[2].selectbox(t("Destino"), [t("Escolha a origem primeiro")], disabled=True)
 
     evolucao = interface.dados("evolucao_mensal", inicio, fim, cia, origem, destino)
     if evolucao.empty:
-        st.info("Nenhum voo com esses filtros. Tente um período maior ou outra combinação.")
+        st.info(t("Nenhum voo com esses filtros. Tente um período maior ou outra combinação."))
         st.stop()
 
     calor = interface.dados("mapa_de_calor", inicio, fim, cia, origem, destino)
@@ -296,59 +310,67 @@ with interface.pagina_protegida():
     tendencia = len(evolucao) >= 3
     numeros = [
         interface.Numero(
-            "Voos no período",
+            t("Voos no período"),
             painel.numero(total),
-            f"{painel.nome_mes(inicio)} a {painel.nome_mes(fim)}",
+            t("{inicio} a {fim}", inicio=painel.nome_mes(inicio), fim=painel.nome_mes(fim)),
             tendencia=evolucao["voos"].tolist() if tendencia else None,
         ),
         interface.Numero(
-            "Taxa de atraso",
+            t("Taxa de atraso"),
             painel.porcentagem(taxa),
-            "acima de 15 min",
+            t("acima de 15 min"),
             tendencia=evolucao["taxa_atraso"].tolist() if tendencia else None,
         ),
         interface.Numero(
-            "Mês mais difícil",
+            t("Mês mais difícil"),
             painel.nome_mes(pior_mes["mes"].date()),
-            f"{painel.porcentagem(pior_mes['taxa_atraso'])} de atraso",
+            t("{taxa} de atraso", taxa=painel.porcentagem(pior_mes["taxa_atraso"])),
         ),
     ]
     if not por_hora.empty:
         numeros.append(
             interface.Numero(
-                "Hora mais crítica",
+                t("Hora mais crítica"),
                 f"{int(por_hora.idxmax()):02d}h",
-                f"{painel.porcentagem(por_hora.max())} de atraso",
+                t("{taxa} de atraso", taxa=painel.porcentagem(por_hora.max())),
             )
         )
     interface.numeros(numeros)
     if tendencia:
-        interface.nota("As linhas mostram o período escolhido, mês a mês.")
+        interface.nota(t("As linhas mostram o período escolhido, mês a mês."))
 
     e = interface._e
-    texto = (
-        f"De {e(painel.nome_mes(inicio))} a {e(painel.nome_mes(fim))}, "
-        f"<b>{e(painel.porcentagem(taxa))}</b> dos {e(painel.numero(total))} voos nacionais"
-        f"{e(recorte(cia, origem, destino, cias))} partiram com mais de 15 "
-        f"minutos de atraso. O mês mais difícil foi {e(painel.nome_mes(pior_mes['mes'].date()))}, "
-        f"com <b>{e(painel.porcentagem(pior_mes['taxa_atraso']))}</b>"
+    texto = t(
+        "De {inicio} a {fim}, <b>{taxa}</b> dos {voos} voos nacionais{recorte} partiram com mais "
+        "de 15 minutos de atraso. O mês mais difícil foi {pior_mes}, com <b>{taxa_pior}</b>",
+        inicio=e(painel.nome_mes(inicio)),
+        fim=e(painel.nome_mes(fim)),
+        taxa=e(painel.porcentagem(taxa)),
+        voos=e(painel.numero(total)),
+        recorte=e(recorte(cia, origem, destino, cias)),
+        pior_mes=e(painel.nome_mes(pior_mes["mes"].date())),
+        taxa_pior=e(painel.porcentagem(pior_mes["taxa_atraso"])),
     )
     if not por_hora.empty:
-        texto += (
-            f"; a hora mais crítica, a das {int(por_hora.idxmax()):02d}h, com "
-            f"<b>{e(painel.porcentagem(por_hora.max()))}</b>"
+        texto += t(
+            "; a hora mais crítica, a das {hora}h, com <b>{taxa}</b>",
+            hora=f"{int(por_hora.idxmax()):02d}",
+            taxa=e(painel.porcentagem(por_hora.max())),
         )
     interface.resumo(texto + ".")
 
     esquerda, direita = st.columns(2, gap="medium")
     with esquerda, interface.quadro("companhias", altura="stretch"):
         interface.secao(
-            "Companhias",
-            f"Taxa de atraso das companhias com pelo menos {painel.MIN_VOOS_RANKING} voos.",
+            t("Companhias"),
+            t(
+                "Taxa de atraso das companhias com pelo menos {minimo} voos.",
+                minimo=painel.MIN_VOOS_RANKING,
+            ),
         )
         ranking = interface.dados("ranking_companhias", inicio, fim, origem, destino)
         if ranking.empty:
-            interface.nota("Nenhuma companhia com voos suficientes nesse recorte.")
+            interface.nota(t("Nenhuma companhia com voos suficientes nesse recorte."))
         else:
             media = float((ranking["taxa_atraso"] * ranking["voos"]).sum() / ranking["voos"].sum())
             interface.ranking(
@@ -362,24 +384,35 @@ with interface.pagina_protegida():
                     for linha in ranking.itertuples()
                 ],
                 maximo=max(float(ranking["taxa_atraso"].max()), media) * 1.1,
-                referencia=(media, f"Média das companhias do ranking: {painel.porcentagem(media)}"),
+                referencia=(
+                    media,
+                    t(
+                        "Média das companhias do ranking: {taxa}",
+                        taxa=painel.porcentagem(media),
+                    ),
+                ),
                 chips=True,
             )
             interface.nota(
-                "As diferenças misturam rotas e horários diferentes: não é um ranking de "
-                "qualidade das companhias."
+                t(
+                    "As diferenças misturam rotas e horários diferentes: não é um ranking de "
+                    "qualidade das companhias."
+                )
             )
     with direita, interface.quadro("evolucao", altura="stretch"):
-        interface.secao("Evolução mensal", "Taxa de atraso em cada mês do período.")
+        interface.secao(t("Evolução mensal"), t("Taxa de atraso em cada mês do período."))
         interface.grafico(
             interface.grafico_linhas(
                 evolucao,
                 "mes",
-                {"taxa_atraso": "Taxa de atraso"},
-                "Taxa de atraso",
+                {"taxa_atraso": t("Taxa de atraso")},
+                t("Taxa de atraso"),
                 "%",
                 marcas=[
-                    (pior_mes["mes"].date(), f"pico: {painel.porcentagem(pior_mes['taxa_atraso'])}")
+                    (
+                        pior_mes["mes"].date(),
+                        t("pico: {taxa}", taxa=painel.porcentagem(pior_mes["taxa_atraso"])),
+                    )
                 ],
             ),
             altura=280,
@@ -387,10 +420,13 @@ with interface.pagina_protegida():
 
     with interface.quadro("horarios"):
         interface.secao(
-            "Quando os voos mais atrasam",
-            "Em cima, a taxa de atraso de cada hora prevista de partida (hora local do "
-            "aeroporto); embaixo, a mesma taxa por dia da semana. Combinações com menos de "
-            f"{MIN_VOOS_CELULA} voos ficam em branco.",
+            t("Quando os voos mais atrasam"),
+            t(
+                "Em cima, a taxa de atraso de cada hora prevista de partida (hora local do "
+                "aeroporto); embaixo, a mesma taxa por dia da semana. Combinações com menos de "
+                "{minimo} voos ficam em branco.",
+                minimo=MIN_VOOS_CELULA,
+            ),
         )
         calor = calor[calor["voos"] >= MIN_VOOS_CELULA]
         horas = sorted({int(h) for h in calor["hora"]} | {int(h) for h in por_hora.index})
@@ -408,17 +444,21 @@ with interface.pagina_protegida():
         dias["semana"] = [semana_do_ano(d) for d in dias["data"].dt.date]
         dias["dia_semana"] = [painel.DIAS_SEMANA[d.weekday()] for d in dias["data"].dt.date]
         dias["rotulo"] = [
-            f"{painel.DIAS_SEMANA[d.weekday()]}, {d:%d/%m/%Y}" for d in dias["data"].dt.date
+            f"{painel.DIAS_SEMANA[d.weekday()]}, {painel.data(d)}" for d in dias["data"].dt.date
         ]
         piores = dias.nlargest(PIORES_DIAS, "taxa_atraso")
         dias["pior"] = dias.index.isin(piores.index)
         maximo = float(dias["taxa_atraso"].quantile(0.99))
         with interface.quadro("calendario"):
             interface.secao(
-                "Dia a dia",
-                "A taxa de atraso de cada dia do período, uma coluna por semana. Quanto mais "
-                f"escuro, mais atraso. Dias com menos de {MIN_VOOS_DIA} voos ficam em branco; os "
-                f"{len(piores)} piores dias têm a borda preta.",
+                t("Dia a dia"),
+                t(
+                    "A taxa de atraso de cada dia do período, uma coluna por semana. Quanto mais "
+                    "escuro, mais atraso. Dias com menos de {minimo} voos ficam em branco; os "
+                    "{piores} piores dias têm a borda preta.",
+                    minimo=MIN_VOOS_DIA,
+                    piores=len(piores),
+                ),
             )
             anos = sorted(dias["ano"].unique())
             for ano in anos:
@@ -433,7 +473,7 @@ with interface.pagina_protegida():
                 for r in piores.itertuples()
             )
             interface.html_bruto(
-                f'<div class="fdr-piores-titulo">Os piores dias do período</div>'
+                f'<div class="fdr-piores-titulo">{e(t("Os piores dias do período"))}</div>'
                 f'<div class="fdr-piores">{itens}</div>'
             )
 
@@ -442,18 +482,23 @@ with interface.pagina_protegida():
     if not rotas.empty:
         with interface.quadro("rotas"):
             interface.secao(
-                "As rotas no mapa",
-                f"As {len(rotas)} rotas com mais voos no recorte (pelo menos 30 voos cada). A cor "
-                "é a taxa de atraso; a espessura, o número de voos. Passe o mouse num arco para "
-                "ver os números.",
+                t("As rotas no mapa"),
+                t(
+                    "As {rotas} rotas com mais voos no recorte (pelo menos 30 voos cada). A cor "
+                    "é a taxa de atraso; a espessura, o número de voos. Passe o mouse num arco "
+                    "para ver os números.",
+                    rotas=len(rotas),
+                ),
             )
             st.pydeck_chart(mapa_de_rotas(rotas), height=520)
             minimo, maximo = rotas["taxa_atraso"].quantile([0.05, 0.95])
             interface.html_bruto(
-                interface.legenda_do_mapa(minimo, maximo, "mais voos", RAMPA_ROTAS)
+                interface.legenda_do_mapa(minimo, maximo, t("mais voos"), RAMPA_ROTAS)
             )
 
     interface.nota(
-        "Os motivos dos atrasos não aparecem aqui: o campo de justificativa vem vazio em todos "
-        "os arquivos da ANAC."
+        t(
+            "Os motivos dos atrasos não aparecem aqui: o campo de justificativa vem vazio em "
+            "todos os arquivos da ANAC."
+        )
     )

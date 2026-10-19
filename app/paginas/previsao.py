@@ -9,6 +9,8 @@ As escolhas ficam na URL, com os códigos dos aeroportos e das companhias (ex.:
 
 As variáveis saem da mesma consulta do treino (fdr.previsao), com o histórico até 2 meses antes
 do voo.
+
+Os textos passam por `t()` (fdr.idioma); as traduções estão em fdr/traducoes/previsao.py.
 """
 
 from datetime import date, timedelta
@@ -18,7 +20,8 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from fdr import interface, painel
+from fdr import idioma, interface, painel
+from fdr.idioma import t
 from fdr.previsao import Voo
 
 FAIXAS = {
@@ -50,35 +53,37 @@ def cartao_do_voo(
     voo = resultado["voo"]
     origem, destino = aeroportos.loc[voo.origem], aeroportos.loc[voo.destino]
     texto_faixa, situacao = FAIXAS[resultado["faixa"]]
+    texto_faixa = t(texto_faixa)
     chance = resultado["probabilidade"]
     media = resultado["media_do_modelo"]
     preenchido = min(chance / ESCALA_MAXIMA, 1) * 100
     marca = min(media / ESCALA_MAXIMA, 1) * 100
     if resultado["taxa_rota_hora_12m"] is not None:
-        comparacao = (
-            f"Nos 12 meses de histórico, {painel.porcentagem(resultado['taxa_rota_hora_12m'])} "
-            f"dos {painel.numero(resultado['voos_rota_hora_12m'])} voos dessa rota nesse horário "
-            "atrasaram."
+        comparacao = t(
+            "Nos 12 meses de histórico, {taxa} dos {voos} voos dessa rota nesse horário atrasaram.",
+            taxa=painel.porcentagem(resultado["taxa_rota_hora_12m"]),
+            voos=painel.numero(resultado["voos_rota_hora_12m"]),
         )
     else:
-        comparacao = "Não houve voos dessa rota nesse horário nos 12 meses de histórico."
-    dia = f"{painel.DIAS_SEMANA[voo.data.isoweekday() - 1]}, {voo.data:%d/%m/%Y}"
+        comparacao = t("Não houve voos dessa rota nesse horário nos 12 meses de histórico.")
+    dia = f"{painel.DIAS_SEMANA[voo.data.isoweekday() - 1]}, {painel.data(voo.data)}"
     codigo = painel.CODIGOS_IATA.get(voo.cia, voo.cia)
     e = interface._e
 
     def dado(rotulo: str, valor: str) -> str:
         return (
-            f'<div><div class="rotulo-pequeno">{e(rotulo)}</div>'
+            f'<div><div class="rotulo-pequeno">{e(t(rotulo))}</div>'
             f'<div class="v">{e(valor)}</div></div>'
         )
 
     return (
         f'<div class="fdr-cartao{"" if titulo == "Cartão de embarque" else " compacto"}">'
         f'<div class="fdr-cartao-topo">'
-        f"<div>{interface.pictograma('aviao')}{e(titulo)} <span>· Boarding pass</span>"
+        f"<div>{interface.pictograma('aviao')}{e(t(titulo))} <span>{e(t('· Boarding pass'))}</span>"
         f"</div><div><b>{e(codigo)}</b>{e(nome_cia)}</div></div>"
         f'<div class="fdr-cartao-corpo"><div class="trecho">'
-        f'<div class="cidades rotulo-pequeno"><span>De</span><span>Para</span></div>'
+        f'<div class="cidades rotulo-pequeno"><span>{e(t("De"))}</span>'
+        f"<span>{e(t('Para'))}</span></div>"
         f'<div class="codigos"><span class="iata">{e(origem.iata)}</span>'
         f'<span class="rota"><hr>{interface.pictograma("aviao")}<hr></span>'
         f'<span class="iata">{e(destino.iata)}</span></div>'
@@ -86,13 +91,15 @@ def cartao_do_voo(
         f'</div><div class="dados">{dado("Companhia", nome_cia)}{dado("Data", dia)}'
         f"{dado('Partida', f'{voo.hora:02d}:00')}"
         f"{dado('Voos no horário', painel.numero(resultado['voos_rota_hora_12m']))}</div></div>"
-        f'<div class="canhoto"><div class="rotulo-pequeno">Chance de atrasar mais de 15 min</div>'
+        f'<div class="canhoto"><div class="rotulo-pequeno">'
+        f"{e(t('Chance de atrasar mais de 15 min'))}</div>"
         f'<div class="chance">{e(painel.porcentagem(chance))}</div>'
         f"{interface.selo(texto_faixa, situacao)}"
         f'<div class="fdr-regua"><div class="preenchido" style="width:{preenchido:.1f}%"></div>'
         f'<div class="marca" style="left:{marca:.1f}%"></div></div>'
         f'<div class="fdr-regua-legenda"><span>0%</span>'
-        f"<span>média dos voos: {e(painel.porcentagem(media))}</span><span>50%</span></div>"
+        f"<span>{e(t('média dos voos: {media}', media=painel.porcentagem(media)))}</span>"
+        "<span>50%</span></div>"
         f'<div class="comparacao">{e(comparacao)}</div><div class="barras"></div></div>'
         f"</div></div>"
     )
@@ -123,24 +130,26 @@ def posicao_entre_os_voos(chance: float, curva: list[dict]) -> tuple[pd.DataFram
 
 DIMINUI = "&#9664; Diminui<i> o risco</i>"
 AUMENTA = "Aumenta<i> o risco</i> &#9654;"
+SEM_FATOR = "Nenhum fator se destacou: a previsão fica perto da média."
 
 
 def fatores(
     itens: list[dict],
     esquerda: str = DIMINUI,
     direita: str = AUMENTA,
-    vazio: str = "Nenhum fator se destacou: a previsão fica perto da média.",
+    vazio: str = SEM_FATOR,
 ) -> str:
     """Barras divergentes, do fator que mais pesou para o que menos pesou: o que aumenta o risco
     fica à direita (âmbar) e o que diminui, à esquerda (azul). `esquerda` e `direita` são os
-    títulos (HTML fixo do código, não texto do usuário)."""
+    títulos (HTML fixo do código, não texto do usuário); os três textos são chaves de `t()`."""
     itens = sorted(itens, key=lambda f: -abs(f["pontos"]))
     if not itens:
-        return f'<p class="fdr-nota">{interface._e(vazio)}</p>'
+        return f'<p class="fdr-nota">{interface._e(t(vazio))}</p>'
     maximo = max(abs(f["pontos"]) for f in itens)
     linhas = [
-        f'<div class="fdr-fatores-cabecalho"><div>Tema</div><div><span>{esquerda}</span>'
-        f'<span>{direita}</span></div><div class="numero">Efeito</div></div>'
+        f'<div class="fdr-fatores-cabecalho"><div>{interface._e(t("Tema"))}</div>'
+        f"<div><span>{t(esquerda)}</span><span>{t(direita)}</span></div>"
+        f'<div class="numero">{interface._e(t("Efeito"))}</div></div>'
     ]
     for fator in itens:
         largura = 50 * abs(fator["pontos"]) / maximo
@@ -148,7 +157,7 @@ def fatores(
         posicao = "left:50%" if fator["pontos"] > 0 else f"left:{50 - largura:.1f}%"
         numero = painel.decimal(fator["pontos"], 1, sinal=True)
         linhas.append(
-            f'<div class="fdr-fator"><div>{interface._e(fator["tema"])}</div>'
+            f'<div class="fdr-fator"><div>{interface._e(t(fator["tema"]))}</div>'
             f'<div class="barra"><div class="eixo"></div><div class="valor" '
             f'style="{posicao};width:{largura:.1f}%;background:{cor}"></div></div>'
             f'<div class="numero">{numero} p.p.</div></div>'
@@ -177,7 +186,7 @@ def grafico_por_hora(por_hora: list[dict], hora: int) -> alt.LayerChart:
     base = alt.Chart(curva).encode(
         x=alt.X(
             "hora:O",
-            title="Hora prevista da partida",
+            title=t("Hora prevista da partida"),
             axis=alt.Axis(labelAngle=0, labelExpr="datum.value % 3 == 0 ? datum.value + 'h' : ''"),
         ),
         y=alt.Y(
@@ -187,8 +196,8 @@ def grafico_por_hora(por_hora: list[dict], hora: int) -> alt.LayerChart:
             scale=alt.Scale(domain=[0, teto], nice=False),
         ),
         tooltip=[
-            alt.Tooltip("hora_texto:N", title="Partida"),
-            alt.Tooltip("chance_texto:N", title="Chance"),
+            alt.Tooltip("hora_texto:N", title=t("Partida")),
+            alt.Tooltip("chance_texto:N", title=t("Chance")),
         ],
     )
     barras = base.mark_bar(width={"band": 0.74}).encode(
@@ -211,7 +220,7 @@ def grafico_por_hora(por_hora: list[dict], hora: int) -> alt.LayerChart:
     return barras + valor + chance
 
 
-@st.cache_data(show_spinner="Calculando a semana...", max_entries=64)
+@st.cache_data(show_spinner=False, max_entries=64)
 def chances_da_semana(origem: str, destino: str, cia: str, primeiro_dia: date) -> pd.DataFrame:
     """A chance do mesmo voo em cada hora de 7 dias seguidos (os que cabem no período da
     previsão), e se a rota teve voos naquele horário nos 12 meses de histórico."""
@@ -231,7 +240,7 @@ def chances_da_semana(origem: str, destino: str, cia: str, primeiro_dia: date) -
 
 
 def rotulo_do_dia(dia: date) -> str:
-    return f"{painel.DIAS_SEMANA[dia.weekday()]} {dia:%d/%m}"
+    return f"{painel.DIAS_SEMANA[dia.weekday()]} {painel.dia_e_mes(dia)}"
 
 
 def grade_da_semana(semana: pd.DataFrame, destaques: pd.DataFrame) -> alt.LayerChart:
@@ -241,14 +250,14 @@ def grade_da_semana(semana: pd.DataFrame, destaques: pd.DataFrame) -> alt.LayerC
     base = alt.Chart(semana).encode(
         x=alt.X(
             "hora:O",
-            title="Hora prevista da partida",
+            title=t("Hora prevista da partida"),
             axis=alt.Axis(labelAngle=0, labelExpr="datum.value + 'h'", labelOverlap="parity"),
         ),
         y=alt.Y("rotulo:N", sort=ordem, title=None),
         tooltip=[
-            alt.Tooltip("rotulo:N", title="Dia"),
-            alt.Tooltip("hora_texto:N", title="Partida"),
-            alt.Tooltip("chance_texto:N", title="Chance de atraso"),
+            alt.Tooltip("rotulo:N", title=t("Dia")),
+            alt.Tooltip("hora_texto:N", title=t("Partida")),
+            alt.Tooltip("chance_texto:N", title=t("Chance de atraso")),
         ],
     )
     com_voos = (
@@ -257,7 +266,7 @@ def grade_da_semana(semana: pd.DataFrame, destaques: pd.DataFrame) -> alt.LayerC
         .encode(
             color=alt.Color(
                 "chance:Q",
-                title="Chance de atraso",
+                title=t("Chance de atraso"),
                 scale=alt.Scale(range=interface.RAMPA),
                 legend=alt.Legend(format="%", gradientLength=220, orient="bottom"),
             )
@@ -289,15 +298,20 @@ with interface.pagina_protegida():
     previsor = interface.previsor()
     inicio, fim = previsor.periodo()
     interface.cabecalho(
-        "Previsão",
-        "Qual a chance de o seu voo atrasar?",
-        "Escolha a rota, a companhia, a data e a hora. O modelo estima a chance de a partida "
-        "atrasar mais de 15 minutos, usando só o histórico publicado até 2 meses antes do voo.",
+        t("Previsão"),
+        t("Qual a chance de o seu voo atrasar?"),
+        t(
+            "Escolha a rota, a companhia, a data e a hora. O modelo estima a chance de a partida "
+            "atrasar mais de 15 minutos, usando só o histórico publicado até 2 meses antes do voo."
+        ),
         icone="aviao",
         meta=[
-            ("Modelo", "LightGBM"),
-            ("Voos de", f"{inicio:%d/%m/%Y} a {fim:%d/%m/%Y}"),
-            ("Histórico", "Até 2 meses antes"),
+            (t("Modelo"), "LightGBM"),
+            (
+                t("Voos de"),
+                t("{inicio} a {fim}", inicio=painel.data(inicio), fim=painel.data(fim)),
+            ),
+            (t("Histórico"), t("Até 2 meses antes")),
         ],
     )
     rotas = previsor.rotas()
@@ -399,35 +413,37 @@ with interface.pagina_protegida():
             col_cia, col_data = linha2[0], linha2[1]
             col_hora = linha2[2] if com_hora else None
         valido("origem", origens)
-        origem = col_origem.selectbox("Origem", origens, format_func=rotulo, **campo("origem"))
+        origem = col_origem.selectbox(t("Origem"), origens, format_func=rotulo, **campo("origem"))
         destinos = list(rotas.loc[rotas["origem"] == origem, "destino"])
         valido("destino", destinos)
-        destino = col_destino.selectbox("Destino", destinos, format_func=rotulo, **campo("destino"))
+        destino = col_destino.selectbox(
+            t("Destino"), destinos, format_func=rotulo, **campo("destino")
+        )
         # Os valores iniciais vão pela Session State (e não por value/index), como o resto do
         # formulário: assim o Streamlit não avisa que o campo tem dois valores iniciais.
         if not inicio <= st.session_state.get(prefixo + "data", hoje) <= fim:
             st.session_state[prefixo + "data"] = hoje
         st.session_state.setdefault(prefixo + "data", hoje)
         dia = col_data.date_input(
-            "Data do voo" if com_hora else "Semana a partir de",
+            t("Data do voo") if com_hora else t("Semana a partir de"),
             min_value=inicio,
             max_value=fim,
-            format="DD/MM/YYYY",
+            format="MM/DD/YYYY" if idioma.ingles() else "DD/MM/YYYY",
             **campo("data"),
         )
         cias = previsor.companhias_na_rota(origem, destino, dia)
         if not cias:
-            st.info("Nenhuma companhia voou essa rota nos 12 meses de histórico. Escolha outra.")
+            st.info(t("Nenhuma companhia voou essa rota nos 12 meses de histórico. Escolha outra."))
             st.stop()
         valido("cia", cias)
         cia = col_cia.selectbox(
-            "Companhia", cias, format_func=lambda c: nomes_cias.get(c, c), **campo("cia")
+            t("Companhia"), cias, format_func=lambda c: nomes_cias.get(c, c), **campo("cia")
         )
         hora = 0
         if com_hora:
             st.session_state.setdefault(prefixo + "hora", 10)
             hora = col_hora.selectbox(
-                "Hora prevista da partida",
+                t("Hora prevista da partida"),
                 range(24),
                 format_func=lambda h: f"{h:02d}:00",
                 **campo("hora"),
@@ -438,8 +454,9 @@ with interface.pagina_protegida():
         with interface.quadro("voo"):
             if exemplos:
                 st.pills(
-                    "Comece por um exemplo",
+                    t("Comece por um exemplo"),
                     list(exemplos),
+                    format_func=t,
                     key="exemplo",
                     on_change=aplicar_exemplo,
                 )
@@ -455,40 +472,51 @@ with interface.pagina_protegida():
         interface.html_bruto(cartao_do_voo(principal, cadastro, nomes_cias.get(voo.cia, voo.cia)))
         if principal["historico_defasado"]:
             interface.nota(
-                "A ANAC ainda não publicou os dados de 2 meses antes deste voo. O modelo usa o "
-                f"último mês publicado ({painel.nome_mes(previsor.ultimo_mes_publicado)}), um "
-                "histórico mais velho do que no treino: a previsão fica menos confiável."
+                t(
+                    "A ANAC ainda não publicou os dados de 2 meses antes deste voo. O modelo usa o "
+                    "último mês publicado ({mes}), um histórico mais velho do que no treino: a "
+                    "previsão fica menos confiável.",
+                    mes=painel.nome_mes(previsor.ultimo_mes_publicado),
+                )
             )
 
         # O resumo em uma frase: a chance contra a média e o fator que mais pesou.
         chance, media = principal["probabilidade"], principal["media_do_modelo"]
-        lado = "acima" if chance > media else "abaixo"
-        texto = (
-            f"A chance prevista é de <b>{e(painel.porcentagem(chance))}</b>, {lado} da média dos "
-            f"voos ({e(painel.porcentagem(media))})."
+        molde = (
+            "A chance prevista é de <b>{chance}</b>, acima da média dos voos ({media})."
+            if chance > media
+            else "A chance prevista é de <b>{chance}</b>, abaixo da média dos voos ({media})."
         )
+        texto = t(molde, chance=e(painel.porcentagem(chance)), media=e(painel.porcentagem(media)))
         temas = sorted(
             principal["aumentam"] + principal["diminuem"], key=lambda f: -abs(f["pontos"])
         )
         if temas:
-            verbo = "aumentou" if temas[0]["pontos"] > 0 else "reduziu"
-            texto += (
-                f" O que mais pesou foi <b>{e(temas[0]['tema'].lower())}</b>, que {verbo} a "
-                f"chance em {e(painel.decimal(abs(temas[0]['pontos']), 1))} p.p."
+            molde = (
+                " O que mais pesou foi <b>{tema}</b>, que aumentou a chance em {pontos} p.p."
+                if temas[0]["pontos"] > 0
+                else " O que mais pesou foi <b>{tema}</b>, que reduziu a chance em {pontos} p.p."
+            )
+            texto += t(
+                molde,
+                tema=e(t(temas[0]["tema"]).lower()),
+                pontos=e(painel.decimal(abs(temas[0]["pontos"]), 1)),
             )
         interface.resumo(texto)
 
         with interface.quadro("fatores"):
             interface.secao(
-                "O que mais pesou nesta previsão",
-                "Quanto a chance mudaria, em pontos percentuais, sem cada tema. Calculado com o "
-                "SHAP do próprio modelo, somado por tema.",
+                t("O que mais pesou nesta previsão"),
+                t(
+                    "Quanto a chance mudaria, em pontos percentuais, sem cada tema. Calculado com "
+                    "o SHAP do próprio modelo, somado por tema."
+                ),
             )
             interface.html_bruto(fatores(principal["aumentam"] + principal["diminuem"]))
 
         comparacao, e_se = st.columns(2, gap="medium")
         with comparacao, interface.quadro("companhias", altura="stretch"):
-            interface.secao("Outras companhias", "Mesma rota, data e horário.")
+            interface.secao(t("Outras companhias"), t("Mesma rota, data e horário."))
             ordenados = sorted(por_cia, key=lambda r: r["probabilidade"])
             interface.ranking(
                 [
@@ -502,19 +530,23 @@ with interface.pagina_protegida():
                 ],
                 maximo=max(max(r["probabilidade"] for r in por_cia), media) * 1.1,
                 cor=interface.APAGADO,
-                referencia=(media, f"Média dos voos: {painel.porcentagem(media)}"),
+                referencia=(media, t("Média dos voos: {media}", media=painel.porcentagem(media))),
                 chips=True,
                 destacar=painel.CODIGOS_IATA.get(voo.cia, voo.cia),
             )
             interface.nota(
-                "O mesmo voo com cada companhia: a diferença vem do histórico de cada uma na "
-                "rota, no aeroporto e na programação do dia."
+                t(
+                    "O mesmo voo com cada companhia: a diferença vem do histórico de cada uma na "
+                    "rota, no aeroporto e na programação do dia."
+                )
             )
         with e_se, interface.quadro("horarios", altura="stretch"):
             interface.secao(
-                "E se fosse em outro horário?",
-                "Mesma companhia, rota e data. Em cinza-claro, horários sem voos dessa rota no "
-                "histórico.",
+                t("E se fosse em outro horário?"),
+                t(
+                    "Mesma companhia, rota e data. Em cinza-claro, horários sem voos dessa rota "
+                    "no histórico."
+                ),
             )
             interface.grafico(grafico_por_hora(por_hora, voo.hora), altura=200)
 
@@ -523,23 +555,27 @@ with interface.pagina_protegida():
         inicio_teste, fim_teste = (pd.Timestamp(m).date() for m in metricas["periodo"])
         with interface.quadro("posicao"):
             interface.secao(
-                "Onde este voo fica entre todos",
-                f"Mais arriscado que {painel.porcentagem(abaixo, 0)} dos "
-                f"{painel.numero(metricas['voos'])} voos do período de teste "
-                f"({painel.nome_mes(inicio_teste)} a {painel.nome_mes(fim_teste)}), pela chance "
-                "prevista.",
+                t("Onde este voo fica entre todos"),
+                t(
+                    "Mais arriscado que {parcela} dos {voos} voos do período de teste ({inicio} "
+                    "a {fim}), pela chance prevista.",
+                    parcela=painel.porcentagem(abaixo, 0),
+                    voos=painel.numero(metricas["voos"]),
+                    inicio=painel.nome_mes(inicio_teste),
+                    fim=painel.nome_mes(fim_teste),
+                ),
             )
             base_faixas = alt.Chart(faixas).encode(
                 x=alt.X(
                     "rotulo:O",
-                    title="Chance prevista de atraso",
+                    title=t("Chance prevista de atraso"),
                     sort=list(faixas["rotulo"]),
                     axis=alt.Axis(labelAngle=0),
                 ),
                 y=alt.Y("parcela:Q", title=None, axis=alt.Axis(format="%", tickCount=4)),
                 tooltip=[
-                    alt.Tooltip("rotulo:N", title="Faixa"),
-                    alt.Tooltip("parcela_texto:N", title="Parcela dos voos"),
+                    alt.Tooltip("rotulo:N", title=t("Faixa")),
+                    alt.Tooltip("parcela_texto:N", title=t("Parcela dos voos")),
                 ],
             )
             interface.grafico(
@@ -555,7 +591,7 @@ with interface.pagina_protegida():
                 .mark_text(
                     dy=-24, fontWeight=700, color=interface.DESTAQUE, font=interface.FONTE_TITULO
                 )
-                .encode(text=alt.value("ESTE VOO")),
+                .encode(text=alt.value(t("ESTE VOO"))),
                 altura=220,
             )
         return parametros_do_voo(voo)
@@ -563,39 +599,57 @@ with interface.pagina_protegida():
     def mostrar_melhor_horario() -> dict:
         with interface.quadro("semana_filtros"):
             voo = escolher_voo(com_hora=False)
-        semana = chances_da_semana(voo.origem, voo.destino, voo.cia, voo.data).copy()
+        with st.spinner(t("Calculando a semana...")):
+            semana = chances_da_semana(voo.origem, voo.destino, voo.cia, voo.data).copy()
         semana["rotulo"] = [rotulo_do_dia(d) for d in semana["dia"]]
         semana["hora_texto"] = [f"{h:02d}:00" for h in semana["hora"]]
         semana["chance_texto"] = [painel.porcentagem(c) for c in semana["chance"]]
         parametros = parametros_do_voo(voo, com_hora=False)
         candidatos = semana[semana["com_voos"]]
         nome_cia = nomes_cias.get(voo.cia, voo.cia)
-        trecho = f"{cadastro.at[voo.origem, 'iata']} para {cadastro.at[voo.destino, 'iata']}"
+        trecho = t(
+            "{origem} para {destino}",
+            origem=cadastro.at[voo.origem, "iata"],
+            destino=cadastro.at[voo.destino, "iata"],
+        )
         if candidatos.empty:
             interface.aviso(
-                f"A rota {trecho} não teve voos em nenhum horário nos 12 meses de histórico: não "
-                "dá para comparar horários."
+                t(
+                    "A rota {trecho} não teve voos em nenhum horário nos 12 meses de histórico: "
+                    "não dá para comparar horários.",
+                    trecho=trecho,
+                )
             )
             return parametros
         melhor = candidatos.loc[candidatos["chance"].idxmin()]
         pior = candidatos.loc[candidatos["chance"].idxmax()]
 
         def quando(linha) -> str:
-            return f"{rotulo_do_dia(linha['dia'])} às {linha['hora_texto']}"
+            return t("{dia} às {hora}", dia=rotulo_do_dia(linha["dia"]), hora=linha["hora_texto"])
 
         interface.resumo(
-            f"Com a {e(nome_cia)}, de {e(trecho)}, na semana que começa em "
-            f"{e(f'{voo.data:%d/%m}')}: o horário com menor chance de atraso é "
-            f"<b>{e(quando(melhor))} ({e(melhor['chance_texto'])})</b>; o com maior chance, "
-            f"<b>{e(quando(pior))} ({e(pior['chance_texto'])})</b>."
+            t(
+                "Com a {cia}, de {trecho}, na semana que começa em {dia}: o horário com menor "
+                "chance de atraso é <b>{melhor} ({chance_melhor})</b>; o com maior chance, "
+                "<b>{pior} ({chance_pior})</b>.",
+                cia=e(nome_cia),
+                trecho=e(trecho),
+                dia=e(painel.dia_e_mes(voo.data)),
+                melhor=e(quando(melhor)),
+                chance_melhor=e(melhor["chance_texto"]),
+                pior=e(quando(pior)),
+                chance_pior=e(pior["chance_texto"]),
+            )
         )
         destaques = pd.DataFrame([melhor, pior]).assign(tipo=["melhor", "pior"])
         with interface.quadro("semana"):
             interface.secao(
-                "A semana hora a hora",
-                "A chance de atraso prevista para cada dia e hora de partida. Em cinza, horários "
-                "em que a rota não teve voos nos 12 meses de histórico (ficam fora da escolha do "
-                "melhor e do pior). Borda azul: o melhor horário; preta: o pior.",
+                t("A semana hora a hora"),
+                t(
+                    "A chance de atraso prevista para cada dia e hora de partida. Em cinza, "
+                    "horários em que a rota não teve voos nos 12 meses de histórico (ficam fora "
+                    "da escolha do melhor e do pior). Borda azul: o melhor horário; preta: o pior."
+                ),
             )
             interface.grafico(grade_da_semana(semana, destaques), altura=330)
 
@@ -603,7 +657,7 @@ with interface.pagina_protegida():
             st.session_state.update(data=melhor["dia"], hora=int(melhor["hora"]), modo="voo")
 
         st.button(
-            f"Ver o melhor horário em detalhe ({quando(melhor)})",
+            t("Ver o melhor horário em detalhe ({quando})", quando=quando(melhor)),
             icon=":material/arrow_forward:",
             on_click=detalhar,
             key="detalhar_melhor",
@@ -619,10 +673,10 @@ with interface.pagina_protegida():
             st.session_state["b_hora"] = 18 if st.session_state.get("hora", 10) != 18 else 7
         coluna_a, coluna_b = st.columns(2, gap="medium")
         with coluna_a, interface.quadro("voo_a"):
-            interface.secao("Voo A")
+            interface.secao(t("Voo A"))
             voo_a = escolher_voo(empilhado=True)
         with coluna_b, interface.quadro("voo_b"):
-            interface.secao("Voo B")
+            interface.secao(t("Voo B"))
             voo_b = escolher_voo("b_", empilhado=True)
         resultado_a, resultado_b = previsor.prever([voo_a, voo_b])
         cartoes = st.columns(2, gap="medium")
@@ -636,12 +690,15 @@ with interface.pagina_protegida():
 
         diferenca = (resultado_b["probabilidade"] - resultado_a["probabilidade"]) * 100
         if abs(diferenca) < 0.05:
-            frase = "Os dois voos têm praticamente a mesma chance de atraso."
+            frase = t("Os dois voos têm praticamente a mesma chance de atraso.")
         else:
             maior, menor = ("B", "A") if diferenca > 0 else ("A", "B")
-            frase = (
-                f"O voo <b>{maior}</b> tem <b>{e(painel.decimal(abs(diferenca), 1))} p.p.</b> a "
-                f"mais de chance de atraso que o voo {menor}."
+            frase = t(
+                "O voo <b>{maior}</b> tem <b>{pontos} p.p.</b> a mais de chance de atraso que o "
+                "voo {menor}.",
+                maior=maior,
+                menor=menor,
+                pontos=e(painel.decimal(abs(diferenca), 1)),
             )
         interface.resumo(frase)
 
@@ -655,9 +712,11 @@ with interface.pagina_protegida():
         )[:DIFERENCAS_MOSTRADAS]
         with interface.quadro("diferenca"):
             interface.secao(
-                "De onde vem a diferença",
-                "Para cada tema, quanto ele pesa a mais (ou a menos) no voo B do que no voo A, em "
-                "pontos percentuais (SHAP por tema).",
+                t("De onde vem a diferença"),
+                t(
+                    "Para cada tema, quanto ele pesa a mais (ou a menos) no voo B do que no voo A, "
+                    "em pontos percentuais (SHAP por tema)."
+                ),
             )
             interface.html_bruto(
                 fatores(
@@ -672,7 +731,11 @@ with interface.pagina_protegida():
     ler_link()
     st.session_state.setdefault("modo", "voo")
     modo = st.segmented_control(
-        "O que você quer ver", list(MODOS), format_func=MODOS.get, required=True, key="modo"
+        t("O que você quer ver"),
+        list(MODOS),
+        format_func=lambda m: t(MODOS[m]),
+        required=True,
+        key="modo",
     )
 
     if modo == "melhor":
@@ -682,19 +745,21 @@ with interface.pagina_protegida():
     else:
         parametros = mostrar_um_voo()
     parametros = {"modo": modo} | parametros
-    st.query_params.from_dict(parametros)
+    interface.parametros_na_url(parametros)
 
     url = st.context.url
     if url:
-        link = url.split("?")[0] + "?" + urlencode(parametros)
+        link = url.split("?")[0] + "?" + urlencode(interface.com_idioma(parametros))
         with interface.quadro("link"):
             interface.secao(
-                "Compartilhe esta previsão",
-                "O link abre o app com as mesmas escolhas.",
+                t("Compartilhe esta previsão"),
+                t("O link abre o app com as mesmas escolhas."),
             )
             interface.copiar_link(link)
 
     interface.nota(
-        "É uma probabilidade, não uma garantia: cerca de 15% dos voos atrasam. O modelo não vê "
-        "clima nem a rotação do avião. Confirme o horário com a companhia no dia do voo."
+        t(
+            "É uma probabilidade, não uma garantia: cerca de 15% dos voos atrasam. O modelo não "
+            "vê clima nem a rotação do avião. Confirme o horário com a companhia no dia do voo."
+        )
     )

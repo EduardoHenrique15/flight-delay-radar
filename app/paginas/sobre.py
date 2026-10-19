@@ -8,6 +8,7 @@ import pandas as pd
 import streamlit as st
 
 from fdr import config, interface, painel
+from fdr.idioma import t
 
 SEGMENTOS = {
     "companhia": "Companhia",
@@ -34,7 +35,7 @@ def grupos_do_segmento(segmento: str, linhas: list[dict]) -> pd.DataFrame:
         grupos["grupo"] = [painel.nome_mes(pd.Timestamp(m).date()) for m in grupos["codigo"]]
         grupos = grupos.sort_values("codigo")
     else:
-        grupos["grupo"] = [g[:1].upper() + g[1:] for g in grupos["codigo"]]
+        grupos["grupo"] = [t(g[:1].upper() + g[1:]) for g in grupos["codigo"]]
         grupos = grupos.sort_values("codigo", key=lambda c: c.str.extract(r"(\d+)h")[0].astype(int))
     return grupos.reset_index(drop=True)
 
@@ -67,10 +68,10 @@ def grafico_halteres(
                 "serie:N", scale=cores, title=None, legend=alt.Legend(orient="top", offset=4)
             ),
             tooltip=[
-                alt.Tooltip("grupo:N", title="Grupo"),
-                alt.Tooltip("serie:N", title="Série"),
-                alt.Tooltip("valor:Q", title="Valor", format=formato.replace("%", ".1%")),
-                alt.Tooltip("voos:Q", title="Voos no teste", format=",.0f"),
+                alt.Tooltip("grupo:N", title=t("Grupo")),
+                alt.Tooltip("serie:N", title=t("Série")),
+                alt.Tooltip("valor:Q", title=t("Valor"), format=formato.replace("%", ".1%")),
+                alt.Tooltip("voos:Q", title=t("Voos no teste"), format=",.0f"),
             ],
         )
     )
@@ -80,15 +81,16 @@ def grafico_halteres(
 def grafico_cobertura(modelo: pd.DataFrame, base: pd.DataFrame, fracao: float) -> alt.LayerChart:
     """A curva de ganho: a parcela dos atrasos pegos ao avisar os X% de voos de maior risco."""
     origem = pd.DataFrame({"fracao": [0.0], "cobertura": [0.0]})
+    nome_modelo, nome_base, ao_acaso = t("Modelo"), t("Baseline"), t("Ao acaso")
     curvas = pd.concat(
         [
-            pd.concat([origem, modelo]).assign(serie="Modelo"),
-            pd.concat([origem, base]).assign(serie="Baseline"),
-            pd.DataFrame({"fracao": [0.0, 0.5], "cobertura": [0.0, 0.5], "serie": "Ao acaso"}),
+            pd.concat([origem, modelo]).assign(serie=nome_modelo),
+            pd.concat([origem, base]).assign(serie=nome_base),
+            pd.DataFrame({"fracao": [0.0, 0.5], "cobertura": [0.0, 0.5], "serie": ao_acaso}),
         ]
     )
     cores = alt.Scale(
-        domain=["Modelo", "Baseline", "Ao acaso"],
+        domain=[nome_modelo, nome_base, ao_acaso],
         range=[interface.DESTAQUE, interface.COMPARACAO, interface.APAGADO],
     )
     linhas = (
@@ -97,13 +99,13 @@ def grafico_cobertura(modelo: pd.DataFrame, base: pd.DataFrame, fracao: float) -
         .encode(
             x=alt.X(
                 "fracao:Q",
-                title="Voos avisados (os de maior risco)",
+                title=t("Voos avisados (os de maior risco)"),
                 axis=alt.Axis(format="%", grid=True),
                 scale=alt.Scale(domain=[0, 0.5]),
             ),
             y=alt.Y(
                 "cobertura:Q",
-                title="Atrasos pegos",
+                title=t("Atrasos pegos"),
                 axis=alt.Axis(format="%"),
                 scale=alt.Scale(domain=[0, 1]),
             ),
@@ -111,12 +113,12 @@ def grafico_cobertura(modelo: pd.DataFrame, base: pd.DataFrame, fracao: float) -
                 "serie:N", scale=cores, title=None, legend=alt.Legend(orient="top", offset=4)
             ),
             strokeDash=alt.condition(
-                "datum.serie == 'Ao acaso'", alt.value([4, 4]), alt.value([1, 0])
+                alt.datum.serie == ao_acaso, alt.value([4, 4]), alt.value([1, 0])
             ),
             tooltip=[
-                alt.Tooltip("serie:N", title="Série"),
-                alt.Tooltip("fracao:Q", title="Voos avisados", format=".0%"),
-                alt.Tooltip("cobertura:Q", title="Atrasos pegos", format=".1%"),
+                alt.Tooltip("serie:N", title=t("Série")),
+                alt.Tooltip("fracao:Q", title=t("Voos avisados"), format=".0%"),
+                alt.Tooltip("cobertura:Q", title=t("Atrasos pegos"), format=".1%"),
             ],
         )
     )
@@ -136,14 +138,21 @@ def grafico_cobertura(modelo: pd.DataFrame, base: pd.DataFrame, fracao: float) -
 def mostrar_onde_erra(segmentos: dict) -> None:
     e = interface._e
     interface.secao(
-        "Onde o modelo erra",
-        "O mesmo teste, separado por grupos. O PR-AUC muda com a taxa de atraso de cada grupo; "
-        "por isso, compare o modelo com o baseline na mesma linha, e não uma linha com a outra.",
+        t("Onde o modelo erra"),
+        t(
+            "O mesmo teste, separado por grupos. O PR-AUC muda com a taxa de atraso de cada "
+            "grupo; por isso, compare o modelo com o baseline na mesma linha, e não uma linha com "
+            "a outra."
+        ),
     )
     disponiveis = [k for k in SEGMENTOS if segmentos.get(k)]
     st.session_state.setdefault("segmento", disponiveis[0])
     segmento = st.segmented_control(
-        "Separar por", disponiveis, format_func=SEGMENTOS.get, required=True, key="segmento"
+        t("Separar por"),
+        disponiveis,
+        format_func=lambda k: t(SEGMENTOS[k]),
+        required=True,
+        key="segmento",
     )
     grupos = grupos_do_segmento(segmento, segmentos[segmento])
     altura = 38 * len(grupos) + 40
@@ -151,36 +160,44 @@ def mostrar_onde_erra(segmentos: dict) -> None:
     perdeu = grupos[grupos["pr_auc"] <= grupos["pr_auc_baseline"]]
     grupos["desvio"] = grupos["taxa_prevista"] - grupos["taxa_real"]
     pior = grupos.loc[grupos["desvio"].abs().idxmax()]
-    sentido = "acima" if pior["desvio"] > 0 else "abaixo"
+    sentido = t("acima") if pior["desvio"] > 0 else t("abaixo")
     if perdeu.empty:
-        texto = f"O modelo supera o baseline em <b>todos os {len(grupos)} grupos</b> deste recorte."
+        texto = t(
+            "O modelo supera o baseline em <b>todos os {grupos} grupos</b> deste recorte.",
+            grupos=len(grupos),
+        )
     else:
         nomes = ", ".join(f"<b>{e(g)}</b>" for g in perdeu["grupo"])
-        texto = (
-            f"O modelo supera o baseline em {len(grupos) - len(perdeu)} de {len(grupos)} grupos; "
-            f"em {nomes}, não."
+        texto = t(
+            "O modelo supera o baseline em {venceu} de {grupos} grupos; em {nomes}, não.",
+            venceu=len(grupos) - len(perdeu),
+            grupos=len(grupos),
+            nomes=nomes,
         )
     pontos = painel.decimal(abs(pior["desvio"]) * 100, 1)
-    texto += (
-        f" O maior erro de calibração é em <b>{e(pior['grupo'])}</b>: previu "
-        f"{e(painel.porcentagem(pior['taxa_prevista']))} de atrasos, e foram "
-        f"{e(painel.porcentagem(pior['taxa_real']))} (a previsão ficou {e(pontos)} p.p. "
-        f"{sentido} do real)."
+    texto += " " + t(
+        "O maior erro de calibração é em <b>{grupo}</b>: previu {previsto} de atrasos, e foram "
+        "{real} (a previsão ficou {pontos} p.p. {sentido} do real).",
+        grupo=e(pior["grupo"]),
+        previsto=e(painel.porcentagem(pior["taxa_prevista"])),
+        real=e(painel.porcentagem(pior["taxa_real"])),
+        pontos=e(pontos),
+        sentido=sentido,
     )
     interface.resumo(texto)
 
     esquerda, direita = st.columns(2, gap="medium")
     with esquerda, interface.quadro("acerto_grupo", altura="stretch"):
         interface.secao(
-            "Acerto em cada grupo",
-            "PR-AUC do modelo e do baseline (maior é melhor).",
+            t("Acerto em cada grupo"),
+            t("PR-AUC do modelo e do baseline (maior é melhor)."),
         )
         interface.grafico(
             grafico_halteres(
                 grupos,
                 {
-                    "pr_auc_baseline": ("Baseline", interface.COMPARACAO),
-                    "pr_auc": ("Modelo", interface.DESTAQUE),
+                    "pr_auc_baseline": (t("Baseline"), interface.COMPARACAO),
+                    "pr_auc": (t("Modelo"), interface.DESTAQUE),
                 },
                 ".2f",
                 "PR-AUC",
@@ -189,37 +206,42 @@ def mostrar_onde_erra(segmentos: dict) -> None:
         )
     with direita, interface.quadro("calibracao_grupo", altura="stretch"):
         interface.secao(
-            "Atrasos previstos contra os reais",
-            "A taxa média prevista pelo modelo e a taxa real de atraso no grupo.",
+            t("Atrasos previstos contra os reais"),
+            t("A taxa média prevista pelo modelo e a taxa real de atraso no grupo."),
         )
         interface.grafico(
             grafico_halteres(
                 grupos,
                 {
-                    "taxa_real": ("Real", interface.PRETO),
-                    "taxa_prevista": ("Previsto", interface.DESTAQUE),
+                    "taxa_real": (t("Real"), interface.PRETO),
+                    "taxa_prevista": (t("Previsto"), interface.DESTAQUE),
                 },
                 "%",
-                "Voos com mais de 15 min de atraso",
+                t("Voos com mais de 15 min de atraso"),
             ),
             altura=altura,
         )
     interface.nota(
-        "Só grupos com pelo menos 1.000 voos no teste; aeroportos: os 10 com mais partidas."
+        t(
+            "Só grupos com pelo menos {minimo} voos no teste; aeroportos: os 10 com mais partidas.",
+            minimo=painel.numero(1000),
+        )
     )
 
 
 def mostrar_uso_pratico() -> None:
     e = interface._e
     interface.secao(
-        "Usar o modelo na prática",
-        "Uma regra simples: avisar os passageiros dos voos com maior risco previsto. Quanto mais "
-        "voos avisados, mais atrasos o aviso pega, mas mais avisos são alarme falso.",
+        t("Usar o modelo na prática"),
+        t(
+            "Uma regra simples: avisar os passageiros dos voos com maior risco previsto. Quanto "
+            "mais voos avisados, mais atrasos o aviso pega, mas mais avisos são alarme falso."
+        ),
     )
     caminho = config.PASTA_MODELOS / "uso_pratico.json"
     if not caminho.exists():
         interface.aviso(
-            "Falta o models/uso_pratico.json: rode python -m fdr.pipeline --stage pratica."
+            t("Falta o models/uso_pratico.json: rode python -m fdr.pipeline --stage pratica.")
         )
         return
     uso = interface.json_do_projeto("models/uso_pratico.json")
@@ -229,7 +251,7 @@ def mostrar_uso_pratico() -> None:
     with interface.quadro("alerta"):
         st.session_state.setdefault("fracao_alerta", FRACAO_INICIAL)
         porcento = st.slider(
-            "Avisar os voos de maior risco (% de todos os voos)",
+            t("Avisar os voos de maior risco (% de todos os voos)"),
             min_value=int(round(modelo["fracao"].min() * 100)),
             max_value=int(round(modelo["fracao"].max() * 100)),
             step=1,
@@ -242,53 +264,72 @@ def mostrar_uso_pratico() -> None:
         interface.numeros(
             [
                 interface.Numero(
-                    "Voos avisados",
+                    t("Voos avisados"),
                     painel.numero(linha["voos"]),
-                    f"de {painel.numero(uso['voos'])} no teste · chance a partir de "
-                    f"{painel.porcentagem(linha['limiar'])}",
+                    t(
+                        "de {voos} no teste · chance a partir de {limiar}",
+                        voos=painel.numero(uso["voos"]),
+                        limiar=painel.porcentagem(linha["limiar"]),
+                    ),
                 ),
                 interface.Numero(
-                    "Atrasaram, dos avisados",
+                    t("Atrasaram, dos avisados"),
                     painel.porcentagem(linha["precisao"]),
-                    f"{painel.decimal(lift, 1)}x a média ({painel.porcentagem(uso['taxa_real'])})"
-                    f" · baseline {painel.porcentagem(linha_base['precisao'])}",
-                    "A precisão do aviso: dos voos avisados, a parcela que atrasou de verdade.",
+                    t(
+                        "{lift}x a média ({media}) · baseline {baseline}",
+                        lift=painel.decimal(lift, 1),
+                        media=painel.porcentagem(uso["taxa_real"]),
+                        baseline=painel.porcentagem(linha_base["precisao"]),
+                    ),
+                    t("A precisão do aviso: dos voos avisados, a parcela que atrasou de verdade."),
                 ),
                 interface.Numero(
-                    "Atrasos pegos",
+                    t("Atrasos pegos"),
                     painel.porcentagem(linha["cobertura"]),
-                    f"de {painel.numero(uso['atrasos'])} atrasos · baseline "
-                    f"{painel.porcentagem(linha_base['cobertura'])}",
-                    "A cobertura do aviso: dos voos que atrasaram, a parcela que foi avisada.",
+                    t(
+                        "de {atrasos} atrasos · baseline {baseline}",
+                        atrasos=painel.numero(uso["atrasos"]),
+                        baseline=painel.porcentagem(linha_base["cobertura"]),
+                    ),
+                    t("A cobertura do aviso: dos voos que atrasaram, a parcela que foi avisada."),
                 ),
                 interface.Numero(
-                    "Alarmes falsos",
+                    t("Alarmes falsos"),
                     painel.porcentagem(1 - linha["precisao"]),
-                    "dos avisos, o voo saiu no horário",
+                    t("dos avisos, o voo saiu no horário"),
                 ),
             ]
         )
         alarmes = 1 - linha["precisao"]
         interface.resumo(
-            f"Avisando os <b>{porcento}%</b> de voos com maior risco, "
-            f"<b>{e(painel.porcentagem(linha['precisao']))}</b> deles atrasaram, "
-            f"{e(painel.decimal(lift, 1))} vezes a média, e o aviso pegou "
-            f"<b>{e(painel.porcentagem(linha['cobertura']))}</b> de todos os atrasos. "
-            f"Em troca, {e(painel.porcentagem(alarmes))} dos avisos seriam alarme falso. "
-            f"Com o baseline, a mesma regra pega {e(painel.porcentagem(linha_base['cobertura']))}"
-            " dos atrasos."
+            t(
+                "Avisando os <b>{porcento}%</b> de voos com maior risco, <b>{precisao}</b> deles "
+                "atrasaram, {lift} vezes a média, e o aviso pegou <b>{cobertura}</b> de todos os "
+                "atrasos. Em troca, {alarmes} dos avisos seriam alarme falso. Com o baseline, a "
+                "mesma regra pega {cobertura_base} dos atrasos.",
+                porcento=porcento,
+                precisao=e(painel.porcentagem(linha["precisao"])),
+                lift=e(painel.decimal(lift, 1)),
+                cobertura=e(painel.porcentagem(linha["cobertura"])),
+                alarmes=e(painel.porcentagem(alarmes)),
+                cobertura_base=e(painel.porcentagem(linha_base["cobertura"])),
+            )
         )
 
     with interface.quadro("curva_ganho"):
         interface.secao(
-            "Quantos atrasos o aviso pega",
-            "A curva de ganho no teste. Avisar ao acaso pega a mesma parcela dos atrasos que a "
-            "de voos avisados (a linha tracejada).",
+            t("Quantos atrasos o aviso pega"),
+            t(
+                "A curva de ganho no teste. Avisar ao acaso pega a mesma parcela dos atrasos que "
+                "a de voos avisados (a linha tracejada)."
+            ),
         )
         interface.grafico(grafico_cobertura(modelo, base, porcento / 100), altura=300)
     interface.nota(
-        "Do teste, usado uma única vez. Sem clima e sem a rotação do avião, o modelo erra muitos "
-        "atrasos: serve para priorizar, não para garantir."
+        t(
+            "Do teste, usado uma única vez. Sem clima e sem a rotação do avião, o modelo erra "
+            "muitos atrasos: serve para priorizar, não para garantir."
+        )
     )
 
 
@@ -301,105 +342,137 @@ with interface.pagina_protegida():
     inicio_teste, fim_teste = (pd.Timestamp(m).date() for m in teste["periodo"])
     inicio_treino, fim_treino = (pd.Timestamp(m).date() for m in metadados["treino"])
 
+    periodo_teste = t(
+        "{inicio} a {fim}", inicio=painel.nome_mes(inicio_teste), fim=painel.nome_mes(fim_teste)
+    )
     interface.cabecalho(
-        "Sobre o modelo",
-        "Como a previsão é feita, quanto ela acerta e onde ela erra",
-        "Um LightGBM treinado com os voos nacionais regulares, validado sempre no futuro e "
-        "comparado com um baseline simples. Todos os números abaixo vêm dos arquivos gerados "
-        "pelo pipeline.",
+        t("Sobre o modelo"),
+        t("Como a previsão é feita, quanto ela acerta e onde ela erra"),
+        t(
+            "Um LightGBM treinado com os voos nacionais regulares, validado sempre no futuro e "
+            "comparado com um baseline simples. Todos os números abaixo vêm dos arquivos gerados "
+            "pelo pipeline."
+        ),
         icone="info",
         meta=[
-            ("Algoritmo", "LightGBM"),
-            ("Voos no treino", painel.numero(metadados["voos_treino"])),
-            ("Teste", f"{painel.nome_mes(inicio_teste)} a {painel.nome_mes(fim_teste)}"),
+            (t("Algoritmo"), "LightGBM"),
+            (t("Voos no treino"), painel.numero(metadados["voos_treino"])),
+            (t("Teste"), periodo_teste),
         ],
     )
 
-    interface.secao("Como funciona")
+    interface.secao(t("Como funciona"))
     interface.etapas(
         [
             (
-                "O que prevê",
-                "A chance de um voo nacional regular partir com mais de 15 minutos de atraso.",
+                t("O que prevê"),
+                t("A chance de um voo nacional regular partir com mais de 15 minutos de atraso."),
             ),
             (
-                "Com o quê",
-                "Companhia, rota, data, hora, feriados e o histórico de atrasos até 2 meses "
-                "antes do voo. Um teste garante que nada do futuro entra.",
+                t("Com o quê"),
+                t(
+                    "Companhia, rota, data, hora, feriados e o histórico de atrasos até 2 meses "
+                    "antes do voo. Um teste garante que nada do futuro entra."
+                ),
             ),
             (
-                "Treino",
-                f"{painel.numero(metadados['voos_treino'])} voos, de "
-                f"{painel.nome_mes(inicio_treino)} a {painel.nome_mes(fim_treino)}. Escolhido "
-                "em 5 janelas de validação, contra o baseline e uma regressão logística.",
+                t("Treino"),
+                t(
+                    "{voos} voos, de {inicio} a {fim}. Escolhido em 5 janelas de validação, "
+                    "contra o baseline e uma regressão logística.",
+                    voos=painel.numero(metadados["voos_treino"]),
+                    inicio=painel.nome_mes(inicio_treino),
+                    fim=painel.nome_mes(fim_treino),
+                ),
             ),
             (
-                "Teste",
-                f"{painel.nome_mes(inicio_teste)} a {painel.nome_mes(fim_teste)}, "
-                f"{painel.numero(teste['voos'])} voos, usado uma única vez, depois de todas "
-                "as escolhas.",
+                t("Teste"),
+                t(
+                    "{periodo}, {voos} voos, usado uma única vez, depois de todas as escolhas.",
+                    periodo=periodo_teste,
+                    voos=painel.numero(teste["voos"]),
+                ),
             ),
         ]
     )
 
     def intervalo(nome: str, casas: int = 3) -> str:
         baixo, alto = teste["intervalo_95"][nome]
-        return f"IC 95%: {painel.decimal(baixo, casas)} a {painel.decimal(alto, casas)}"
+        return t(
+            "IC 95%: {baixo} a {alto}",
+            baixo=painel.decimal(baixo, casas),
+            alto=painel.decimal(alto, casas),
+        )
 
     ganho = teste["ganho_sobre_baseline"]["pr_auc"]
     ganho_baixo, ganho_alto = teste["ganho_sobre_baseline_intervalo_95"]["pr_auc"]
     lift = teste["lift_10pct"]
     interface.secao(
-        "Resultado no teste",
-        f"O baseline é a taxa histórica de atraso da rota no horário (PR-AUC "
-        f"{painel.decimal(baseline['pr_auc'])} no teste). O ganho do modelo é de "
-        f"{painel.decimal(ganho, sinal=True)}, com intervalo de 95% de "
-        f"{painel.decimal(ganho_baixo, sinal=True)} a {painel.decimal(ganho_alto, sinal=True)}: "
-        "pequeno, mas consistente.",
+        t("Resultado no teste"),
+        t(
+            "O baseline é a taxa histórica de atraso da rota no horário (PR-AUC {baseline} no "
+            "teste). O ganho do modelo é de {ganho}, com intervalo de 95% de {baixo} a {alto}: "
+            "pequeno, mas consistente.",
+            baseline=painel.decimal(baseline["pr_auc"]),
+            ganho=painel.decimal(ganho, sinal=True),
+            baixo=painel.decimal(ganho_baixo, sinal=True),
+            alto=painel.decimal(ganho_alto, sinal=True),
+        ),
     )
     interface.numeros(
         [
             interface.Numero(
                 "PR-AUC",
                 painel.decimal(teste["pr_auc"]),
-                f"{painel.decimal(ganho, sinal=True)} sobre o baseline · {intervalo('pr_auc')}",
+                t(
+                    "{ganho} sobre o baseline · {intervalo}",
+                    ganho=painel.decimal(ganho, sinal=True),
+                    intervalo=intervalo("pr_auc"),
+                ),
                 interface.AJUDA["pr_auc"],
             ),
             interface.Numero(
                 "ROC-AUC",
                 painel.decimal(teste["roc_auc"]),
                 intervalo("roc_auc"),
-                "Chance de um voo que atrasou receber risco maior que um que não atrasou.",
+                t("Chance de um voo que atrasou receber risco maior que um que não atrasou."),
             ),
             interface.Numero(
-                "Calibração (ECE)",
+                t("Calibração (ECE)"),
                 f"{painel.decimal(teste['ece'] * 100, 1)} p.p.",
-                "a probabilidade prevista bate com a taxa real",
+                t("a probabilidade prevista bate com a taxa real"),
                 interface.AJUDA["ece"],
             ),
             interface.Numero(
-                "Top 10% de risco",
+                t("Top 10% de risco"),
                 painel.porcentagem(lift["precisao"]),
-                f"atrasaram · {painel.decimal(lift['lift'], 2)}x a média · baseline "
-                f"{painel.porcentagem(teste['lift_10pct_baseline']['precisao'])}",
-                "Dos 10% de voos com maior risco previsto, a parcela que atrasou de verdade.",
+                t(
+                    "atrasaram · {lift}x a média · baseline {baseline}",
+                    lift=painel.decimal(lift["lift"], 2),
+                    baseline=painel.porcentagem(teste["lift_10pct_baseline"]["precisao"]),
+                ),
+                t("Dos 10% de voos com maior risco previsto, a parcela que atrasou de verdade."),
             ),
         ]
     )
-    interface.nota("Intervalos de 95% por bootstrap pareado por dia.")
+    interface.nota(t("Intervalos de 95% por bootstrap pareado por dia."))
 
     esquerda, direita = st.columns(2, gap="medium")
     with esquerda, interface.quadro("temas", altura="stretch"):
         interface.secao(
-            "O que mais pesa nas previsões",
-            "Efeito médio de cada tema na chance de atraso, em pontos percentuais (SHAP).",
+            t("O que mais pesa nas previsões"),
+            t("Efeito médio de cada tema na chance de atraso, em pontos percentuais (SHAP)."),
         )
         temas = pd.DataFrame(explicacao["por_tema"])
+        temas["tema"] = [t(tema) for tema in temas["tema"]]
         temas["texto"] = [f"{painel.decimal(v, 1)} p.p." for v in temas["pontos_medios_abs"]]
         barras = alt.Chart(temas).encode(
-            x=alt.X("pontos_medios_abs:Q", title="Pontos percentuais", axis=alt.Axis(grid=True)),
+            x=alt.X("pontos_medios_abs:Q", title=t("Pontos percentuais"), axis=alt.Axis(grid=True)),
             y=alt.Y("tema:N", sort="-x", title=None, axis=alt.Axis(labelLimit=240)),
-            tooltip=[alt.Tooltip("tema:N", title="Tema"), alt.Tooltip("texto:N", title="Efeito")],
+            tooltip=[
+                alt.Tooltip("tema:N", title=t("Tema")),
+                alt.Tooltip("texto:N", title=t("Efeito")),
+            ],
         )
         interface.grafico(
             barras.mark_bar(color=interface.DESTAQUE, size=14)
@@ -410,12 +483,13 @@ with interface.pagina_protegida():
         )
     with direita, interface.quadro("calibracao", altura="stretch"):
         interface.secao(
-            "Probabilidade prevista contra a taxa real",
-            "No teste, por faixas de risco. Na diagonal, o previsto bate com o real.",
+            t("Probabilidade prevista contra a taxa real"),
+            t("No teste, por faixas de risco. Na diagonal, o previsto bate com o real."),
         )
         curva = pd.DataFrame(teste["curva_calibracao"])
         curva["faixa_texto"] = [
-            f"{painel.porcentagem(a, 0)} a {painel.porcentagem(b, 0)}" for a, b in curva["faixa"]
+            t("{inicio} a {fim}", inicio=painel.porcentagem(a, 0), fim=painel.porcentagem(b, 0))
+            for a, b in curva["faixa"]
         ]
         curva = curva.drop(columns="faixa")
         limite = float(max(curva["prevista_media"].max(), curva["taxa_real"].max())) * 1.05
@@ -427,21 +501,21 @@ with interface.pagina_protegida():
         pontos = alt.Chart(curva).encode(
             x=alt.X(
                 "prevista_media:Q",
-                title="Prevista pelo modelo",
+                title=t("Prevista pelo modelo"),
                 axis=alt.Axis(format="%", grid=True),
                 scale=alt.Scale(domain=[0, limite]),
             ),
             y=alt.Y(
                 "taxa_real:Q",
-                title="Taxa real de atraso",
+                title=t("Taxa real de atraso"),
                 axis=alt.Axis(format="%"),
                 scale=alt.Scale(domain=[0, limite]),
             ),
             tooltip=[
-                alt.Tooltip("faixa_texto:N", title="Faixa"),
-                alt.Tooltip("prevista_media:Q", title="Prevista", format=".1%"),
-                alt.Tooltip("taxa_real:Q", title="Real", format=".1%"),
-                alt.Tooltip("voos:Q", title="Voos", format=",.0f"),
+                alt.Tooltip("faixa_texto:N", title=t("Faixa")),
+                alt.Tooltip("prevista_media:Q", title=t("Prevista"), format=".1%"),
+                alt.Tooltip("taxa_real:Q", title=t("Real"), format=".1%"),
+                alt.Tooltip("voos:Q", title=t("Voos"), format=",.0f"),
             ],
         )
         interface.grafico(
@@ -450,55 +524,74 @@ with interface.pagina_protegida():
             + pontos.mark_point(color=interface.DESTAQUE, stroke="white", strokeWidth=2),
             altura=34 * len(temas),
         )
-        interface.nota("Acima da diagonal, o modelo subestima o risco: acontece nas faixas altas.")
+        interface.nota(
+            t("Acima da diagonal, o modelo subestima o risco: acontece nas faixas altas.")
+        )
 
     mostrar_onde_erra(teste["segmentos"])
     mostrar_uso_pratico()
 
-    interface.secao("Limitações")
+    interface.secao(t("Limitações"))
     interface.etapas(
         [
-            ("Sem clima", "O VRA não traz o tempo, uma das maiores causas de atraso."),
+            (t("Sem clima"), t("O VRA não traz o tempo, uma das maiores causas de atraso.")),
             (
-                "Sem a rotação do avião",
-                "O atraso do voo anterior do mesmo avião não entra; a posição do voo no dia da "
-                "companhia é só uma aproximação.",
+                t("Sem a rotação do avião"),
+                t(
+                    "O atraso do voo anterior do mesmo avião não entra; a posição do voo no dia "
+                    "da companhia é só uma aproximação."
+                ),
             ),
             (
-                "Risco alto subestimado",
-                "Nas faixas de maior risco a taxa real passa da prevista, e companhias pequenas "
-                "têm mais erro.",
+                t("Risco alto subestimado"),
+                t(
+                    "Nas faixas de maior risco a taxa real passa da prevista, e companhias "
+                    "pequenas têm mais erro."
+                ),
             ),
             (
-                "Só atraso",
-                "Cancelados ficam de fora. Não serve para garantir um voo, ranquear companhias "
-                "ou pedir indenização.",
+                t("Só atraso"),
+                t(
+                    "Cancelados ficam de fora. Não serve para garantir um voo, ranquear "
+                    "companhias ou pedir indenização."
+                ),
             ),
         ],
         limites=True,
     )
 
-    interface.secao("Quem fez")
+    interface.secao(t("Quem fez"))
     with interface.quadro("autor"):
+        e = interface._e
         interface.html_bruto(
             '<div class="fdr-autor"><div class="iniciais">EH</div><div>'
-            f'<div class="nome">{interface._e(interface.AUTOR)}</div>'
-            '<div class="texto">Projeto pessoal, de ponta a ponta: o download dos dados da ANAC, '
-            "o warehouse com testes de qualidade, o modelo validado no tempo, o monitoramento "
-            "com regra de retreino, o assistente com IA e este app.</div>"
-            '<div class="vaga"><i></i>Aberto a vagas em Ciência de Dados, Machine Learning e '
-            "IA</div></div></div>"
+            f'<div class="nome">{e(interface.AUTOR)}</div>'
+            '<div class="texto">'
+            + e(
+                t(
+                    "Projeto pessoal, de ponta a ponta: o download dos dados da ANAC, o warehouse "
+                    "com testes de qualidade, o modelo validado no tempo, o monitoramento com "
+                    "regra de retreino, o assistente com IA e este app."
+                )
+            )
+            + '</div><div class="vaga"><i></i>'
+            + e(t("Aberto a vagas em Ciência de Dados, Machine Learning e IA"))
+            + "</div></div></div>"
         )
         with st.container(key="placas_contato"):
             contato = st.columns(2, gap="small")
             contato[0].page_link(
-                interface.LINKEDIN, label="Falar comigo no LinkedIn", icon=":material/north_east:"
+                interface.LINKEDIN,
+                label=t("Falar comigo no LinkedIn"),
+                icon=":material/north_east:",
             )
             contato[1].page_link(
-                interface.GITHUB, label="Outros projetos no GitHub", icon=":material/north_east:"
+                interface.GITHUB,
+                label=t("Outros projetos no GitHub"),
+                icon=":material/north_east:",
             )
 
-    interface.secao("Para saber mais")
+    interface.secao(t("Para saber mais"))
     with st.container(key="placas"):
         colunas = st.columns(4, gap="small")
         for coluna, (titulo, caminho) in zip(
@@ -512,5 +605,5 @@ with interface.pagina_protegida():
             strict=True,
         ):
             coluna.page_link(
-                f"{interface.REPOSITORIO}{caminho}", label=titulo, icon=":material/north_east:"
+                f"{interface.REPOSITORIO}{caminho}", label=t(titulo), icon=":material/north_east:"
             )

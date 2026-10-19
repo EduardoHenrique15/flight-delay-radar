@@ -6,11 +6,14 @@ gráficos e tratamento de erros.
   e o traceback vai só para o log.
 - A chave do Gemini vem dos secrets do Streamlit ou da variável GEMINI_API_KEY. Sem chave, só o
   assistente muda (modo de demonstração).
+- Idioma: português ou inglês (fdr.idioma). O seletor fica no topo; `?lang=en` na URL abre em
+  inglês, e `parametros_na_url` mantém o idioma quando uma página escreve a URL.
 
 Identidade visual: sinalização de aeroporto. Detalhes no bloco "Identidade visual" abaixo. O tema
 do Streamlit está em .streamlit/config.toml, e o tema dos gráficos (Altair) é registrado aqui.
 """
 
+import base64
 import html
 import logging
 import os
@@ -25,8 +28,9 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as componentes
 
-from fdr import config, painel
+from fdr import config, idioma, painel
 from fdr.assistant.agent import Assistente, criar_assistente
+from fdr.idioma import t
 from fdr.previsao import Previsor
 
 log = logging.getLogger("fdr.app")
@@ -92,17 +96,46 @@ PICTOGRAMAS = {
     "2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z",
 }
 
-AJUDA = {
-    "pr_auc": "PR-AUC: mede se o modelo põe os voos que atrasam no topo da lista de risco. "
-    "Vai de 0 a 1; um palpite ao acaso fica perto da taxa de atraso (cerca de 0,15).",
-    "brier": "Brier: erro médio entre a probabilidade prevista e o que aconteceu (0 ou 1). "
-    "Quanto menor, melhor.",
-    "ece": "ECE: diferença média entre a probabilidade prevista e a taxa real, por faixas. "
-    'Mede se "20% de chance" quer dizer 20% mesmo.',
-    "psi": "PSI: quanto a distribuição de uma variável mudou em relação ao treino. Abaixo de "
-    "0,10: estável; de 0,10 a 0,25: atenção; acima de 0,25: mudança forte.",
-    "baseline": "Baseline: a taxa de atraso da rota naquele horário nos últimos 12 meses. É a "
-    "régua que o modelo precisa vencer.",
+
+AJUDA = idioma.Traduzidos(
+    {
+        "pr_auc": "PR-AUC: mede se o modelo põe os voos que atrasam no topo da lista de risco. "
+        "Vai de 0 a 1; um palpite ao acaso fica perto da taxa de atraso (cerca de 0,15).",
+        "brier": "Brier: erro médio entre a probabilidade prevista e o que aconteceu (0 ou 1). "
+        "Quanto menor, melhor.",
+        "ece": "ECE: diferença média entre a probabilidade prevista e a taxa real, por faixas. "
+        'Mede se "20% de chance" quer dizer 20% mesmo.',
+        "psi": "PSI: quanto a distribuição de uma variável mudou em relação ao treino. Abaixo de "
+        "0,10: estável; de 0,10 a 0,25: atenção; acima de 0,25: mudança forte.",
+        "baseline": "Baseline: a taxa de atraso da rota naquele horário nos últimos 12 meses. É a "
+        "régua que o modelo precisa vencer.",
+    }
+)
+
+# As bandeiras do seletor de idioma, em SVG (a bandeira em emoji não aparece no Windows).
+_BANDEIRA_BR = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14">'
+    '<rect width="20" height="14" fill="#009c3b"/>'
+    '<path d="M10 1.6 18.4 7 10 12.4 1.6 7z" fill="#ffdf00"/>'
+    '<circle cx="10" cy="7" r="3.5" fill="#002776"/>'
+    '<path d="M6.6 6.2a8 8 0 0 1 6.8 1.9" stroke="#fff" stroke-width=".6" fill="none"/></svg>'
+)
+_BANDEIRA_US = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19 13">'
+    '<rect width="19" height="13" fill="#fff"/>'
+    + "".join(f'<rect y="{2 * i}" width="19" height="1" fill="#b22234"/>' for i in range(7))
+    + '<rect width="7.6" height="7" fill="#3c3b6e"/>'
+    + "".join(
+        f'<circle cx="{0.95 + 1.27 * c + 0.63 * (r % 2):.2f}" cy="{0.8 + 1.1 * r:.2f}" '
+        'r=".28" fill="#fff"/>'
+        for r in range(6)
+        for c in range(6 - r % 2)
+    )
+    + "</svg>"
+)
+BANDEIRAS = {
+    codigo: "data:image/svg+xml;base64," + base64.b64encode(svg.encode()).decode()
+    for codigo, svg in (("pt", _BANDEIRA_BR), ("en", _BANDEIRA_US))
 }
 
 # A largura total da página: as faixas e o rodapé saem do contêiner e vão de ponta a ponta com o
@@ -133,11 +166,11 @@ header[data-testid="stHeader"] {{ background: {PRETO}; border-bottom: 3px solid 
     color: #c9ced6 !important; font-family: {FONTE_TITULO}; font-weight: 600;
     text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.84rem;
 }}
-/* Os links do topo param antes do selo "Dados até ..." (à direita); o que não cabe vai para o
-   botão "Mais", em vez de encostar no selo. */
-header[data-testid="stHeader"] .rc-overflow {{ max-width: calc(100% - 290px - 230px); gap: 2px; }}
-@media (max-width: 1100px) {{
-    header[data-testid="stHeader"] .rc-overflow {{ max-width: calc(100% - 290px - 40px); }}
+/* Os links do topo param antes do seletor de idioma e do selo "Dados até ..." (à direita); o que
+   não cabe vai para o botão "Mais", em vez de encostar neles. */
+header[data-testid="stHeader"] .rc-overflow {{ max-width: calc(100% - 290px - 110px); gap: 2px; }}
+@media (min-width: 1440px) {{
+    header[data-testid="stHeader"] .rc-overflow {{ max-width: calc(100% - 290px - 330px); }}
 }}
 [data-testid="stTopNavLink"] {{
     padding-left: 0.6rem !important; padding-right: 0.6rem !important;
@@ -150,14 +183,48 @@ header[data-testid="stHeader"] .rc-overflow {{ max-width: calc(100% - 290px - 23
 [data-testid="stTopNavLink"][aria-current="page"] p {{ color: {PRETO} !important; }}
 [data-testid="stHeader"] button svg {{ color: #c9ced6; }}
 .fdr-topo {{
-    position: fixed; top: 0; right: 28px; height: 3.5rem; z-index: 999991; display: flex;
+    position: fixed; top: 0; right: 124px; height: 3.5rem; z-index: 999991; display: flex;
     align-items: center; gap: 8px; font-family: {FONTE_TITULO}; font-size: 0.78rem;
     font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #9aa1ab;
     pointer-events: none;
 }}
 .fdr-topo i {{ width: 8px; height: 8px; background: #4fd88a; display: inline-block;
     box-shadow: 0 0 0 3px rgba(79, 216, 138, 0.2); }}
-@media (max-width: 1100px) {{ .fdr-topo {{ display: none; }} }}
+/* O selo "Dados até" só aparece em telas largas: abaixo disso, o espaço fica para o menu */
+@media (max-width: 1439px) {{ .fdr-topo {{ display: none; }} }}
+/* O seletor de idioma: as bandeiras do Brasil e dos Estados Unidos, fixas no canto direito da
+   barra do topo; no celular, acima do conteúdo (a barra do topo já tem a marca e o menu). O
+   texto PT/EN continua no botão (para leitores de tela), mas fica invisível. */
+.st-key-idioma_seletor {{
+    position: fixed; top: 0.85rem; right: 24px; z-index: 999992; width: auto !important;
+}}
+[data-testid="stLayoutWrapper"]:has(> .st-key-idioma_seletor) {{ margin-bottom: -1rem; }}
+.st-key-idioma_seletor [role="radiogroup"] {{ gap: 6px; }}
+.st-key-idioma_seletor button[data-variant="segmented_control"] {{
+    min-height: 0 !important; width: 34px; height: 24px; padding: 0 !important;
+    border: 2px solid transparent !important; border-radius: 3px !important;
+    background: center / 28px 19px no-repeat !important; opacity: 0.45;
+}}
+.st-key-idioma_seletor button[data-variant="segmented_control"]:nth-of-type(1) {{
+    background-image: url("{BANDEIRAS["pt"]}") !important;
+}}
+.st-key-idioma_seletor button[data-variant="segmented_control"]:nth-of-type(2) {{
+    background-image: url("{BANDEIRAS["en"]}") !important;
+}}
+.st-key-idioma_seletor button[data-variant="segmented_control"] p {{ font-size: 0 !important; }}
+.st-key-idioma_seletor button[data-variant="segmented_control"]:hover {{ opacity: 0.85; }}
+.st-key-idioma_seletor button[data-variant="segmented_control"][aria-checked="true"] {{
+    opacity: 1; border-color: {AMARELO} !important;
+}}
+@media (max-width: 760px) {{
+    .st-key-idioma_seletor {{ position: static; margin: 0 0 0 auto; }}
+    [data-testid="stLayoutWrapper"]:has(> .st-key-idioma_seletor) {{
+        margin-bottom: 0; display: flex; justify-content: flex-end;
+    }}
+    .st-key-idioma_seletor button[data-variant="segmented_control"][aria-checked="true"] {{
+        border-color: {PRETO} !important;
+    }}
+}}
 
 /* Faixa de título: de ponta a ponta, com o pictograma num quadro amarelo */
 .fdr-faixa {{
@@ -743,14 +810,51 @@ def configurar_pagina() -> None:
     )
     st.logo(str(PASTA_ESTATICA / "logo.svg"), size="large", link=REPOSITORIO)
     st.markdown(CSS, unsafe_allow_html=True)
+    configurar_idioma()
     try:
         ultimo = painel.nome_mes(date.fromisoformat(manifest()["ultimo_mes"]))
         st.markdown(
-            f'<div class="fdr-topo"><i></i>Dados até {_e(ultimo)}</div>',
+            f'<div class="fdr-topo"><i></i>{_e(t("Dados até {mes}", mes=ultimo))}</div>',
             unsafe_allow_html=True,
         )
     except Exception:  # sem dados, o aviso do topo some; as páginas mostram o erro
         log.exception("Sem o manifest dos marts")
+
+
+def configurar_idioma() -> None:
+    """O seletor PT/EN no topo. Na primeira execução da sessão, o idioma vem da URL (?lang=en)."""
+    if "idioma" not in st.session_state:
+        da_url = st.query_params.get("lang")
+        st.session_state["idioma"] = da_url if da_url in idioma.IDIOMAS else idioma.PADRAO
+    with st.container(key="idioma_seletor"):
+        st.segmented_control(
+            "Idioma / Language",
+            list(idioma.IDIOMAS),
+            format_func=idioma.IDIOMAS.get,
+            key="idioma",
+            required=True,
+            label_visibility="collapsed",
+        )
+    idioma.definir(st.session_state["idioma"])
+    if idioma.ingles():  # o botão das páginas que não cabem no menu (ver CSS: "Mais")
+        st.markdown(
+            '<style>[data-testid="stTopNavSection"] p::after { content: "More"; }</style>',
+            unsafe_allow_html=True,
+        )
+    parametros_na_url(dict(st.query_params))
+
+
+def com_idioma(parametros: dict[str, str]) -> dict[str, str]:
+    """Os parâmetros de um link do app, com o idioma (?lang=en) quando não é o português."""
+    parametros = {k: v for k, v in parametros.items() if k != "lang"}
+    return parametros | ({"lang": idioma.atual()} if idioma.ingles() else {})
+
+
+def parametros_na_url(parametros: dict[str, str]) -> None:
+    """Escreve os parâmetros na URL (substituindo os que havia), mantendo o idioma."""
+    novos = com_idioma(parametros)
+    if dict(st.query_params) != novos:
+        st.query_params.from_dict(novos)
 
 
 # Componentes -------------------------------------------------------------------------------------
@@ -919,10 +1023,23 @@ def painel_de_partidas(partidas: list[Partida], dia: str, legenda: list[tuple[st
             f"<td><span class='situacao' style='color:{cor}'>{icone_situacao(p.situacao, cor)}"
             f"<span class='rotulo'>{_e(p.texto_situacao)}</span></span></td></tr>"
         )
+    colunas = [
+        ("", "Partida"),
+        ("opcional", "Voo"),
+        ("", "De"),
+        ("", "Para"),
+        ("opcional", "Destino"),
+        ("opcional", "Companhia"),
+        ("chance", "Chance"),
+        ("", "Previsão"),
+    ]
     cabecalho_tabela = (
-        "<tr><th>Partida</th><th class='opcional'>Voo</th><th>De</th><th>Para</th>"
-        "<th class='opcional'>Destino</th><th class='opcional'>Companhia</th>"
-        "<th class='chance'>Chance</th><th>Previsão</th></tr>"
+        "<tr>"
+        + "".join(
+            f"<th class='{classe}'>{_e(t(nome))}</th>" if classe else f"<th>{_e(t(nome))}</th>"
+            for classe, nome in colunas
+        )
+        + "</tr>"
     )
     itens_legenda = "".join(
         f"<span style='color:{SITUACAO_NO_PAINEL[s]}'>{icone_situacao(s, SITUACAO_NO_PAINEL[s])}"
@@ -931,8 +1048,10 @@ def painel_de_partidas(partidas: list[Partida], dia: str, legenda: list[tuple[st
     )
     st.markdown(
         f'<div class="fdr-painel"><div class="fdr-painel-topo">'
-        f'<div class="nome">{pictograma("partidas")}Partidas <small>/ Departures</small></div>'
-        f'<div class="dia">{_e(dia)}<small>Chance de atraso prevista pelo modelo</small></div>'
+        f'<div class="nome">{pictograma("partidas")}{_e(t("Partidas"))} '
+        f"<small>{_e(t('/ Departures'))}</small></div>"
+        f'<div class="dia">{_e(dia)}<small>{_e(t("Chance de atraso prevista pelo modelo"))}'
+        "</small></div>"
         f'</div><div class="fdr-painel-tabela"><table><thead>{cabecalho_tabela}</thead>'
         f"<tbody>{''.join(linhas)}</tbody></table></div>"
         f'<div class="fdr-painel-legenda">{itens_legenda}</div></div>',
@@ -954,7 +1073,7 @@ def legenda_do_mapa(minimo: float, maximo: float, tamanho: str, rampa: list[str]
     return (
         f'<div class="fdr-legenda-mapa"><span class="rampa">{_e(painel.porcentagem(minimo, 0))}'
         f'<i style="background:linear-gradient(90deg, {", ".join(rampa)})"></i>'
-        f"{_e(painel.porcentagem(maximo, 0))} com atraso</span>"
+        f"{_e(t('{taxa} com atraso', taxa=painel.porcentagem(maximo, 0)))}</span>"
         f'<span class="tamanho"><b style="width:8px;height:8px"></b>'
         f'<b style="width:16px;height:16px"></b><b style="width:26px;height:26px"></b>'
         f"{_e(tamanho)}</span></div>"
@@ -1027,6 +1146,8 @@ def copiar_link(link: str) -> None:
     área de transferência do navegador e, se ela não estiver disponível (por exemplo, fora do
     https), seleciona o texto e copia do jeito antigo."""
     seguro = html.escape(link, quote=True)
+    rotulo, copiado = html.escape(t("Copiar link")), html.escape(t("Copiado ✓"))
+    manual = html.escape(t("Use Ctrl+C"))
     componentes.html(
         f"""
 <div style="display:flex;gap:8px;font-family:Barlow,'Segoe UI',system-ui,sans-serif">
@@ -1037,22 +1158,22 @@ def copiar_link(link: str) -> None:
   <button id="copiar" type="button"
     style="flex:none;padding:0 18px;border:none;border-radius:2px;background:{AMARELO};
     color:{PRETO};font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;
-    cursor:pointer">Copiar link</button>
+    cursor:pointer">{rotulo}</button>
 </div>
 <script>
 const campo = document.getElementById("link"), botao = document.getElementById("copiar");
 function avisar(texto) {{
   botao.textContent = texto;
-  setTimeout(() => {{ botao.textContent = "Copiar link"; }}, 2000);
+  setTimeout(() => {{ botao.textContent = "{rotulo}"; }}, 2000);
 }}
 function jeitoAntigo() {{
   campo.select();
-  try {{ avisar(document.execCommand("copy") ? "Copiado ✓" : "Use Ctrl+C"); }}
-  catch (e) {{ avisar("Use Ctrl+C"); }}
+  try {{ avisar(document.execCommand("copy") ? "{copiado}" : "{manual}"); }}
+  catch (e) {{ avisar("{manual}"); }}
 }}
 botao.addEventListener("click", () => {{
   if (navigator.clipboard && window.isSecureContext) {{
-    navigator.clipboard.writeText(campo.value).then(() => avisar("Copiado ✓"), jeitoAntigo);
+    navigator.clipboard.writeText(campo.value).then(() => avisar("{copiado}"), jeitoAntigo);
   }} else {{
     jeitoAntigo();
   }}
@@ -1076,6 +1197,12 @@ def html_bruto(conteudo: str) -> None:
     st.markdown(conteudo, unsafe_allow_html=True)
 
 
+RODAPE_DESCRICAO = (
+    "Pontualidade dos voos nacionais com os dados públicos da ANAC, previsão de atraso com "
+    "LightGBM validada no tempo, monitoramento mês a mês e um assistente que responde em SQL."
+)
+
+
 def rodape() -> None:
     """O rodapé de ponta a ponta, igual em todas as páginas."""
     links_projeto = [
@@ -1094,21 +1221,20 @@ def rodape() -> None:
 
     def lista(itens: list[tuple[str, str]]) -> str:
         return "".join(
-            f'<a href="{_e(url)}" target="_blank" rel="noopener">{_e(t)}</a>' for t, url in itens
+            f'<a href="{_e(url)}" target="_blank" rel="noopener">{_e(t(texto))}</a>'
+            for texto, url in itens
         )
 
     st.markdown(
         f'<div class="fdr-rodape"><div class="fdr-rodape-grade"><div>'
         f'<div class="marca"><span>{pictograma("partidas")}</span>Flight Delay Radar</div>'
-        f"<p>Pontualidade dos voos nacionais com os dados públicos da ANAC, previsão de atraso "
-        f"com LightGBM validada no tempo, monitoramento mês a mês e um assistente que responde "
-        f"em SQL.</p><p>Projeto de {_e(AUTOR)}. "
-        f'<span class="vaga">Aberto a vagas em Ciência de Dados, Machine Learning e IA.</span>'
-        f'</p><div class="contato"><a href="{_e(LINKEDIN)}" target="_blank" rel="noopener">'
+        f"<p>{_e(t(RODAPE_DESCRICAO))}</p><p>{_e(t('Projeto de {autor}.', autor=AUTOR))} "
+        f'<span class="vaga">{_e(t("Aberto a vagas em Ciência de Dados, Machine Learning e IA."))}'
+        f'</span></p><div class="contato"><a href="{_e(LINKEDIN)}" target="_blank" rel="noopener">'
         f'LinkedIn</a><a href="{_e(GITHUB)}" target="_blank" rel="noopener">GitHub</a></div>'
         f"</div>"
-        f"<div><h4>Projeto</h4>{lista(links_projeto)}</div>"
-        f"<div><h4>Dados</h4>{lista(links_dados)}</div></div></div>",
+        f"<div><h4>{_e(t('Projeto'))}</h4>{lista(links_projeto)}</div>"
+        f"<div><h4>{_e(t('Dados'))}</h4>{lista(links_dados)}</div></div></div>",
         unsafe_allow_html=True,
     )
 
@@ -1122,8 +1248,10 @@ def pagina_protegida() -> Iterator[None]:
     except Exception:
         log.exception("Erro na página")
         st.error(
-            "Algo deu errado ao montar esta página. Tente recarregar; se continuar, os dados "
-            "podem estar sendo atualizados."
+            t(
+                "Algo deu errado ao montar esta página. Tente recarregar; se continuar, os dados "
+                "podem estar sendo atualizados."
+            )
         )
     finally:
         rodape()
@@ -1145,9 +1273,15 @@ def consultar(funcao: Callable, *args):
 
 
 @st.cache_data(show_spinner=False, ttl=3600)
-def dados(nome: str, *args):
-    """Resultado em cache de uma consulta de fdr.painel, pelo nome da função."""
+def _dados(nome: str, codigo_idioma: str, *args):
+    idioma.definir(codigo_idioma)
     return consultar(getattr(painel, nome), *args)
+
+
+def dados(nome: str, *args):
+    """Resultado em cache de uma consulta de fdr.painel, pelo nome da função. O idioma entra na
+    chave do cache: algumas consultas trazem rótulos (os dias da semana, por exemplo)."""
+    return _dados(nome, idioma.atual(), *args)
 
 
 @st.cache_data(show_spinner=False)
@@ -1160,7 +1294,7 @@ def json_do_projeto(caminho_relativo: str) -> dict:
     return painel.ler_json(config.RAIZ / caminho_relativo)
 
 
-@st.cache_resource(show_spinner="Carregando o modelo...")
+@st.cache_resource(show_spinner=False)
 def previsor() -> Previsor:
     return Previsor(config.PASTA_MARTS / "previsao")
 
@@ -1241,9 +1375,18 @@ def _tema_dos_graficos() -> alt.theme.ThemeConfig:
     }
 
 
+LOCALE_INGLES = {
+    "number": {"decimal": ".", "thousands": ",", "grouping": [3], "currency": ["$", ""]}
+}
+
+
 def grafico(chart: alt.Chart | alt.LayerChart, altura: int = 300) -> None:
-    """Mostra um gráfico Altair com o tema do projeto (e não o do Streamlit)."""
-    st.altair_chart(chart.properties(height=altura), theme=None, width="stretch")
+    """Mostra um gráfico Altair com o tema do projeto (e não o do Streamlit). Em inglês, os
+    números dos eixos e das dicas trocam a vírgula decimal pelo ponto."""
+    chart = chart.properties(height=altura)
+    if idioma.ingles():
+        chart = chart.configure(locale=LOCALE_INGLES)
+    st.altair_chart(chart, theme=None, width="stretch")
 
 
 def grafico_linhas(
@@ -1279,8 +1422,8 @@ def grafico_linhas(
             "serie:N", scale=cores, legend=alt.Legend(title=None) if len(series) > 1 else None
         ),
         tooltip=[
-            alt.Tooltip("mes_rotulo:O", title="Mês"),
-            alt.Tooltip("serie:N", title="Série"),
+            alt.Tooltip("mes_rotulo:O", title=t("Mês")),
+            alt.Tooltip("serie:N", title=t("Série")),
             alt.Tooltip("valor:Q", title=titulo_y, format=formato.replace("%", ".1%")),
         ],
     )

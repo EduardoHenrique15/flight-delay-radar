@@ -5,7 +5,6 @@ monitoramento. Nenhum teste chama o Gemini."""
 import re
 
 import pytest
-import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from fdr import config, painel
@@ -22,18 +21,6 @@ TITULOS = {
     "paginas/sobre.py": "Como a previsão é feita, quanto ela acerta e onde ela erra",
 }
 PAGINAS = tuple(TITULOS)
-
-
-@pytest.fixture
-def dados_do_app(amostra_pipeline, tmp_path, monkeypatch):
-    """O app lendo os marts da amostra; o banco do assistente é recriado numa pasta temporária."""
-    monkeypatch.setattr(config, "PASTA_MARTS", amostra_pipeline / "marts")
-    monkeypatch.setattr(config, "BANCO_APP", tmp_path / "app.duckdb")
-    st.cache_data.clear()
-    st.cache_resource.clear()
-    yield
-    st.cache_data.clear()
-    st.cache_resource.clear()
 
 
 def abrir(pagina: str) -> AppTest:

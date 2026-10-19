@@ -182,6 +182,42 @@ def test_limite_por_sessao_e_por_dia(banco, tmp_path):
     assert len(llm.chamadas) == 1
 
 
+def test_em_ingles_o_modelo_explica_em_ingles_e_o_cache_fica_a_parte(banco, tmp_path):
+    from fdr.assistant.agent import PEDIDO_EM_INGLES
+
+    respostas = {
+        normalizar(PERGUNTA): [
+            {"pode_responder": True, "sql": SQL_GOL, "explicacao": "I counted Gol's flights."}
+        ]
+    }
+    assistente, llm = criar(banco, tmp_path, respostas)
+    mensagens = []
+    gerar = llm.gerar
+    llm.gerar = lambda sistema, mensagem: mensagens.append(mensagem) or gerar(sistema, mensagem)
+    ingles = assistente.responder(PERGUNTA, idioma="en")
+    assert ingles.origem == "modelo" and ingles.texto.endswith("Answer: 2.")
+    assert PEDIDO_EM_INGLES in mensagens[0]
+    assert assistente.responder(PERGUNTA, idioma="en").origem == "cache"
+    # Em português, a resposta em inglês do cache não serve: vai ao modelo, sem o pedido.
+    portugues = assistente.responder(PERGUNTA)
+    assert portugues.origem == "modelo" and portugues.texto.endswith("Resposta: 2.")
+    assert PEDIDO_EM_INGLES not in mensagens[1] and len(llm.chamadas) == 2
+
+
+def test_em_ingles_a_demonstracao_acha_a_pergunta_traduzida(banco, tmp_path):
+    from fdr.traducoes import TEXTOS
+
+    original = "Quantos voos foram realizados em julho de 2026?"
+    demo = {original: {"sql": SQL_GOL, "explicacao": "Contei os voos."}}
+    assistente, _ = criar(banco, tmp_path, demonstracao=demo, sem_chave=True)
+    resposta = assistente.responder(TEXTOS[original], idioma="en")
+    assert resposta.origem == "demonstracao" and resposta.tabela.iat[0, 0] == 2
+    assert resposta.avisos == ["Saved demo answer (no Gemini key)."]
+    outra = assistente.responder("Which airline is most delayed?", idioma="en")
+    assert outra.origem == "limite" and outra.texto.startswith("The assistant is in demo mode")
+    assert TEXTOS[original] in outra.texto
+
+
 def test_normalizar_e_resumir():
     assert normalizar("  Qual é a TAXA de atraso?? ") == "qual e a taxa de atraso"
     import pandas as pd

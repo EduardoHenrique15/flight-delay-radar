@@ -5,9 +5,10 @@ Sem a chave do Gemini, ou sem cota, ele responde com as respostas gravadas de de
 
 import streamlit as st
 
-from fdr import interface
+from fdr import idioma, interface
 from fdr.assistant.agent import Resposta
 from fdr.assistant.eval import ler_perguntas
+from fdr.idioma import t
 
 # Origem da resposta -> (rótulo, situação do selo)
 ORIGENS = {
@@ -21,8 +22,11 @@ ORIGENS = {
 
 
 def exemplos(assistente) -> list[str]:
+    """As perguntas de exemplo, no idioma da sessão (as gravadas estão em português)."""
     gravadas = assistente.demonstracao.perguntas()
-    return (gravadas or [q["pergunta"] for q in ler_perguntas() if q.get("demo")])[:4]
+    return [
+        t(p) for p in (gravadas or [q["pergunta"] for q in ler_perguntas() if q.get("demo")])[:4]
+    ]
 
 
 def mostrar(resposta: Resposta) -> None:
@@ -30,12 +34,12 @@ def mostrar(resposta: Resposta) -> None:
         st.markdown(resposta.pergunta)
     with st.chat_message("assistant", avatar=":material/database:"):
         rotulo, situacao = ORIGENS.get(resposta.origem, (resposta.origem, "neutro"))
-        interface.html_bruto(interface.selo(rotulo, situacao))
+        interface.html_bruto(interface.selo(t(rotulo), situacao))
         st.markdown(resposta.texto)
         if resposta.tabela is not None and not resposta.tabela.empty:
             st.dataframe(resposta.tabela, hide_index=True, width="stretch")
         if resposta.sql:
-            with st.expander("Ver a consulta SQL"):
+            with st.expander(t("Ver a consulta SQL")):
                 st.code(resposta.sql, language="sql")
         for aviso in resposta.avisos:
             interface.nota(aviso)
@@ -44,15 +48,18 @@ def mostrar(resposta: Resposta) -> None:
 with interface.pagina_protegida():
     assistente, trava = interface.assistente()
     interface.cabecalho(
-        "Pergunte aos dados",
-        "Perguntas em português, respostas do banco",
-        "O assistente transforma a pergunta numa consulta SQL, que passa por travas de segurança "
-        "e roda nos dados do app. O número vem sempre do banco, nunca do modelo de linguagem.",
+        t("Pergunte aos dados"),
+        t("Perguntas em português, respostas do banco"),
+        t(
+            "O assistente transforma a pergunta numa consulta SQL, que passa por travas de "
+            "segurança e roda nos dados do app. O número vem sempre do banco, nunca do modelo de "
+            "linguagem."
+        ),
         icone="conversa",
         meta=[
-            ("Modelo de linguagem", "Gemini" if assistente.llm else "Demonstração"),
-            ("Banco", "DuckDB · 6 tabelas"),
-            ("Consultas", "Só leitura"),
+            (t("Modelo de linguagem"), "Gemini" if assistente.llm else t("Demonstração")),
+            (t("Banco"), t("DuckDB · 6 tabelas")),
+            (t("Consultas"), t("Só leitura")),
         ],
     )
     st.session_state.setdefault("conversa", [])
@@ -60,21 +67,26 @@ with interface.pagina_protegida():
 
     if assistente.llm is None:
         interface.aviso(
-            "Modo de demonstração: este app está sem a chave do Gemini. As perguntas de exemplo "
-            "têm consultas gravadas, que rodam de novo nos dados atuais."
+            t(
+                "Modo de demonstração: este app está sem a chave do Gemini. As perguntas de "
+                "exemplo têm consultas gravadas, que rodam de novo nos dados atuais."
+            )
         )
     else:
         interface.aviso(
-            f"Até {assistente.uso.por_sessao} perguntas novas por visita e "
-            f"{assistente.uso.por_dia} por dia (cota gratuita do Gemini). Depois disso, o "
-            "assistente responde só às perguntas de exemplo."
+            t(
+                "Até {por_sessao} perguntas novas por visita e {por_dia} por dia (cota gratuita "
+                "do Gemini). Depois disso, o assistente responde só às perguntas de exemplo.",
+                por_sessao=assistente.uso.por_sessao,
+                por_dia=assistente.uso.por_dia,
+            )
         )
 
-    interface.secao("Faça uma pergunta", "Ou comece por um dos exemplos abaixo.")
+    interface.secao(t("Faça uma pergunta"), t("Ou comece por um dos exemplos abaixo."))
     # Dentro de um contêiner, a caixa de pergunta fica no corpo da página (e não presa embaixo).
     with st.container():
         digitada = st.chat_input(
-            "Ex.: Qual companhia mais atrasou em julho de 2026?", max_chars=300
+            t("Ex.: Qual companhia mais atrasou em julho de 2026?"), max_chars=300
         )
     pergunta = None
     with st.container(key="exemplos"):
@@ -87,37 +99,48 @@ with interface.pagina_protegida():
     pergunta = digitada or pergunta
 
     if pergunta:
-        with trava, st.spinner("Consultando os dados..."):
+        with trava, st.spinner(t("Consultando os dados...")):
             resposta = assistente.responder(
-                pergunta, usadas_na_sessao=st.session_state["perguntas_ao_modelo"]
+                pergunta,
+                usadas_na_sessao=st.session_state["perguntas_ao_modelo"],
+                idioma=idioma.atual(),
             )
         if resposta.tentativas:
             st.session_state["perguntas_ao_modelo"] += 1
         st.session_state["conversa"].append(resposta)
 
     if st.session_state["conversa"]:
-        interface.secao("Conversa")
+        interface.secao(t("Conversa"))
     for resposta in reversed(st.session_state["conversa"]):
         mostrar(resposta)
 
-    interface.secao("Como o assistente responde")
+    interface.secao(t("Como o assistente responde"))
     interface.etapas(
         [
-            ("Pergunta", "Em português, sobre os voos, as companhias e os aeroportos do app."),
             (
-                "Consulta",
-                "O Gemini escreve uma consulta SQL a partir da descrição das tabelas, sem "
-                "receber as linhas do banco.",
+                t("Pergunta"),
+                t("Em português, sobre os voos, as companhias e os aeroportos do app."),
             ),
             (
-                "Travas",
-                "Só leitura (SELECT), só as 6 tabelas do app, sem arquivos nem rede, no máximo "
-                "1.000 linhas e 10 segundos.",
+                t("Consulta"),
+                t(
+                    "O Gemini escreve uma consulta SQL a partir da descrição das tabelas, sem "
+                    "receber as linhas do banco."
+                ),
             ),
             (
-                "Resposta",
-                "O DuckDB roda a consulta e os números da resposta saem da tabela, que aparece "
-                "junto com o SQL.",
+                t("Travas"),
+                t(
+                    "Só leitura (SELECT), só as 6 tabelas do app, sem arquivos nem rede, no "
+                    "máximo 1.000 linhas e 10 segundos."
+                ),
+            ),
+            (
+                t("Resposta"),
+                t(
+                    "O DuckDB roda a consulta e os números da resposta saem da tabela, que "
+                    "aparece junto com o SQL."
+                ),
             ),
         ]
     )

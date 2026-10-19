@@ -7,6 +7,7 @@ from datetime import date
 import streamlit as st
 
 from fdr import interface, painel
+from fdr.idioma import t
 from fdr.monitoring.drift import nivel
 
 FUNDO_PSI = {"atenção": "#fdf3d7", "alerta": "#fbe9e9"}
@@ -29,7 +30,8 @@ def tabela_psi(meses, importantes: list[str]) -> str:
             f"<tr><th>{e(painel.nome_mes(mes['mes'].date()))}</th>{''.join(celulas)}</tr>"
         )
     return (
-        f'<div class="fdr-tabela-rolagem"><table class="fdr-tabela"><thead><tr><th>Mês</th>'
+        '<div class="fdr-tabela-rolagem"><table class="fdr-tabela"><thead><tr>'
+        f"<th>{e(t('Mês'))}</th>"
         f"{cabecalho}</tr></thead><tbody>{''.join(linhas)}</tbody></table></div>"
     )
 
@@ -37,12 +39,12 @@ def tabela_psi(meses, importantes: list[str]) -> str:
 def situacao_do_retreino(retreino: dict) -> tuple[str, str, str, str]:
     """(cor do marco, rótulo curto, texto do selo, situação do selo) do mês."""
     if retreino.get("promovido"):
-        return interface.DESTAQUE, "promovido", "Desafiante promovido", "bom"
+        return interface.DESTAQUE, t("promovido"), t("Desafiante promovido"), "bom"
     if retreino.get("disparou") and retreino.get("adiado"):
-        return interface.AMARELO, "adiado", "Retreino adiado", "atencao"
+        return interface.AMARELO, t("adiado"), t("Retreino adiado"), "atencao"
     if retreino.get("disparou"):
-        return interface.AMARELO, "mantido", "Campeão mantido", "atencao"
-    return interface.SUPERFICIE, "sem retreino", "Sem retreino", "neutro"
+        return interface.AMARELO, t("mantido"), t("Campeão mantido"), "atencao"
+    return interface.SUPERFICIE, t("sem retreino"), t("Sem retreino"), "neutro"
 
 
 def linha_do_tempo(meses, treino_inicial: date) -> str:
@@ -52,7 +54,7 @@ def linha_do_tempo(meses, treino_inicial: date) -> str:
     paradas = [
         f'<div class="fdr-parada"><div class="marco" style="--cor:{interface.PRETO}"></div>'
         f'<div class="mes">{e(painel.mes_curto(treino_inicial))}</div>'
-        f'<div class="tipo">treino do campeão</div></div>'
+        f'<div class="tipo">{e(t("treino do campeão"))}</div></div>'
     ]
     eventos = []
     for _, mes in meses.iterrows():
@@ -73,7 +75,7 @@ def linha_do_tempo(meses, treino_inicial: date) -> str:
     lista = (
         f'<div class="fdr-eventos">{"".join(eventos)}</div>'
         if eventos
-        else '<p class="fdr-nota">Nenhuma regra disparou até agora.</p>'
+        else f'<p class="fdr-nota">{e(t("Nenhuma regra disparou até agora."))}</p>'
     )
     return f'<div class="fdr-rota">{"".join(paradas)}</div>{lista}'
 
@@ -87,30 +89,35 @@ with interface.pagina_protegida():
         date.fromisoformat(promocoes[-1]["desafiante_treino"][1]) if promocoes else treino_inicial
     )
     interface.cabecalho(
-        "Monitoramento",
-        "O modelo continua acertando?",
-        "Cada mês publicado pela ANAC é um teste novo. O modelo é comparado com o baseline, a "
-        "calibração é conferida e as variáveis são vigiadas. Quando uma regra dispara, um "
-        "desafiante é treinado e só substitui o campeão se vencer com folga.",
+        t("Monitoramento"),
+        t("O modelo continua acertando?"),
+        t(
+            "Cada mês publicado pela ANAC é um teste novo. O modelo é comparado com o baseline, a "
+            "calibração é conferida e as variáveis são vigiadas. Quando uma regra dispara, um "
+            "desafiante é treinado e só substitui o campeão se vencer com folga."
+        ),
         icone="grafico",
         meta=[
-            ("Meses monitorados", str(len(meses))),
-            ("Campeão atual", f"treino até {painel.nome_mes(treino_atual)}"),
-            ("Retreinos promovidos", str(len(promocoes))),
+            (t("Meses monitorados"), str(len(meses))),
+            (t("Campeão atual"), t("treino até {mes}", mes=painel.nome_mes(treino_atual))),
+            (t("Retreinos promovidos"), str(len(promocoes))),
         ],
     )
     if meses.empty:
-        st.info("Ainda não há meses monitorados.")
+        st.info(t("Ainda não há meses monitorados."))
         st.stop()
 
     simulados = meses[meses["tipo"] == "simulacao"]
     if not simulados.empty:
         interface.aviso(
-            f"De {painel.nome_mes(simulados['mes'].min().date())} a "
-            f"{painel.nome_mes(simulados['mes'].max().date())}, uma simulação do passado: um "
-            f"modelo treinado só até {painel.nome_mes(treino_inicial)} foi avaliado mês a mês, "
-            "sem olhar o futuro, com as mesmas regras de retreino de produção. Os meses seguintes "
-            "entram pelo pipeline mensal."
+            t(
+                "De {inicio} a {fim}, uma simulação do passado: um modelo treinado só até "
+                "{treino} foi avaliado mês a mês, sem olhar o futuro, com as mesmas regras de "
+                "retreino de produção. Os meses seguintes entram pelo pipeline mensal.",
+                inicio=painel.nome_mes(simulados["mes"].min().date()),
+                fim=painel.nome_mes(simulados["mes"].max().date()),
+                treino=painel.nome_mes(treino_inicial),
+            )
         )
 
     ultimo = meses.iloc[-1]
@@ -118,66 +125,80 @@ with interface.pagina_protegida():
     interface.numeros(
         [
             interface.Numero(
-                f"PR-AUC em {painel.nome_mes(ultimo['mes'].date())}",
+                t("PR-AUC em {mes}", mes=painel.nome_mes(ultimo["mes"].date())),
                 painel.decimal(ultimo["pr_auc_modelo"]),
-                f"{painel.decimal(ultimo['pr_auc_modelo'] - ultimo['pr_auc_baseline'], sinal=True)}"
-                " sobre o baseline",
+                t(
+                    "{ganho} sobre o baseline",
+                    ganho=painel.decimal(
+                        ultimo["pr_auc_modelo"] - ultimo["pr_auc_baseline"], sinal=True
+                    ),
+                ),
                 interface.AJUDA["pr_auc"],
                 tendencia=list(meses["pr_auc_modelo"]),
             ),
             interface.Numero(
-                "Meses vencendo o baseline",
-                f"{vitorias} de {len(meses)}",
-                "pela PR-AUC",
+                t("Meses vencendo o baseline"),
+                t("{vitorias} de {total}", vitorias=vitorias, total=len(meses)),
+                t("pela PR-AUC"),
                 tendencia=list(meses["pr_auc_modelo"] - meses["pr_auc_baseline"]),
             ),
             interface.Numero(
-                "Calibração (ECE)",
+                t("Calibração (ECE)"),
                 f"{painel.decimal(ultimo['ece'] * 100, 1)} p.p.",
-                "limite para retreino: 5 p.p.",
+                t("limite para retreino: 5 p.p."),
                 interface.AJUDA["ece"],
                 tendencia=list(meses["ece"]),
             ),
             interface.Numero(
-                f"Atraso real em {painel.nome_mes(ultimo['mes'].date())}",
+                t("Atraso real em {mes}", mes=painel.nome_mes(ultimo["mes"].date())),
                 painel.porcentagem(ultimo["taxa_real"]),
-                f"previsto pelo modelo: {painel.porcentagem(ultimo['taxa_prevista'])}",
+                t(
+                    "previsto pelo modelo: {taxa}",
+                    taxa=painel.porcentagem(ultimo["taxa_prevista"]),
+                ),
                 tendencia=list(meses["taxa_real"]),
             ),
         ]
     )
     interface.nota(
-        "As linhas mostram cada mês monitorado. No segundo indicador, a linha é a diferença de "
-        "PR-AUC entre o modelo e o baseline."
+        t(
+            "As linhas mostram cada mês monitorado. No segundo indicador, a linha é a diferença "
+            "de PR-AUC entre o modelo e o baseline."
+        )
     )
 
     regras = historico["regras"]
     with interface.quadro("retreinos"):
         interface.secao(
-            "Linha do tempo dos retreinos",
-            "O retreino dispara se o modelo perder do baseline no mês, se o ECE passar de "
-            f"{regras['ece_maximo'] * 100:.0f} p.p., se o PSI de uma variável importante passar "
-            f"de 0,25 ou a cada {regras['meses_maximos_sem_retreino']} meses. O desafiante só "
-            "substitui o campeão se o ganho de PR-AUC tiver intervalo de 95% acima de zero.",
+            t("Linha do tempo dos retreinos"),
+            t(
+                "O retreino dispara se o modelo perder do baseline no mês, se o ECE passar de "
+                "{ece} p.p., se o PSI de uma variável importante passar de {psi} ou a cada "
+                "{meses} meses. O desafiante só substitui o campeão se o ganho de PR-AUC tiver "
+                "intervalo de 95% acima de zero.",
+                ece=f"{regras['ece_maximo'] * 100:.0f}",
+                psi=painel.decimal(0.25, 2),
+                meses=regras["meses_maximos_sem_retreino"],
+            ),
         )
         interface.html_bruto(linha_do_tempo(meses, treino_inicial))
 
     marcas = [
-        (m["mes"].date(), "retreino")
+        (m["mes"].date(), t("retreino"))
         for m in meses.to_dict("records")
         if m["retreino"].get("promovido")
     ]
     esquerda, direita = st.columns(2, gap="medium")
     with esquerda, interface.quadro("pr_auc", altura="stretch"):
         interface.secao(
-            "PR-AUC: modelo contra baseline",
-            "Quanto maior, melhor o modelo separa os voos que atrasam.",
+            t("PR-AUC: modelo contra baseline"),
+            t("Quanto maior, melhor o modelo separa os voos que atrasam."),
         )
         interface.grafico(
             interface.grafico_linhas(
                 meses,
                 "mes",
-                {"pr_auc_modelo": "Modelo", "pr_auc_baseline": "Baseline"},
+                {"pr_auc_modelo": t("Modelo"), "pr_auc_baseline": t("Baseline")},
                 "PR-AUC",
                 ".2f",
                 marcas=marcas,
@@ -186,15 +207,15 @@ with interface.pagina_protegida():
         )
     with direita, interface.quadro("taxas", altura="stretch"):
         interface.secao(
-            "Taxa de atraso: prevista e real",
-            "Dezembro é o mês mais difícil: a taxa real sobe mais do que o modelo prevê.",
+            t("Taxa de atraso: prevista e real"),
+            t("Dezembro é o mês mais difícil: a taxa real sobe mais do que o modelo prevê."),
         )
         interface.grafico(
             interface.grafico_linhas(
                 meses,
                 "mes",
-                {"taxa_prevista": "Prevista pelo modelo", "taxa_real": "Real"},
-                "Taxa de atraso",
+                {"taxa_prevista": t("Prevista pelo modelo"), "taxa_real": t("Real")},
+                t("Taxa de atraso"),
                 "%",
                 marcas=marcas,
             ),
@@ -203,9 +224,13 @@ with interface.pagina_protegida():
 
     with interface.quadro("psi"):
         interface.secao(
-            "Mudança nas variáveis (PSI)",
-            "As 5 variáveis que mais pesam no modelo, fora mês do ano, feriados e férias (essas "
-            "mudam todo mês por definição). Amarelo: atenção (0,10 ou mais). Vermelho: mudança "
-            "forte (0,25 ou mais), que dispara o retreino.",
+            t("Mudança nas variáveis (PSI)"),
+            t(
+                "As 5 variáveis que mais pesam no modelo, fora mês do ano, feriados e férias "
+                "(essas mudam todo mês por definição). Amarelo: atenção ({atencao} ou mais). "
+                "Vermelho: mudança forte ({forte} ou mais), que dispara o retreino.",
+                atencao=painel.decimal(0.10, 2),
+                forte=painel.decimal(0.25, 2),
+            ),
         )
         interface.html_bruto(tabela_psi(meses, historico["variaveis_importantes"]))

@@ -11,7 +11,7 @@ flight departs more than 15 minutes late. An end-to-end data project on public d
 validated on future data, monthly monitoring with a retraining rule, and an assistant that
 answers questions in SQL.
 
-**[Open the app](https://flight-delay-radar.streamlit.app)** (the interface is in Portuguese)
+**[Open the app in English](https://flight-delay-radar.streamlit.app/?lang=en)** (PT | EN switch at the top)
 
 ![App overview: the month's indicators and the departures board with the predicted chance of delay](docs/img/app_inicio.png)
 
@@ -19,13 +19,13 @@ answers questions in SQL.
 
 | Page | What it has |
 | --- | --- |
-| Visão geral (Overview) | Last month's numbers, a departures board with the model's predicted chance of delay and a clickable map: pick an airport to see where its flights are most delayed. |
-| Pontualidade (On-time performance) | Filters by period, airline and route; airline ranking, monthly trend and a day-of-week by hour heatmap. |
-| Previsão (Prediction) | Pick route, airline, date and hour: the chance of delay on a boarding pass, the factors that weighed most (SHAP), other airlines and other hours. |
-| Buscar voo (Flight lookup) | Type a flight number (e.g. G3 1400): how often it left on time in the last 12 months, how large the delays were, month by month, and the predicted chance for the next flight. |
-| Monitoramento (Monitoring) | Month-by-month performance against the baseline, calibration, feature drift (PSI) and the retraining timeline. |
-| Pergunte aos dados (Ask the data) | Questions in Portuguese become SQL, which goes through guardrails and runs on the app's database. |
-| Sobre o modelo (About the model) | How the prediction works, test metrics with intervals, where the model errs (by airline, airport, hour and month), how many delays an alert rule catches and the limitations. |
+| Overview | Last month's numbers, a departures board with the model's predicted chance of delay and a clickable map: pick an airport to see where its flights are most delayed. |
+| On-time performance | Filters by period, airline and route; airline ranking, monthly trend and a day-of-week by hour heatmap. |
+| Prediction | Pick route, airline, date and hour: the chance of delay on a boarding pass, the factors that weighed most (SHAP), other airlines and other hours. |
+| Flight lookup | Type a flight number (e.g. G3 1400): how often it left on time in the last 12 months, how large the delays were, month by month, and the predicted chance for the next flight. |
+| Monitoring | Month-by-month performance against the baseline, calibration, feature drift (PSI) and the retraining timeline. |
+| Ask the data | Questions in English or Portuguese become SQL, which goes through guardrails and runs on the app's database. |
+| About the model | How the prediction works, test metrics with intervals, where the model errs (by airline, airport, hour and month), how many delays an alert rule catches and the limitations. |
 
 <table>
 <tr>

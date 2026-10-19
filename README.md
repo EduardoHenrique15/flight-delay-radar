@@ -10,7 +10,7 @@ de 15 minutos de atraso. Um projeto de dados de ponta a ponta com os dados públ
 ingestão, warehouse com testes de qualidade, um modelo validado sempre no futuro, monitoramento
 mês a mês com regra de retreino e um assistente que responde perguntas em SQL.
 
-**[Abrir o app](https://flight-delay-radar.streamlit.app)**
+**[Abrir o app](https://flight-delay-radar.streamlit.app)** (em português ou inglês: botão PT | EN no topo)
 
 ![Visão geral do app: indicadores do mês e o painel de partidas com a chance prevista de atraso](docs/img/app_inicio.png)
 
@@ -23,7 +23,7 @@ mês a mês com regra de retreino e um assistente que responde perguntas em SQL.
 | Previsão | Escolha rota, companhia, data e hora: a chance de atraso num cartão de embarque, os fatores que mais pesaram (SHAP), as outras companhias e os outros horários. |
 | Buscar voo | Digite o número do voo (ex.: G3 1400): quantas vezes ele saiu no horário nos últimos 12 meses, o tamanho dos atrasos, mês a mês, e a chance prevista para o próximo voo. |
 | Monitoramento | Desempenho mês a mês contra o baseline, calibração, mudança nas variáveis (PSI) e a linha do tempo dos retreinos. |
-| Pergunte aos dados | Perguntas em português viram SQL, que passa por travas e roda no banco do app. |
+| Pergunte aos dados | Perguntas em português ou inglês viram SQL, que passa por travas e roda no banco do app. |
 | Sobre o modelo | Como a previsão é feita, as métricas do teste com intervalos, onde o modelo erra (por companhia, aeroporto, horário e mês), quantos atrasos uma regra de alerta pega e as limitações. |
 
 <table>
