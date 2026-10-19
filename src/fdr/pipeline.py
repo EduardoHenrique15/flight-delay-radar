@@ -10,6 +10,8 @@ Etapas:
   train     treino final com as escolhas da validação e teste usado uma única vez; grava
             models/model.txt, metadata.json, reference_profile.json e metrics.json
   explain   explicação do modelo (SHAP por tema) e gráficos em docs/img/
+  pratica   regra de alerta no teste (precisão e cobertura ao avisar os voos de maior risco);
+            grava models/uso_pratico.json
   monitor-historico  histórico retroativo do monitoramento (simulação de dez/2025 a ago/2026)
   monitor   monitora os meses novos publicados; grava monitoring/history.json
 
@@ -19,6 +21,7 @@ Uso: python -m fdr.pipeline --stage data
      python -m fdr.pipeline --stage validacao
      python -m fdr.pipeline --stage train
      python -m fdr.pipeline --stage explain
+     python -m fdr.pipeline --stage pratica
      python -m fdr.pipeline --stage monitor-historico
      python -m fdr.pipeline --stage monitor
 """
@@ -117,6 +120,13 @@ def etapa_explicacao() -> None:
     explain.main()
 
 
+def etapa_pratica() -> None:
+    from fdr.model import pratica
+
+    print("O modelo na prática: regra de alerta no teste, contra o baseline")
+    pratica.main()
+
+
 def etapa_monitoramento(historico_retroativo: bool) -> None:
     from fdr.monitoring import monthly
 
@@ -135,6 +145,7 @@ def main() -> None:
             "validacao",
             "train",
             "explain",
+            "pratica",
             "monitor",
             "monitor-historico",
         ],
@@ -154,6 +165,8 @@ def main() -> None:
         etapa_treino()
     elif args.stage == "explain":
         etapa_explicacao()
+    elif args.stage == "pratica":
+        etapa_pratica()
     elif args.stage == "monitor":
         etapa_monitoramento(historico_retroativo=False)
     elif args.stage == "monitor-historico":

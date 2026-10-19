@@ -1,12 +1,14 @@
 # Modelo: chance de um voo partir com mais de 15 minutos de atraso
 
 Cartão do modelo (*model card*). Os números vêm de `models/metrics.json`,
-`models/metadata.json` e `models/explicacao_global.json`, gerados pelo pipeline:
+`models/metadata.json`, `models/explicacao_global.json` e `models/uso_pratico.json`, gerados pelo
+pipeline:
 
 ```powershell
 python -m fdr.pipeline --stage validacao   # compara os modelos e trava as escolhas
 python -m fdr.pipeline --stage train       # treino final e teste, usado uma única vez
 python -m fdr.pipeline --stage explain     # SHAP por tema e gráficos
+python -m fdr.pipeline --stage pratica     # regra de alerta no teste (precisão e cobertura)
 ```
 
 ## 1. A pergunta
@@ -114,6 +116,30 @@ dias sorteados para os dois modelos (bootstrap pareado).
 
 A tabela completa está em `models/metrics.json`, na seção `modelo_final.teste.segmentos`.
 
+### Na prática: uma regra de alerta
+
+Uma forma simples de usar o modelo é avisar os passageiros dos voos com maior risco previsto.
+A tabela mostra, no teste (196.159 voos, 31.058 atrasos), a **precisão** (dos voos avisados,
+quantos atrasaram) e a **cobertura** (dos atrasos, quantos foram avisados):
+
+| Voos avisados | Precisão do modelo | Precisão do baseline | Cobertura do modelo | Cobertura do baseline |
+| --- | --- | --- | --- | --- |
+| 5% | 42,2% | 38,8% | 13,3% | 12,3% |
+| 10% | 37,3% | 33,6% | 23,5% | 21,2% |
+| 20% | 31,7% | 29,3% | 40,1% | 37,1% |
+| 30% | 28,1% | 26,5% | 53,2% | 50,1% |
+
+- **Nas quatro frações da tabela, o modelo pega mais atrasos que o baseline**, mas a diferença é
+  pequena: de 1,0 a 3,1 pontos percentuais de cobertura.
+- **Há um preço:** avisando 10% dos voos, 62,7% dos avisos seriam alarme falso, e 76,5% dos
+  atrasos ficariam sem aviso.
+- **Uso adequado:** priorizar (por exemplo, quem escolhe um horário ou uma conexão), e não
+  garantir nada sobre um voo.
+
+A curva completa (de 1% a 50% dos voos) e as regras por limiar de probabilidade estão em
+`models/uso_pratico.json`, gerado pela etapa `pratica`, que confere que as previsões refeitas
+reproduzem o PR-AUC do `models/metrics.json`.
+
 ## 7. O que mais pesa na previsão
 
 O SHAP vem do próprio LightGBM (TreeSHAP) e foi somado por tema. O gráfico mostra o efeito médio
@@ -162,3 +188,4 @@ de cada tema sobre a probabilidade em 20.000 voos do teste.
 | `models/metrics.json` | baseline, validação, escolha, calibração, teste e segmentos |
 | `models/reference_profile.json` | distribuição das variáveis no treino (para o PSI na Fase 4) |
 | `models/explicacao_global.json` | SHAP médio por tema e por variável no teste |
+| `models/uso_pratico.json` | precisão e cobertura de uma regra de alerta no teste, modelo e baseline |

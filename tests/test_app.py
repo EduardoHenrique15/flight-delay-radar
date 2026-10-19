@@ -140,6 +140,20 @@ def test_buscar_voo_mostra_o_historico_e_o_proximo_voo(dados_do_app, amostra_pip
     assert "Nenhuma partida nacional do voo G3 99999" in texto(app)
 
 
+def test_sobre_mostra_onde_o_modelo_erra_e_a_regra_de_alerta(dados_do_app):
+    app = abrir("paginas/sobre.py")
+    sem_erros(app)
+    assert "Onde o modelo erra" in texto(app)
+    assert "Avisando os <b>10%</b>" in texto(app)
+    for segmento in ("aeroporto_origem", "faixa_horaria", "mes"):
+        app.session_state["segmento"] = segmento
+        app.run()
+        sem_erros(app)
+    app.slider(key="fracao_alerta").set_value(25).run()
+    sem_erros(app)
+    assert "Avisando os <b>25%</b>" in texto(app)
+
+
 def test_assistente_sem_chave_fica_em_modo_de_demonstracao(dados_do_app, monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     app = abrir("paginas/assistente.py")

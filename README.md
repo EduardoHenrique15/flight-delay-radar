@@ -24,7 +24,7 @@ mês a mês com regra de retreino e um assistente que responde perguntas em SQL.
 | Buscar voo | Digite o número do voo (ex.: G3 1400): quantas vezes ele saiu no horário nos últimos 12 meses, o tamanho dos atrasos, mês a mês, e a chance prevista para o próximo voo. |
 | Monitoramento | Desempenho mês a mês contra o baseline, calibração, mudança nas variáveis (PSI) e a linha do tempo dos retreinos. |
 | Pergunte aos dados | Perguntas em português viram SQL, que passa por travas e roda no banco do app. |
-| Sobre o modelo | Como a previsão é feita, as métricas do teste com intervalos e as limitações. |
+| Sobre o modelo | Como a previsão é feita, as métricas do teste com intervalos, onde o modelo erra (por companhia, aeroporto, horário e mês), quantos atrasos uma regra de alerta pega e as limitações. |
 
 <table>
 <tr>
