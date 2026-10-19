@@ -8,7 +8,7 @@ import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
-from fdr import config
+from fdr import config, painel
 from fdr.config import RAIZ
 
 APP = str(RAIZ / "app" / "streamlit_app.py")
@@ -16,6 +16,7 @@ TITULOS = {
     "paginas/inicio.py": "Pontualidade dos voos no Brasil",
     "paginas/pontualidade.py": "Quem atrasa, onde e quando",
     "paginas/previsao.py": "Qual a chance de o seu voo atrasar?",
+    "paginas/buscar_voo.py": "Como o seu voo costuma se sair?",
     "paginas/monitoramento.py": "O modelo continua acertando?",
     "paginas/assistente.py": "Perguntas em português, respostas do banco",
     "paginas/sobre.py": "Como a previsão é feita, quanto ela acerta e onde ela erra",
@@ -68,7 +69,7 @@ def test_cada_pagina_abre_sem_erro(dados_do_app, monkeypatch, pagina, com_chave)
 def test_inicio_mostra_os_numeros_do_ultimo_mes(dados_do_app):
     app = abrir("paginas/inicio.py")
     assert "Voos nacionais realizados" in texto(app)
-    assert "Dados da ANAC até jul/2026" in texto(app)
+    assert "Dados até jul/2026" in texto(app)
     assert "horas de atraso" in texto(app)
     assert "linkedin.com/in/eduardo-henrique15" in texto(app)  # o contato no rodapé
 
@@ -115,6 +116,28 @@ def test_previsao_melhor_horario_e_comparacao(dados_do_app):
     sem_erros(app)
     assert "De onde vem a diferença" in texto(app)
     assert app.query_params["b_hora"] == "18"  # o voo B começa em outro horário
+
+
+def test_buscar_voo_mostra_o_historico_e_o_proximo_voo(dados_do_app, amostra_pipeline):
+    con = painel.conectar_marts(amostra_pipeline / "marts")
+    cia, numero = con.execute(
+        "select cia, numero_voo from voos where tipo_linha = 'N' and situacao = 'REALIZADO' "
+        "group by all order by count(*) desc, cia, numero_voo limit 1"
+    ).fetchone()
+    app = abrir("paginas/buscar_voo.py")
+    sem_erros(app)
+    # Código ICAO, com hífen e zeros à esquerda: a busca entende e mostra o código IATA.
+    app.text_input(key="voo").set_value(f"{cia}-00{numero}").run()
+    sem_erros(app)
+    pagina = texto(app)
+    rotulo = f"{painel.CODIGOS_IATA.get(cia, cia)}-{numero.lstrip('0')}"
+    assert app.query_params["voo"] == rotulo
+    assert "Partidas realizadas" in pagina
+    assert "O próximo voo, pelo modelo" in pagina
+    # Um número que não existe na base avisa, sem erro.
+    app.text_input(key="voo").set_value("G3 99999").run()
+    sem_erros(app)
+    assert "Nenhuma partida nacional do voo G3 99999" in texto(app)
 
 
 def test_assistente_sem_chave_fica_em_modo_de_demonstracao(dados_do_app, monkeypatch):

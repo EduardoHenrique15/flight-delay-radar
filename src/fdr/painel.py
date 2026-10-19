@@ -239,6 +239,21 @@ def rotas_com_atraso(
     ).df()
 
 
+def historico_do_voo(con: duckdb.DuckDBPyConnection, cia: str, numero: str) -> pd.DataFrame:
+    """Todas as partidas nacionais de um número de voo na janela do app (realizadas e canceladas).
+    O número é comparado sem os zeros à esquerda (0140 e 140 são o mesmo voo)."""
+    return con.execute(
+        """
+        select data_prevista, mes, origem, destino, hora_prevista, situacao, atraso_partida_min,
+               atrasado_15
+        from voos
+        where cia = ? and ltrim(numero_voo, '0') = ltrim(?, '0') and tipo_linha = 'N'
+        order by data_prevista
+        """,
+        [cia, numero],
+    ).df()
+
+
 def mapa_aeroportos(con: duckdb.DuckDBPyConnection, mes: date, minimo: int = 50) -> pd.DataFrame:
     """Partidas e taxa de atraso por aeroporto de origem no mês, com as coordenadas."""
     return con.execute(

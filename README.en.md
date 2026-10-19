@@ -22,6 +22,7 @@ answers questions in SQL.
 | Visão geral (Overview) | Last month's numbers, a departures board with the model's predicted chance of delay and a clickable map: pick an airport to see where its flights are most delayed. |
 | Pontualidade (On-time performance) | Filters by period, airline and route; airline ranking, monthly trend and a day-of-week by hour heatmap. |
 | Previsão (Prediction) | Pick route, airline, date and hour: the chance of delay on a boarding pass, the factors that weighed most (SHAP), other airlines and other hours. |
+| Buscar voo (Flight lookup) | Type a flight number (e.g. G3 1400): how often it left on time in the last 12 months, how large the delays were, month by month, and the predicted chance for the next flight. |
 | Monitoramento (Monitoring) | Month-by-month performance against the baseline, calibration, feature drift (PSI) and the retraining timeline. |
 | Pergunte aos dados (Ask the data) | Questions in Portuguese become SQL, which goes through guardrails and runs on the app's database. |
 | Sobre o modelo (About the model) | How the prediction works, test metrics with intervals and the limitations. |

@@ -85,6 +85,9 @@ PICTOGRAMAS = {
     "grafico": "M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z",
     "conversa": "M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-"
     "1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z",
+    "busca": "M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 "
+    "9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 "
+    "14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z",
     "info": "M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 "
     "2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z",
 }
@@ -126,10 +129,22 @@ parágrafo. Os blocos em HTML deste app não têm essa margem: sem isto, encosta
 /* Barra do topo: preta, com a borda amarela das placas */
 header[data-testid="stHeader"] {{ background: {PRETO}; border-bottom: 3px solid {AMARELO}; }}
 [data-testid="stTopNavLink"] {{ border-radius: 2px !important; }}
-[data-testid="stTopNavLink"] p {{
+[data-testid="stTopNavLink"] p, [data-testid="stTopNavSection"] p {{
     color: #c9ced6 !important; font-family: {FONTE_TITULO}; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.07em; font-size: 0.86rem;
+    text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.84rem;
 }}
+/* Os links do topo param antes do selo "Dados até ..." (à direita); o que não cabe vai para o
+   botão "Mais", em vez de encostar no selo. */
+header[data-testid="stHeader"] .rc-overflow {{ max-width: calc(100% - 290px - 230px); gap: 2px; }}
+@media (max-width: 1100px) {{
+    header[data-testid="stHeader"] .rc-overflow {{ max-width: calc(100% - 290px - 40px); }}
+}}
+[data-testid="stTopNavLink"] {{
+    padding-left: 0.6rem !important; padding-right: 0.6rem !important;
+}}
+/* O botão das páginas que não cabem na barra: "2 more" do Streamlit vira "Mais" */
+[data-testid="stTopNavSection"] p {{ font-size: 0 !important; }}
+[data-testid="stTopNavSection"] p::after {{ content: "Mais"; font-size: 0.84rem; }}
 [data-testid="stTopNavLink"]:hover {{ background: #2a2e35 !important; }}
 [data-testid="stTopNavLink"][aria-current="page"] {{ background: {AMARELO} !important; }}
 [data-testid="stTopNavLink"][aria-current="page"] p {{ color: {PRETO} !important; }}
@@ -544,6 +559,34 @@ button[data-variant="segmented_control"]:hover {{ border-color: {PRETO} !importa
     .fdr-cartao .trecho, .fdr-cartao .canhoto {{ padding: 20px 18px; }}
 }}
 
+/* Buscar voo: a placa do voo, com o número em letras que viram */
+.fdr-placa-voo {{ background: {PRETO}; border-radius: 3px; padding: 22px 26px; display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto; gap: 28px; align-items: center;
+    box-shadow: 0 12px 28px rgba(20, 22, 26, 0.18); border-bottom: 3px solid {AMARELO}; }}
+.fdr-placa-voo .numero {{ font-family: {FONTE_TITULO}; font-size: 2.2rem; font-weight: 700; }}
+.fdr-placa-voo .trecho {{ font-family: {FONTE_TITULO}; color: #ffffff; font-size: 1.6rem;
+    font-weight: 700; letter-spacing: 0.06em; }}
+.fdr-placa-voo .trecho small {{ display: block; color: #9aa1ab; font-size: 0.9rem;
+    font-weight: 500; letter-spacing: 0.02em; margin-top: 2px; }}
+.fdr-placa-voo .hora {{ text-align: right; font-family: {FONTE_TITULO}; color: {AMARELO};
+    font-size: 2rem; font-weight: 700; }}
+.fdr-placa-voo .hora small {{ display: block; color: #9aa1ab; font-size: 0.72rem;
+    letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }}
+@media (max-width: 760px) {{
+    .fdr-placa-voo {{ grid-template-columns: 1fr; gap: 12px; padding: 18px; }}
+    .fdr-placa-voo .hora {{ text-align: left; }}
+    .fdr-placa-voo .numero {{ font-size: 1.6rem; }}
+}}
+.fdr-proximo {{ display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px;
+    align-items: center; }}
+.fdr-proximo .chance {{ font-family: {FONTE_NUMEROS}; font-size: 3rem; font-weight: 700;
+    color: {TINTA}; line-height: 1; text-align: right; }}
+.fdr-proximo .chance small {{ display: block; font-size: 0.72rem; color: {SUAVE};
+    letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; margin-top: 6px; }}
+.fdr-proximo .quando {{ font-family: {FONTE_TITULO}; font-size: 1.3rem; font-weight: 700;
+    color: {TINTA}; text-transform: uppercase; letter-spacing: 0.03em; }}
+.fdr-proximo .texto {{ font-size: 0.92rem; color: {TEXTO}; margin: 4px 0 10px 0; }}
+
 /* Cartão compacto (Comparar dois voos): uma coluna só, como no celular */
 .fdr-cartao.compacto .fdr-cartao-corpo {{ grid-template-columns: 1fr; }}
 .fdr-cartao.compacto .canhoto {{ border-left: none; border-top: 2px dashed {LINHA}; }}
@@ -703,7 +746,7 @@ def configurar_pagina() -> None:
     try:
         ultimo = painel.nome_mes(date.fromisoformat(manifest()["ultimo_mes"]))
         st.markdown(
-            f'<div class="fdr-topo"><i></i>Dados da ANAC até {_e(ultimo)}</div>',
+            f'<div class="fdr-topo"><i></i>Dados até {_e(ultimo)}</div>',
             unsafe_allow_html=True,
         )
     except Exception:  # sem dados, o aviso do topo some; as páginas mostram o erro

@@ -1,5 +1,5 @@
 """Testes das consultas do app (fdr.painel) com os marts da amostra: números de impacto,
-calendário e mapa de rotas."""
+calendário, mapa de rotas e histórico de um voo."""
 
 import pytest
 
@@ -47,3 +47,15 @@ def test_mapa_rotas_traz_as_rotas_mais_voadas_com_coordenadas(con, periodo):
     origem = rotas.iloc[0]["origem"]
     so_dela = painel.mapa_rotas(con, *periodo, origem=origem, minimo=1)
     assert (so_dela["origem"] == origem).all()
+
+
+def test_historico_do_voo_ignora_zeros_a_esquerda(con):
+    cia, numero, voos = con.execute(
+        "select cia, numero_voo, count(*) from voos where tipo_linha = 'N' "
+        "group by all order by 3 desc, 1, 2 limit 1"
+    ).fetchone()
+    historico = painel.historico_do_voo(con, cia, numero)
+    assert len(historico) == voos
+    assert len(painel.historico_do_voo(con, cia, "00" + numero.lstrip("0"))) == voos
+    assert historico["data_prevista"].is_monotonic_increasing
+    assert painel.historico_do_voo(con, cia, "99999").empty

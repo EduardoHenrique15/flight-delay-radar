@@ -24,6 +24,7 @@ navegacao = st.navigation(
         st.Page(PAGINAS / "inicio.py", title="Visão geral", default=True),
         st.Page(PAGINAS / "pontualidade.py", title="Pontualidade"),
         st.Page(PAGINAS / "previsao.py", title="Previsão"),
+        st.Page(PAGINAS / "buscar_voo.py", title="Buscar voo"),
         st.Page(PAGINAS / "monitoramento.py", title="Monitoramento"),
         st.Page(PAGINAS / "assistente.py", title="Pergunte aos dados"),
         st.Page(PAGINAS / "sobre.py", title="Sobre o modelo"),
