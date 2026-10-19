@@ -19,6 +19,15 @@ from sqlglot import exp
 
 LIMITE_LINHAS = 1000
 TEMPO_MAXIMO_S = 10.0
+# O que todo SQL aprovado cumpriu, para o app mostrar ao lado da resposta (uma linha por trava).
+TRAVAS = (
+    "Uma instrução só, de leitura (SELECT)",
+    "Só as 6 tabelas do app",
+    "Sem funções de arquivo, rede ou sistema",
+    "No máximo 1.000 linhas",
+    "Banco só de leitura, sem acesso externo",
+    "No máximo 10 segundos",
+)
 
 # Funções que leem arquivos, rede ou o ambiente. Bloqueadas pelo nome, em qualquer lugar.
 PADRAO_FUNCAO_PROIBIDA = re.compile(

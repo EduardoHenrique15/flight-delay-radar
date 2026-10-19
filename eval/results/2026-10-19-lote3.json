@@ -1,0 +1,129 @@
+{
+  "data": "2026-10-19",
+  "modelo": "gemini-3.8-flash",
+  "lote": 3,
+  "resumo": {
+    "perguntas": 9,
+    "acerto_execucao": 1.0,
+    "sql_valido": 1.0,
+    "bloqueadas_ou_com_erro": 0.0,
+    "recusa_correta": 1.0,
+    "com_nova_tentativa": 0.0,
+    "latencia_media_s": 54.37,
+    "por_categoria": {
+      "juncao": 1.0,
+      "recusa": 1.0,
+      "tempo": 1.0
+    }
+  },
+  "resultados": [
+    {
+      "id": 23,
+      "categoria": "juncao",
+      "pergunta": "Qual cidade de origem teve mais voos nacionais com mais de 15 minutos de atraso em julho de 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT a.cidade, SUM(p.atrasados_15) AS voos_atrasados FROM pontualidade_mensal AS p JOIN aeroportos AS a ON a.icao = p.origem WHERE p.mes = CAST('2026-07-01' AS DATE) AND p.tipo_linha = 'N' GROUP BY a.cidade ORDER BY voos_atrasados DESC LIMIT 1",
+      "explicacao": "Agrupa os voos nacionais da tabela pontualidade_mensal por cidade de origem para o mês de julho de 2026, somando o total de partidas com mais de 15 minutos de atraso e retornando a cidade com maior quantidade.",
+      "resposta": "Agrupa os voos nacionais da tabela pontualidade_mensal por cidade de origem para o mês de julho de 2026, somando o total de partidas com mais de 15 minutos de atraso e retornando a cidade com maior quantidade. 1 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 35.71,
+      "acerto": true
+    },
+    {
+      "id": 24,
+      "categoria": "tempo",
+      "pergunta": "Em qual mês de 2025 a taxa de atraso dos voos nacionais foi maior?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT mes, SUM(atrasados_15) / SUM(realizados_com_horario) AS taxa_atraso FROM pontualidade_mensal WHERE YEAR(mes) = 2025 AND tipo_linha = 'N' GROUP BY mes ORDER BY taxa_atraso DESC LIMIT 1",
+      "explicacao": "Calcula a taxa de atraso (voos com atraso superior a 15 minutos divididos pelos voos realizados com horário registrado) para cada mês de 2025 em voos nacionais, ordenando do maior para o menor para identificar o mês com a maior taxa.",
+      "resposta": "Calcula a taxa de atraso (voos com atraso superior a 15 minutos divididos pelos voos realizados com horário registrado) para cada mês de 2025 em voos nacionais, ordenando do maior para o menor para identificar o mês com a maior taxa. 1 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 42.94,
+      "acerto": true
+    },
+    {
+      "id": 25,
+      "categoria": "tempo",
+      "pergunta": "Como evoluiu a taxa de atraso dos voos nacionais mês a mês em 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT mes, SUM(atrasados_15) / SUM(realizados_com_horario) AS taxa_atraso FROM pontualidade_mensal WHERE tipo_linha = 'N' AND YEAR(mes) = 2026 GROUP BY mes ORDER BY mes LIMIT 1000",
+      "explicacao": "Calcula a taxa de atraso mensal (partidas com mais de 15 minutos de atraso divididas pelo total de voos realizados com registro de horário) para voos nacionais (tipo_linha = 'N') ao longo do ano de 2026.",
+      "resposta": "Calcula a taxa de atraso mensal (partidas com mais de 15 minutos de atraso divididas pelo total de voos realizados com registro de horário) para voos nacionais (tipo_linha = 'N') ao longo do ano de 2026. 8 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 67.11,
+      "acerto": true
+    },
+    {
+      "id": 26,
+      "categoria": "tempo",
+      "pergunta": "Compare a taxa de atraso dos voos nacionais em dezembro de 2024 e em dezembro de 2025.",
+      "origem": "modelo",
+      "sql_gerado": "SELECT mes, SUM(atrasados_15) / SUM(realizados_com_horario) AS taxa_atraso, SUM(atrasados_15) AS voos_atrasados, SUM(realizados_com_horario) AS voos_realizados FROM pontualidade_mensal WHERE tipo_linha = 'N' AND mes IN (CAST('2024-12-01' AS DATE), CAST('2025-12-01' AS DATE)) GROUP BY mes ORDER BY mes LIMIT 1000",
+      "explicacao": "Calcula a taxa de atraso (partidas com mais de 15 minutos de atraso divididas pelos voos realizados com horário) para voos nacionais em dezembro de 2024 e dezembro de 2025 a partir da tabela pontualidade_mensal.",
+      "resposta": "Calcula a taxa de atraso (partidas com mais de 15 minutos de atraso divididas pelos voos realizados com horário) para voos nacionais em dezembro de 2024 e dezembro de 2025 a partir da tabela pontualidade_mensal. 2 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 73.91,
+      "acerto": true
+    },
+    {
+      "id": 27,
+      "categoria": "tempo",
+      "pergunta": "Quantos voos nacionais foram cancelados no último mês disponível?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT SUM(cancelados) AS total_cancelados FROM pontualidade_mensal WHERE tipo_linha = 'N' AND mes = (SELECT MAX(mes) FROM pontualidade_mensal) LIMIT 1000",
+      "explicacao": "Soma a quantidade de voos cancelados na tabela pontualidade_mensal para voos nacionais (tipo_linha = 'N') no último mês registrado na base.",
+      "resposta": "Soma a quantidade de voos cancelados na tabela pontualidade_mensal para voos nacionais (tipo_linha = 'N') no último mês registrado na base. Resposta: 1.125,00.",
+      "tentativas": 1,
+      "latencia_s": 98.56,
+      "acerto": true
+    },
+    {
+      "id": 28,
+      "categoria": "tempo",
+      "pergunta": "Qual trimestre de 2025 teve mais voos nacionais realizados?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT QUARTER(mes) AS trimestre, SUM(realizados) AS total_realizados FROM pontualidade_mensal WHERE YEAR(mes) = 2025 AND tipo_linha = 'N' GROUP BY QUARTER(mes) ORDER BY total_realizados DESC LIMIT 1",
+      "explicacao": "Agrupa os voos nacionais ('N') realizados em 2025 por trimestre a partir da tabela pontualidade_mensal e ordena de forma decrescente para identificar o trimestre com maior volume.",
+      "resposta": "Agrupa os voos nacionais ('N') realizados em 2025 por trimestre a partir da tabela pontualidade_mensal e ordena de forma decrescente para identificar o trimestre com maior volume. 1 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 80.39,
+      "acerto": true
+    },
+    {
+      "id": 29,
+      "categoria": "recusa",
+      "pergunta": "Qual o preço médio da passagem de São Paulo para o Rio de Janeiro?",
+      "origem": "recusa",
+      "sql_gerado": null,
+      "explicacao": "",
+      "resposta": "A base de dados contém apenas dados operacionais de voos e pontualidade da ANAC (como partidas, atrasos e cancelamentos), não incluindo informações sobre preços, tarifas ou venda de passagens aéreas.",
+      "tentativas": 1,
+      "latencia_s": 31.88,
+      "acerto": true
+    },
+    {
+      "id": 30,
+      "categoria": "recusa",
+      "pergunta": "Vai chover em Guarulhos amanhã?",
+      "origem": "recusa",
+      "sql_gerado": null,
+      "explicacao": "",
+      "resposta": "Não é possível responder a essa pergunta pois o banco de dados contém apenas dados históricos de pontualidade e voos da ANAC, não possuindo informações meteorológicas ou previsões do tempo.",
+      "tentativas": 1,
+      "latencia_s": 27.96,
+      "acerto": true
+    },
+    {
+      "id": 31,
+      "categoria": "recusa",
+      "pergunta": "Qual o nome do piloto do voo GLO 1234?",
+      "origem": "recusa",
+      "sql_gerado": null,
+      "explicacao": "",
+      "resposta": "A base de dados não contém informações sobre tripulantes, pilotos ou passageiros, apenas registros operacionais de voos, horários, atrasos, rotas e aeroportos.",
+      "tentativas": 1,
+      "latencia_s": 30.85,
+      "acerto": true
+    }
+  ]
+}

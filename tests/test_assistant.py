@@ -7,7 +7,7 @@ import pytest
 
 from fdr.assistant import guard, schema
 from fdr.assistant.agent import Assistente, resumir
-from fdr.assistant.llm import Cache, ControleDeUso, LLMFalso, normalizar
+from fdr.assistant.llm import Cache, ControleDeUso, CotaEsgotada, LLMFalso, normalizar
 
 TABELAS = set(schema.TABELAS)
 
@@ -171,6 +171,32 @@ def test_sem_chave_usa_as_respostas_de_demonstracao(banco, tmp_path):
     assert outra.origem == "limite" and PERGUNTA in outra.texto
 
 
+def test_cota_do_dia_esgotada_cai_na_demonstracao_e_para_de_pedir(banco, tmp_path):
+    """O 429 do limite do dia vira a resposta gravada (ou o aviso), não um erro, e o dia fica
+    marcado: a pergunta seguinte nem chega ao modelo."""
+    esgotada = CotaEsgotada("limite de pedidos do dia", diaria=True)
+    demo = {PERGUNTA: {"sql": SQL_GOL, "explicacao": "Contei os voos da Gol."}}
+    respostas = {normalizar(PERGUNTA): [esgotada], "outra pergunta": [esgotada]}
+    assistente, llm = criar(banco, tmp_path, respostas=respostas, demonstracao=demo)
+
+    resposta = assistente.responder(PERGUNTA)
+    assert resposta.origem == "demonstracao" and resposta.texto.endswith("Resposta: 2.")
+    assert "cota do Gemini esgotada hoje" in resposta.avisos[0]
+    assert assistente.uso.motivo_bloqueio(0) == "cota do Gemini esgotada hoje"
+
+    outra = assistente.responder("Outra pergunta")
+    assert outra.origem == "limite" and "esgotada hoje" in outra.texto
+    assert llm.chamadas == [normalizar(PERGUNTA)]  # a segunda não gastou pedido
+
+
+def test_limite_por_minuto_nao_marca_o_dia(banco, tmp_path):
+    respostas = {normalizar(PERGUNTA): [CotaEsgotada("por minuto", diaria=False)]}
+    assistente, _ = criar(banco, tmp_path, respostas=respostas)
+    resposta = assistente.responder(PERGUNTA)
+    assert resposta.origem == "limite" and "limite por minuto" in resposta.texto
+    assert assistente.uso.motivo_bloqueio(0) is None
+
+
 def test_limite_por_sessao_e_por_dia(banco, tmp_path):
     respostas = {
         normalizar(PERGUNTA): [{"pode_responder": True, "sql": SQL_GOL, "explicacao": "ok"}]
@@ -223,7 +249,9 @@ def test_normalizar_e_resumir():
     import pandas as pd
 
     assert resumir(pd.DataFrame({"taxa": [0.1534]})) == "Resposta: 15,3%."
-    assert resumir(pd.DataFrame({"voos": [1234567]})) == "Resposta: 1234567."
+    assert resumir(pd.DataFrame({"voos": [1234567]})) == "Resposta: 1.234.567."
+    assert resumir(pd.DataFrame({"voos": [86746.0]})) == "Resposta: 86.746."  # SUM do DuckDB
+    assert resumir(pd.DataFrame({"atraso": [3.98]})) == "Resposta: 3,98."
     assert resumir(pd.DataFrame()) == "A consulta não encontrou nenhum resultado."
     assert date.today()  # o controle de uso grava por dia
 

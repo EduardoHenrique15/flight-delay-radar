@@ -83,7 +83,10 @@ flowchart LR
   monitoring, and opens a pull request with the data and metrics.
 - **Assistant:** Gemini only writes the query, from a description of the tables. The SQL goes
   through two layers of guardrails (SELECT only, only the app's 6 tables, no files or network,
-  up to 1,000 rows and 10 seconds), and the answer's numbers always come from the database.
+  up to 1,000 rows and 10 seconds), and the answer's numbers always come from the database. On
+  31 questions with known answers, it got 27 of 31 (87.1%) right by the automatic criterion and
+  30 of 31 after manual review ([how it works and how it was evaluated](docs/assistente.md),
+  Portuguese).
 
 Decisions are recorded as [ADRs](docs/decisoes/README.md) (Portuguese): data window, target,
 leakage rule, warehouse, model selection, retraining rule, text-to-SQL and deployment without a

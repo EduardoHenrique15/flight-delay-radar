@@ -145,7 +145,8 @@ class Gemini:
 @dataclass
 class LLMFalso:
     """Modelo falso para os testes: devolve respostas predefinidas por pergunta, em ordem (para
-    simular a nova tentativa), e conta as chamadas."""
+    simular a nova tentativa), e conta as chamadas. Uma resposta que é uma exceção (ErroLLM,
+    CotaEsgotada) é levantada, como faria o Gemini."""
 
     respostas: dict[str, list[dict]]
     chamadas: list[str] = field(default_factory=list)
@@ -156,7 +157,10 @@ class LLMFalso:
         fila = self.respostas.get(pergunta)
         if not fila:
             raise ErroLLM(f"Sem resposta preparada para: {pergunta}")
-        return _validar_resposta(fila.pop(0) if len(fila) > 1 else fila[0])
+        resposta = fila.pop(0) if len(fila) > 1 else fila[0]
+        if isinstance(resposta, Exception):
+            raise resposta
+        return _validar_resposta(resposta)
 
 
 class Cache:
@@ -182,19 +186,31 @@ class Cache:
 
 @dataclass
 class ControleDeUso:
-    """Limite de perguntas ao modelo por sessão e por dia (o dia fica gravado num arquivo)."""
+    """Limite de perguntas ao modelo por sessão e por dia (o dia fica gravado num arquivo). Quando
+    o Gemini avisa que a cota do dia acabou, o dia fica marcado e o app para de pedir."""
 
     caminho: Path
     por_sessao: int = 3
     por_dia: int = 6
 
-    def _usadas_hoje(self) -> int:
+    def _registro(self) -> dict:
         if not self.caminho.exists():
-            return 0
-        registro = json.loads(self.caminho.read_text(encoding="utf-8"))
-        return registro.get(date.today().isoformat(), 0)
+            return {}
+        return json.loads(self.caminho.read_text(encoding="utf-8"))
+
+    def _gravar(self, registro: dict) -> None:
+        self.caminho.parent.mkdir(parents=True, exist_ok=True)
+        self.caminho.write_text(json.dumps(registro) + "\n", encoding="utf-8")
+
+    def _usadas_hoje(self) -> int:
+        return self._registro().get(date.today().isoformat(), 0)
+
+    def marcar_cota_esgotada(self) -> None:
+        self._gravar(self._registro() | {"cota_esgotada_em": date.today().isoformat()})
 
     def motivo_bloqueio(self, usadas_na_sessao: int) -> str | None:
+        if self._registro().get("cota_esgotada_em") == date.today().isoformat():
+            return "cota do Gemini esgotada hoje"
         if usadas_na_sessao >= self.por_sessao:
             return f"limite de {self.por_sessao} perguntas por sessão"
         if self._usadas_hoje() >= self.por_dia:
@@ -203,7 +219,7 @@ class ControleDeUso:
 
     def registrar(self) -> None:
         hoje = date.today().isoformat()
-        self.caminho.parent.mkdir(parents=True, exist_ok=True)
-        self.caminho.write_text(
-            json.dumps({hoje: self._usadas_hoje() + 1}) + "\n", encoding="utf-8"
-        )
+        registro = {hoje: self._usadas_hoje() + 1}  # só o dia de hoje fica no arquivo
+        if self._registro().get("cota_esgotada_em") == hoje:
+            registro["cota_esgotada_em"] = hoje
+        self._gravar(registro)

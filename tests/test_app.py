@@ -145,9 +145,14 @@ def test_assistente_sem_chave_fica_em_modo_de_demonstracao(dados_do_app, monkeyp
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     app = abrir("paginas/assistente.py")
     assert "Modo de demonstração" in texto(app)
-    app.button[0].click().run()  # pergunta de exemplo: responde sem chamar o Gemini
+    assert "Como o assistente foi avaliado" in texto(app)  # o placar de eval/results/
+    # A pergunta de exemplo responde com a gravada (data/demo/), sem chamar o Gemini, e mostra
+    # as travas; a da evolução mês a mês ganha um gráfico de linha.
+    app.button(key="exemplo_4").click().run()
     sem_erros(app)
     assert app.chat_message
+    assert "Travas cumpridas" in texto(app)
+    assert app.get("vega_lite_chart")
 
 
 def test_pagina_com_erro_mostra_mensagem_sem_traceback(dados_do_app, monkeypatch):

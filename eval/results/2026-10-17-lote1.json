@@ -1,0 +1,170 @@
+{
+  "data": "2026-10-17",
+  "modelo": "gemini-3.8-flash",
+  "lote": 1,
+  "resumo": {
+    "perguntas": 11,
+    "acerto_execucao": 0.9091,
+    "sql_valido": 1.0,
+    "bloqueadas_ou_com_erro": 0.0,
+    "recusa_correta": null,
+    "com_nova_tentativa": 0.0,
+    "latencia_media_s": 17.87,
+    "por_categoria": {
+      "agregacao": 1.0,
+      "simples": 0.9
+    }
+  },
+  "resultados": [
+    {
+      "id": 1,
+      "categoria": "simples",
+      "pergunta": "Quantos voos foram realizados em julho de 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT SUM(realizados) AS voos_realizados FROM pontualidade_mensal WHERE mes = CAST('2026-07-01' AS DATE) LIMIT 1000",
+      "explicacao": "Soma a quantidade de voos realizados registrados na tabela pontualidade_mensal para o mês de julho de 2026.",
+      "resposta": "Soma a quantidade de voos realizados registrados na tabela pontualidade_mensal para o mês de julho de 2026. Resposta: 86.746,00.",
+      "tentativas": 1,
+      "latencia_s": 7.88,
+      "acerto": true
+    },
+    {
+      "id": 2,
+      "categoria": "simples",
+      "pergunta": "Quantos voos a Azul cancelou em agosto de 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT SUM(cancelados) AS cancelados FROM pontualidade_mensal WHERE cia = 'AZU' AND mes = CAST('2026-08-01' AS DATE) LIMIT 1000",
+      "explicacao": "Soma o total de voos cancelados da Azul (código ICAO 'AZU') no mês de agosto de 2026 a partir da tabela pontualidade_mensal.",
+      "resposta": "Soma o total de voos cancelados da Azul (código ICAO 'AZU') no mês de agosto de 2026 a partir da tabela pontualidade_mensal. Resposta: 389,00.",
+      "tentativas": 1,
+      "latencia_s": 15.91,
+      "acerto": true
+    },
+    {
+      "id": 3,
+      "categoria": "simples",
+      "pergunta": "Qual é o nome do aeroporto de código SBKP?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT nome, cidade, uf FROM aeroportos WHERE icao = 'SBKP' LIMIT 1000",
+      "explicacao": "Consulta o nome, cidade e estado do aeroporto correspondente ao código ICAO SBKP na tabela de aeroportos.",
+      "resposta": "Consulta o nome, cidade e estado do aeroporto correspondente ao código ICAO SBKP na tabela de aeroportos. 1 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 2.73,
+      "acerto": true
+    },
+    {
+      "id": 4,
+      "categoria": "simples",
+      "pergunta": "Qual a distância entre Guarulhos e Recife?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT distancia_km FROM rotas WHERE origem = 'SBGR' AND destino = 'SBRF' LIMIT 1",
+      "explicacao": "Consulta a distância em km na tabela de rotas entre o Aeroporto de Guarulhos (SBGR) e o Aeroporto do Recife (SBRF).",
+      "resposta": "Consulta a distância em km na tabela de rotas entre o Aeroporto de Guarulhos (SBGR) e o Aeroporto do Recife (SBRF). Resposta: 2.100,00.",
+      "tentativas": 1,
+      "latencia_s": 4.33,
+      "acerto": true
+    },
+    {
+      "id": 5,
+      "categoria": "simples",
+      "pergunta": "Qual foi a taxa de atraso dos voos nacionais em agosto de 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT SUM(atrasados_15) / SUM(realizados_com_horario) AS taxa_atraso FROM pontualidade_mensal WHERE tipo_linha = 'N' AND mes = CAST('2026-08-01' AS DATE) LIMIT 1000",
+      "explicacao": "Calcula a taxa geral de atraso (partidas com mais de 15 minutos de atraso divididas pelo total de voos realizados com horário registrado) para todos os voos nacionais no mês de agosto de 2026.",
+      "resposta": "Calcula a taxa geral de atraso (partidas com mais de 15 minutos de atraso divididas pelo total de voos realizados com horário registrado) para todos os voos nacionais no mês de agosto de 2026. Resposta: 15,7%.",
+      "tentativas": 1,
+      "latencia_s": 4.04,
+      "acerto": true
+    },
+    {
+      "id": 6,
+      "categoria": "simples",
+      "pergunta": "Quantas companhias aéreas brasileiras aparecem nos dados?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT COUNT(*) AS total_cias_brasileiras FROM companhias WHERE brasileira = TRUE LIMIT 1000",
+      "explicacao": "Conta o número total de companhias aéreas brasileiras cadastradas na tabela de companhias.",
+      "resposta": "Conta o número total de companhias aéreas brasileiras cadastradas na tabela de companhias. Resposta: 19.",
+      "tentativas": 1,
+      "latencia_s": 3.04,
+      "acerto": true
+    },
+    {
+      "id": 7,
+      "categoria": "simples",
+      "pergunta": "Qual é o código ICAO da Gol?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT cia, nome FROM companhias WHERE nome ILIKE '%Gol%' LIMIT 5",
+      "explicacao": "Consulta o código ICAO da Gol na tabela de companhias aéreas filtrando pelo nome.",
+      "resposta": "Consulta o código ICAO da Gol na tabela de companhias aéreas filtrando pelo nome. 3 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 2.7,
+      "acerto": false
+    },
+    {
+      "id": 8,
+      "categoria": "simples",
+      "pergunta": "Quantos aeroportos de Minas Gerais aparecem nos dados?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT COUNT(*) AS total_aeroportos FROM aeroportos WHERE uf = 'MG' LIMIT 1000",
+      "explicacao": "Conta o total de aeroportos cadastrados na tabela aeroportos com a sigla de estado (UF) igual a 'MG'.",
+      "resposta": "Conta o total de aeroportos cadastrados na tabela aeroportos com a sigla de estado (UF) igual a 'MG'. Resposta: 21.",
+      "tentativas": 1,
+      "latencia_s": 6.98,
+      "acerto": true
+    },
+    {
+      "id": 9,
+      "categoria": "simples",
+      "pergunta": "Qual foi o maior atraso de partida, em minutos, registrado em julho de 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT data_prevista, cia, numero_voo, origem, destino, atraso_partida_min FROM voos WHERE mes = CAST('2026-07-01' AS DATE) AND situacao = 'REALIZADO' ORDER BY atraso_partida_min DESC LIMIT 1",
+      "explicacao": "Consulta o voo realizado com o maior atraso de partida em minutos registrado no mês de julho de 2026.",
+      "resposta": "Consulta o voo realizado com o maior atraso de partida em minutos registrado no mês de julho de 2026. 1 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 4.36,
+      "acerto": true
+    },
+    {
+      "id": 10,
+      "categoria": "simples",
+      "pergunta": "Quantos voos internacionais foram realizados em julho de 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT SUM(realizados) AS voos_realizados FROM pontualidade_mensal WHERE tipo_linha = 'I' AND mes = CAST('2026-07-01' AS DATE) LIMIT 1000",
+      "explicacao": "Soma a quantidade de voos realizados do tipo internacional (tipo_linha = 'I') na tabela pontualidade_mensal para o mês de julho de 2026.",
+      "resposta": "Soma a quantidade de voos realizados do tipo internacional (tipo_linha = 'I') na tabela pontualidade_mensal para o mês de julho de 2026. Resposta: 14.864,00.",
+      "tentativas": 1,
+      "latencia_s": 4.48,
+      "acerto": true
+    },
+    {
+      "id": 11,
+      "categoria": "agregacao",
+      "pergunta": "Entre as companhias com pelo menos 1000 voos nacionais realizados em julho de 2026, qual teve a maior taxa de atraso?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT c.nome, p.cia, SUM(p.realizados) AS voos_realizados, SUM(p.atrasados_15) / SUM(p.realizados_com_horario) AS taxa_atraso FROM pontualidade_mensal AS p JOIN companhias AS c ON c.cia = p.cia WHERE p.mes = CAST('2026-07-01' AS DATE) AND p.tipo_linha = 'N' GROUP BY c.nome, p.cia HAVING SUM(p.realizados) >= 1000 ORDER BY taxa_atraso DESC LIMIT 1",
+      "explicacao": "Calcula a taxa de atraso superior a 15 minutos para cada companhia aérea com no mínimo 1.000 voos nacionais realizados em julho de 2026 e retorna a de maior taxa.",
+      "resposta": "Calcula a taxa de atraso superior a 15 minutos para cada companhia aérea com no mínimo 1.000 voos nacionais realizados em julho de 2026 e retorna a de maior taxa. 1 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 140.16,
+      "acerto": true
+    }
+  ],
+  "refeitas": [
+    {
+      "id": 11,
+      "data": "2026-10-17"
+    },
+    {
+      "id": 11,
+      "data": "2026-10-17"
+    },
+    {
+      "id": 11,
+      "data": "2026-10-18"
+    },
+    {
+      "id": 11,
+      "data": "2026-10-18"
+    }
+  ]
+}

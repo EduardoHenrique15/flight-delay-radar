@@ -113,6 +113,9 @@ def test_sobre_e_assistente_em_ingles_com_interacoes(dados_do_app, monkeypatch):
     app = abrir_em_ingles("paginas/assistente.py")
     app.button(key="exemplo_0").click().run()  # sem chave: modo de demonstração
     sem_erros(app)
-    assert "demo mode" in "\n".join(m.value for m in app.markdown)
+    pagina = "\n".join(m.value for m in app.markdown)
+    # Com as respostas gravadas (data/demo/), o exemplo responde com a de demonstração.
+    assert "Saved demo answer" in pagina and "Guardrails passed" in pagina
+    assert "How the assistant was evaluated" in pagina
     assert not idioma.FALTANDO, sorted(idioma.FALTANDO)
     assert not sobra_em_portugues(app)

@@ -1,0 +1,24 @@
+# Revisão manual das perguntas que a avaliação automática marcou como erradas (eval.py). Feita
+# rodando o SQL gerado e o de referência nos dados do app e comparando os resultados.
+# veredito: "equivalente" (mesmos números, outra forma de mostrar) ou "erro" (resposta errada).
+# A revisão aparece ao lado da métrica automática, que continua sendo a principal.
+- id: 7
+  veredito: erro
+  nota: >-
+    Buscou os nomes que contêm "Gol" (ILIKE) e trouxe também a Cargolux e a TAAG Angola Airlines,
+    em vez de só a Gol (GLO).
+- id: 12
+  veredito: equivalente
+  nota: >-
+    Os mesmos 5 aeroportos, na mesma ordem e com os mesmos totais, identificados pelo nome em vez
+    do código ICAO.
+- id: 13
+  veredito: equivalente
+  nota: >-
+    A hora com a maior taxa de atraso (22h) está no topo, mas a resposta lista as 5 primeiras em
+    vez de só uma.
+- id: 16
+  veredito: equivalente
+  nota: >-
+    As mesmas 5 companhias, na mesma ordem e com os mesmos totais, identificadas pelo nome em vez
+    do código ICAO.

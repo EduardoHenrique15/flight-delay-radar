@@ -1,0 +1,190 @@
+{
+  "data": "2026-10-18",
+  "modelo": "gemini-3.8-flash",
+  "lote": 2,
+  "resumo": {
+    "perguntas": 11,
+    "acerto_execucao": 0.7273,
+    "sql_valido": 1.0,
+    "bloqueadas_ou_com_erro": 0.0,
+    "recusa_correta": null,
+    "com_nova_tentativa": 0.0,
+    "latencia_media_s": 41.63,
+    "por_categoria": {
+      "agregacao": 0.5714,
+      "juncao": 1.0
+    }
+  },
+  "resultados": [
+    {
+      "id": 12,
+      "categoria": "agregacao",
+      "pergunta": "Quais os 5 aeroportos de origem com mais voos nacionais cancelados em 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT a.nome, a.cidade, a.uf, SUM(p.cancelados) AS total_cancelados FROM pontualidade_mensal AS p JOIN aeroportos AS a ON a.icao = p.origem WHERE p.tipo_linha = 'N' AND YEAR(p.mes) = 2026 GROUP BY a.nome, a.cidade, a.uf ORDER BY total_cancelados DESC LIMIT 5",
+      "explicacao": "Calcula a soma de voos cancelados por aeroporto de origem para voos nacionais (tipo_linha = 'N') no ano de 2026, ordenando pelos 5 maiores totais.",
+      "resposta": "Calcula a soma de voos cancelados por aeroporto de origem para voos nacionais (tipo_linha = 'N') no ano de 2026, ordenando pelos 5 maiores totais. 5 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 4.65,
+      "acerto": false
+    },
+    {
+      "id": 13,
+      "categoria": "agregacao",
+      "pergunta": "Em que hora do dia os voos nacionais regulares têm a maior taxa de atraso?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT hora_prevista, SUM(atrasados_15) / SUM(voos) AS taxa_atraso, SUM(voos) AS total_voos FROM atraso_rota_hora GROUP BY hora_prevista ORDER BY taxa_atraso DESC LIMIT 5",
+      "explicacao": "Calcula a taxa de atraso (partidas com mais de 15 minutos de atraso divididas pelo total de voos realizados) agrupada por hora prevista da partida usando a tabela atraso_rota_hora, que já consolida voos nacionais regulares realizados, ordenando pelas horas com maior taxa de atraso.",
+      "resposta": "Calcula a taxa de atraso (partidas com mais de 15 minutos de atraso divididas pelo total de voos realizados) agrupada por hora prevista da partida usando a tabela atraso_rota_hora, que já consolida voos nacionais regulares realizados, ordenando pelas horas com maior taxa de atraso. 5 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 8.17,
+      "acerto": false
+    },
+    {
+      "id": 14,
+      "categoria": "agregacao",
+      "pergunta": "Quais as 3 companhias com mais voos nacionais realizados em agosto de 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT c.nome, p.cia, SUM(p.realizados) AS voos_realizados FROM pontualidade_mensal AS p JOIN companhias AS c ON c.cia = p.cia WHERE p.tipo_linha = 'N' AND p.mes = CAST('2026-08-01' AS DATE) GROUP BY c.nome, p.cia ORDER BY voos_realizados DESC LIMIT 3",
+      "explicacao": "Consulta os voos nacionais realizados por companhia aérea em agosto de 2026 na tabela pontualidade_mensal, associando o nome da companhia e ordenando de forma decrescente para obter as 3 primeiras posições.",
+      "resposta": "Consulta os voos nacionais realizados por companhia aérea em agosto de 2026 na tabela pontualidade_mensal, associando o nome da companhia e ordenando de forma decrescente para obter as 3 primeiras posições. 3 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 4.63,
+      "acerto": true
+    },
+    {
+      "id": 15,
+      "categoria": "agregacao",
+      "pergunta": "Qual a taxa de cancelamento dos voos nacionais da LATAM em 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT SUM(cancelados) / SUM(voos) AS taxa_cancelamento FROM pontualidade_mensal WHERE cia = 'TAM' AND tipo_linha = 'N' AND YEAR(mes) = 2026 LIMIT 1000",
+      "explicacao": "Calcula a razão entre o total de voos cancelados e o total de voos programados da LATAM (TAM) em voos domésticos ao longo do ano de 2026.",
+      "resposta": "Calcula a razão entre o total de voos cancelados e o total de voos programados da LATAM (TAM) em voos domésticos ao longo do ano de 2026. Resposta: 1,4%.",
+      "tentativas": 1,
+      "latencia_s": 4.41,
+      "acerto": true
+    },
+    {
+      "id": 16,
+      "categoria": "agregacao",
+      "pergunta": "Quais as 5 companhias com mais voos nacionais atrasados mais de 1 hora em julho de 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT c.nome, SUM(p.atrasados_60) AS voos_atrasados_mais_1h FROM pontualidade_mensal AS p JOIN companhias AS c ON c.cia = p.cia WHERE p.tipo_linha = 'N' AND p.mes = CAST('2026-07-01' AS DATE) GROUP BY c.nome ORDER BY voos_atrasados_mais_1h DESC LIMIT 5",
+      "explicacao": "Agrupa a pontualidade mensal por companhia para voos nacionais (tipo_linha = 'N') em julho de 2026, somando os voos com mais de 60 minutos de atraso (atrasados_60) e retornando o ranking das 5 primeiras.",
+      "resposta": "Agrupa a pontualidade mensal por companhia para voos nacionais (tipo_linha = 'N') em julho de 2026, somando os voos com mais de 60 minutos de atraso (atrasados_60) e retornando o ranking das 5 primeiras. 5 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 55.6,
+      "acerto": false
+    },
+    {
+      "id": 17,
+      "categoria": "agregacao",
+      "pergunta": "Qual o atraso médio de partida, em minutos, dos voos nacionais realizados da Gol em agosto de 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT AVG(atraso_partida_min) AS atraso_medio_partida_min FROM voos WHERE cia = 'GLO' AND tipo_linha = 'N' AND situacao = 'REALIZADO' AND mes = CAST('2026-08-01' AS DATE) LIMIT 1000",
+      "explicacao": "Calcula a média de atraso de partida (em minutos) para voos nacionais realizados da Gol (GLO) no mês de agosto de 2026 utilizando a tabela de voos individuais.",
+      "resposta": "Calcula a média de atraso de partida (em minutos) para voos nacionais realizados da Gol (GLO) no mês de agosto de 2026 utilizando a tabela de voos individuais. Resposta: 3,98.",
+      "tentativas": 1,
+      "latencia_s": 117.26,
+      "acerto": true
+    },
+    {
+      "id": 18,
+      "categoria": "agregacao",
+      "pergunta": "Qual dia de agosto de 2026 teve mais voos nacionais com mais de 15 minutos de atraso?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT data_prevista, COUNT(*) AS voos_atrasados FROM voos WHERE mes = CAST('2026-08-01' AS DATE) AND tipo_linha = 'N' AND atrasado_15 = TRUE GROUP BY data_prevista ORDER BY voos_atrasados DESC LIMIT 1",
+      "explicacao": "Identifica o dia em agosto de 2026 com o maior volume de voos nacionais que partiram com atraso superior a 15 minutos.",
+      "resposta": "Identifica o dia em agosto de 2026 com o maior volume de voos nacionais que partiram com atraso superior a 15 minutos. 1 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 9.14,
+      "acerto": true
+    },
+    {
+      "id": 19,
+      "categoria": "juncao",
+      "pergunta": "Entre os aeroportos de Santa Catarina com pelo menos 500 voos nacionais realizados em 2026, qual tem a maior taxa de atraso?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT a.nome, a.cidade, a.icao, SUM(p.realizados) AS voos_realizados, SUM(p.atrasados_15) * 1.0 / SUM(p.realizados_com_horario) AS taxa_atraso FROM pontualidade_mensal AS p JOIN aeroportos AS a ON p.origem = a.icao WHERE a.uf = 'SC' AND p.tipo_linha = 'N' AND YEAR(p.mes) = 2026 GROUP BY a.nome, a.cidade, a.icao HAVING SUM(p.realizados) >= 500 ORDER BY taxa_atraso DESC LIMIT 1",
+      "explicacao": "Calcula a taxa de atraso (atrasados mais de 15 minutos dividido por voos realizados com horário) para aeroportos de Santa Catarina (UF = 'SC') em voos nacionais no ano de 2026, filtrando aqueles com pelo menos 500 voos realizados e ordenando pelo maior índice de atraso.",
+      "resposta": "Calcula a taxa de atraso (atrasados mais de 15 minutos dividido por voos realizados com horário) para aeroportos de Santa Catarina (UF = 'SC') em voos nacionais no ano de 2026, filtrando aqueles com pelo menos 500 voos realizados e ordenando pelo maior índice de atraso. 1 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 39.68,
+      "acerto": true
+    },
+    {
+      "id": 20,
+      "categoria": "juncao",
+      "pergunta": "Quantos voos nacionais foram realizados a partir de aeroportos do estado do Rio de Janeiro em julho de 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT SUM(p.realizados) AS voos_realizados FROM pontualidade_mensal AS p JOIN aeroportos AS a ON p.origem = a.icao WHERE a.uf = 'RJ' AND p.tipo_linha = 'N' AND p.mes = CAST('2026-07-01' AS DATE) LIMIT 1000",
+      "explicacao": "Calcula o total de voos nacionais realizados com origem em aeroportos do estado do Rio de Janeiro em julho de 2026, combinando as tabelas pontualidade_mensal e aeroportos.",
+      "resposta": "Calcula o total de voos nacionais realizados com origem em aeroportos do estado do Rio de Janeiro em julho de 2026, combinando as tabelas pontualidade_mensal e aeroportos. Resposta: 6.169,00.",
+      "tentativas": 1,
+      "latencia_s": 47.7,
+      "acerto": true
+    },
+    {
+      "id": 21,
+      "categoria": "juncao",
+      "pergunta": "Qual o nome da companhia com mais voos realizados em agosto de 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT c.nome, SUM(p.realizados) AS total_realizados FROM pontualidade_mensal AS p JOIN companhias AS c ON c.cia = p.cia WHERE p.mes = CAST('2026-08-01' AS DATE) GROUP BY c.nome ORDER BY total_realizados DESC LIMIT 1",
+      "explicacao": "Agrupa os voos realizados por companhia no mês de agosto de 2026 (mes = '2026-08-01') e retorna o nome da companhia com o maior total.",
+      "resposta": "Agrupa os voos realizados por companhia no mês de agosto de 2026 (mes = '2026-08-01') e retorna o nome da companhia com o maior total. 1 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 63.43,
+      "acerto": true
+    },
+    {
+      "id": 22,
+      "categoria": "juncao",
+      "pergunta": "Quais as 3 rotas domésticas mais longas que tiveram voos em 2026?",
+      "origem": "modelo",
+      "sql_gerado": "SELECT r.origem, r.destino, r.distancia_km FROM rotas AS r JOIN voos AS v ON r.origem = v.origem AND r.destino = v.destino WHERE r.domestica = TRUE AND YEAR(v.mes) = 2026 AND v.situacao = 'REALIZADO' GROUP BY r.origem, r.destino, r.distancia_km ORDER BY r.distancia_km DESC LIMIT 3",
+      "explicacao": "Consulta a tabela de rotas filtrando apenas rotas domésticas que registraram voos realizados no ano de 2026 na tabela de voos, ordenando pela distância em ordem decrescente para retornar as 3 maiores.",
+      "resposta": "Consulta a tabela de rotas filtrando apenas rotas domésticas que registraram voos realizados no ano de 2026 na tabela de voos, ordenando pela distância em ordem decrescente para retornar as 3 maiores. 3 linha(s) encontrada(s).",
+      "tentativas": 1,
+      "latencia_s": 103.26,
+      "acerto": true
+    }
+  ],
+  "refeitas": [
+    {
+      "id": 16,
+      "data": "2026-10-18"
+    },
+    {
+      "id": 17,
+      "data": "2026-10-18"
+    },
+    {
+      "id": 19,
+      "data": "2026-10-18"
+    },
+    {
+      "id": 20,
+      "data": "2026-10-18"
+    },
+    {
+      "id": 21,
+      "data": "2026-10-18"
+    },
+    {
+      "id": 16,
+      "data": "2026-10-19"
+    },
+    {
+      "id": 19,
+      "data": "2026-10-19"
+    },
+    {
+      "id": 20,
+      "data": "2026-10-19"
+    },
+    {
+      "id": 21,
+      "data": "2026-10-19"
+    }
+  ]
+}

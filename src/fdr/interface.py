@@ -358,6 +358,18 @@ button[data-variant="segmented_control"]:hover {{ border-color: {PRETO} !importa
     text-transform: uppercase; letter-spacing: 0.07em; line-height: 1.4;
 }}
 .fdr-selo svg {{ flex: none; }}
+/* Assistente: as travas que o SQL cumpriu e as perguntas revisadas da avaliação */
+.fdr-travas {{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px;
+    margin: 4px 0 8px 0; font-size: 0.85rem; color: {TEXTO}; }}
+.fdr-travas > span {{ font-family: {FONTE_TITULO}; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; font-size: 0.75rem; color: {TINTA}; }}
+.fdr-travas ul {{ display: contents; list-style: none; }}
+.fdr-travas li {{ margin: 0; padding: 0; }}
+.fdr-travas li b {{ color: #1a7f45; margin-right: 4px; }}
+.fdr-erro-eval {{ padding: 12px 0; border-top: 1px solid {LINHA}; }}
+.fdr-erro-eval:first-child {{ border-top: none; padding-top: 0; }}
+.fdr-erro-eval .pergunta {{ font-weight: 600; color: {TINTA}; margin: 6px 0 2px 0; }}
+.fdr-erro-eval .nota {{ font-size: 0.88rem; color: {TEXTO}; }}
 
 /* Resumo do mês */
 .fdr-resumo {{ font-size: 1.22rem !important; line-height: 1.6; color: {TINTA};

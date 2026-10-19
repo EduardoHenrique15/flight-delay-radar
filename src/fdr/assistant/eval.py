@@ -21,6 +21,10 @@ Uso:
     python -m fdr.assistant.eval --lote 3          # perguntas 23 a 31
     python -m fdr.assistant.eval --lote 1 --refazer 11   # refaz só a 11 no último arquivo do lote 1
     python -m fdr.assistant.eval --demo            # grava as respostas de demonstração
+
+O placar do app e de docs/assistente.md (`placar`) junta o último arquivo de cada lote. As
+perguntas que a avaliação automática marcou como erradas têm uma revisão manual em
+eval/revisao.yaml: ela aparece ao lado, sem mudar a métrica automática.
 """
 
 import argparse
@@ -41,6 +45,7 @@ from fdr.assistant.llm import Cache, ControleDeUso, CotaEsgotada, Gemini, Modelo
 from fdr.config import ARQUIVO_DEMO_ASSISTENTE, BANCO_APP, RAIZ
 
 ARQUIVO_PERGUNTAS = RAIZ / "eval" / "questions.yaml"
+ARQUIVO_REVISAO = RAIZ / "eval" / "revisao.yaml"
 PASTA_RESULTADOS = RAIZ / "eval" / "results"
 TAMANHO_LOTE = 11  # 3 lotes; com as novas tentativas, cada lote fica abaixo de ~20 pedidos
 TOLERANCIA = 1e-4
@@ -215,6 +220,57 @@ def gravar_demo(pasta: Path = PASTA_RESULTADOS, destino: Path = ARQUIVO_DEMO_ASS
                 demo.guardar(r["pergunta"], {"sql": r["sql_gerado"], "explicacao": r["explicacao"]})
                 gravadas += 1
     return gravadas
+
+
+def placar(pasta: Path = PASTA_RESULTADOS, revisao: Path = ARQUIVO_REVISAO) -> dict | None:
+    """A avaliação inteira: o último arquivo de cada lote, somado. Devolve None sem resultados.
+
+    `acertos` é a métrica automática (a principal). `acertos_revisados` soma as erradas que a
+    revisão manual julgou equivalentes (mesmos números, outra forma de mostrar)."""
+    ultimos: dict[int, Path] = {}
+    for arquivo in sorted(pasta.glob("*-lote*.json")):
+        ultimos[json.loads(arquivo.read_text(encoding="utf-8"))["lote"]] = arquivo
+    if not ultimos:
+        return None
+    lotes = [json.loads(ultimos[n].read_text(encoding="utf-8")) for n in sorted(ultimos)]
+    resultados = sorted((r for lote in lotes for r in lote["resultados"]), key=lambda r: r["id"])
+    vereditos = {}
+    if revisao.exists():
+        vereditos = {item["id"]: item for item in yaml.safe_load(revisao.read_text("utf-8"))}
+    respondiveis = [r for r in resultados if r["categoria"] != "recusa"]
+    recusas = [r for r in resultados if r["categoria"] == "recusa"]
+    erradas = [
+        {
+            "id": r["id"],
+            "pergunta": r["pergunta"],
+            "veredito": vereditos.get(r["id"], {}).get("veredito", "sem revisão"),
+            "nota": vereditos.get(r["id"], {}).get("nota", ""),
+        }
+        for r in resultados
+        if not r["acerto"]
+    ]
+    categorias = {}
+    for r in resultados:
+        certas, total = categorias.get(r["categoria"], (0, 0))
+        categorias[r["categoria"]] = (certas + bool(r["acerto"]), total + 1)
+    acertos = sum(1 for r in resultados if r["acerto"])
+    return {
+        "modelo": lotes[-1]["modelo"],
+        "datas": [min(lote["data"] for lote in lotes), max(lote["data"] for lote in lotes)],
+        "lotes": len(lotes),
+        "perguntas": len(resultados),
+        "acertos": acertos,
+        "acertos_revisados": acertos + sum(1 for e in erradas if e["veredito"] == "equivalente"),
+        "respondiveis": len(respondiveis),
+        "sql_valido": sum(1 for r in respondiveis if r["sql_gerado"] is not None),
+        "bloqueadas_ou_com_erro": sum(1 for r in respondiveis if r["origem"] == "erro"),
+        "recusas_certas": sum(1 for r in recusas if r["acerto"]),
+        "recusas": len(recusas),
+        "com_nova_tentativa": sum(1 for r in resultados if r["tentativas"] == 2),
+        "latencia_mediana_s": float(np.median([r["latencia_s"] for r in resultados])),
+        "por_categoria": categorias,
+        "erradas": erradas,
+    }
 
 
 def main() -> None:

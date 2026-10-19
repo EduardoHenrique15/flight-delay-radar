@@ -81,7 +81,9 @@ flowchart LR
   monitoramento e abre um pull request com os dados e as métricas.
 - **Assistente:** o Gemini só escreve a consulta, a partir da descrição das tabelas. O SQL passa
   por duas camadas de travas (só SELECT, só as 6 tabelas do app, sem arquivos nem rede, até
-  1.000 linhas e 10 segundos), e o número da resposta sempre vem do banco.
+  1.000 linhas e 10 segundos), e o número da resposta sempre vem do banco. Na avaliação com
+  31 perguntas de resposta conhecida, acertou 27 de 31 (87,1%) pelo critério automático e
+  30 de 31 na revisão manual ([como funciona e como foi avaliado](docs/assistente.md)).
 
 As decisões estão registradas em [ADRs](docs/decisoes/README.md): janela de dados, alvo, regra
 contra vazamento, warehouse, escolha do modelo, regra de retreino, texto para SQL e a publicação

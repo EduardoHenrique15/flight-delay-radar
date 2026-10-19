@@ -15,17 +15,26 @@ As respostas de demonstração são gravadas em português: em inglês, a pergun
 traduzida acha a gravada pela pergunta original. Em português (o padrão), nada muda.
 """
 
+import numbers
 import re
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import duckdb
+import numpy as np
 import pandas as pd
 
-from fdr import idioma
+from fdr import idioma, painel
 from fdr.assistant import guard, schema
-from fdr.assistant.llm import Cache, ControleDeUso, ErroLLM, Gemini, ModeloLinguagem
+from fdr.assistant.llm import (
+    Cache,
+    ControleDeUso,
+    CotaEsgotada,
+    ErroLLM,
+    Gemini,
+    ModeloLinguagem,
+)
 from fdr.config import ARQUIVO_CACHE_ASSISTENTE, ARQUIVO_DEMO_ASSISTENTE, ARQUIVO_USO_ASSISTENTE
 from fdr.idioma import t
 
@@ -51,10 +60,16 @@ def resumir(tabela: pd.DataFrame) -> str:
         return t("A consulta não encontrou nenhum resultado.")
     if tabela.shape == (1, 1):
         valor = tabela.iat[0, 0]
-        if isinstance(valor, float):
-            valor = f"{valor:.1%}" if 0 <= valor <= 1 else f"{valor:,.2f}"
-            if not idioma.ingles():
-                valor = valor.replace(",", "_").replace(".", ",").replace("_", ".")
+        numerico = isinstance(valor, numbers.Real) and not isinstance(valor, bool | np.bool_)
+        if numerico and pd.notna(valor):
+            # Contagens (mesmo as que o SUM devolve como 86746.0) saem inteiras: 86.746; uma
+            # fração entre 0 e 1 é uma taxa: 15,7%; o resto, com duas casas: 3,98.
+            if float(valor).is_integer():
+                valor = painel.numero(valor)
+            elif 0 <= valor <= 1:
+                valor = painel.porcentagem(valor)
+            else:
+                valor = painel.decimal(valor, 2)
         return t("Resposta: {valor}.", valor=valor)
     return t("{linhas} linha(s) encontrada(s).", linhas=len(tabela))
 
@@ -154,28 +169,32 @@ class Assistente:
         bloqueio = "sem chave do Gemini" if self.llm is None else None
         bloqueio = bloqueio or self.uso.motivo_bloqueio(usadas_na_sessao)
         if bloqueio:
-            bloqueio = _traduzir_com_numeros(bloqueio)
-            exemplo = self._demonstracao(pergunta)
-            if exemplo:
-                resposta = self._de_gravada(pergunta, exemplo, "demonstracao")
-                resposta.avisos.append(
-                    t("Resposta gravada de demonstração ({bloqueio}).", bloqueio=bloqueio)
-                )
-                return resposta
-            perguntas = self.demonstracao.perguntas()[:4]
-            if idioma.ingles():
-                from fdr.traducoes import TEXTOS
-
-                perguntas = [TEXTOS.get(p, p) for p in perguntas]
-            sugestoes = "; ".join(perguntas)
-            texto = t("O assistente está em modo de demonstração ({bloqueio}).", bloqueio=bloqueio)
-            if sugestoes:
-                texto += " " + t(
-                    "Experimente uma das perguntas de exemplo: {sugestoes}.", sugestoes=sugestoes
-                )
-            return Resposta(pergunta, texto, "limite")
-
+            return self._sem_o_modelo(pergunta, bloqueio)
         return self._perguntar_ao_modelo(pergunta)
+
+    def _sem_o_modelo(self, pergunta: str, bloqueio: str) -> Resposta:
+        """A resposta gravada de demonstração, se a pergunta for uma delas; senão, o aviso com as
+        perguntas de exemplo."""
+        bloqueio = _traduzir_com_numeros(bloqueio)
+        exemplo = self._demonstracao(pergunta)
+        if exemplo:
+            resposta = self._de_gravada(pergunta, exemplo, "demonstracao")
+            resposta.avisos.append(
+                t("Resposta gravada de demonstração ({bloqueio}).", bloqueio=bloqueio)
+            )
+            return resposta
+        perguntas = self.demonstracao.perguntas()[:4]
+        if idioma.ingles():
+            from fdr.traducoes import TEXTOS
+
+            perguntas = [TEXTOS.get(p, p) for p in perguntas]
+        sugestoes = "; ".join(perguntas)
+        texto = t("O assistente está em modo de demonstração ({bloqueio}).", bloqueio=bloqueio)
+        if sugestoes:
+            texto += " " + t(
+                "Experimente uma das perguntas de exemplo: {sugestoes}.", sugestoes=sugestoes
+            )
+        return Resposta(pergunta, texto, "limite")
 
     def _perguntar_ao_modelo(self, pergunta: str) -> Resposta:
         # O pedido ao modelo é sempre em português; em inglês, só a explicação muda de idioma.
@@ -191,6 +210,13 @@ class Assistente:
             try:
                 self.uso.registrar()
                 bruta = self.llm.gerar(self.sistema, mensagem)
+            except CotaEsgotada as erro:
+                # Sem cota, o app cai no modo de demonstração em vez de mostrar o erro. A cota do
+                # dia fica marcada, para as próximas perguntas não gastarem um pedido à toa.
+                if erro.diaria:
+                    self.uso.marcar_cota_esgotada()
+                    return self._sem_o_modelo(pergunta, "cota do Gemini esgotada hoje")
+                return self._sem_o_modelo(pergunta, "limite por minuto do Gemini")
             except ErroLLM as erro:
                 texto = t("O assistente não conseguiu responder: {erro}", erro=erro)
                 return Resposta(pergunta, texto, "erro", tentativas=tentativa)

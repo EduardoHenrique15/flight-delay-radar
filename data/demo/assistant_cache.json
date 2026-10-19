@@ -1,0 +1,27 @@
+{
+  "quantos voos foram realizados em julho de 2026": {
+    "pergunta": "Quantos voos foram realizados em julho de 2026?",
+    "sql": "SELECT SUM(realizados) AS voos_realizados FROM pontualidade_mensal WHERE mes = CAST('2026-07-01' AS DATE) LIMIT 1000",
+    "explicacao": "Soma a quantidade de voos realizados registrados na tabela pontualidade_mensal para o mês de julho de 2026."
+  },
+  "qual foi a taxa de atraso dos voos nacionais em agosto de 2026": {
+    "pergunta": "Qual foi a taxa de atraso dos voos nacionais em agosto de 2026?",
+    "sql": "SELECT SUM(atrasados_15) / SUM(realizados_com_horario) AS taxa_atraso FROM pontualidade_mensal WHERE tipo_linha = 'N' AND mes = CAST('2026-08-01' AS DATE) LIMIT 1000",
+    "explicacao": "Calcula a taxa geral de atraso (partidas com mais de 15 minutos de atraso divididas pelo total de voos realizados com horário registrado) para todos os voos nacionais no mês de agosto de 2026."
+  },
+  "qual o nome da companhia com mais voos realizados em agosto de 2026": {
+    "pergunta": "Qual o nome da companhia com mais voos realizados em agosto de 2026?",
+    "sql": "SELECT c.nome, SUM(p.realizados) AS total_realizados FROM pontualidade_mensal AS p JOIN companhias AS c ON c.cia = p.cia WHERE p.mes = CAST('2026-08-01' AS DATE) GROUP BY c.nome ORDER BY total_realizados DESC LIMIT 1",
+    "explicacao": "Agrupa os voos realizados por companhia no mês de agosto de 2026 (mes = '2026-08-01') e retorna o nome da companhia com o maior total."
+  },
+  "em qual mes de 2025 a taxa de atraso dos voos nacionais foi maior": {
+    "pergunta": "Em qual mês de 2025 a taxa de atraso dos voos nacionais foi maior?",
+    "sql": "SELECT mes, SUM(atrasados_15) / SUM(realizados_com_horario) AS taxa_atraso FROM pontualidade_mensal WHERE YEAR(mes) = 2025 AND tipo_linha = 'N' GROUP BY mes ORDER BY taxa_atraso DESC LIMIT 1",
+    "explicacao": "Calcula a taxa de atraso (voos com atraso superior a 15 minutos divididos pelos voos realizados com horário registrado) para cada mês de 2025 em voos nacionais, ordenando do maior para o menor para identificar o mês com a maior taxa."
+  },
+  "como evoluiu a taxa de atraso dos voos nacionais mes a mes em 2026": {
+    "pergunta": "Como evoluiu a taxa de atraso dos voos nacionais mês a mês em 2026?",
+    "sql": "SELECT mes, SUM(atrasados_15) / SUM(realizados_com_horario) AS taxa_atraso FROM pontualidade_mensal WHERE tipo_linha = 'N' AND YEAR(mes) = 2026 GROUP BY mes ORDER BY mes LIMIT 1000",
+    "explicacao": "Calcula a taxa de atraso mensal (partidas com mais de 15 minutos de atraso divididas pelo total de voos realizados com registro de horário) para voos nacionais (tipo_linha = 'N') ao longo do ano de 2026."
+  }
+}

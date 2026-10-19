@@ -1,13 +1,20 @@
-"""Pergunte aos dados: o assistente texto->SQL (docs/decisoes/007-texto-para-sql-com-travas.md).
+"""Pergunte aos dados: o assistente texto->SQL (docs/assistente.md e
+docs/decisoes/007-texto-para-sql-com-travas.md).
 
-Sem a chave do Gemini, ou sem cota, ele responde com as respostas gravadas de demonstração.
+Sem a chave do Gemini, ou sem cota, ele responde com as respostas gravadas de demonstração. Cada
+resposta mostra a tabela, um gráfico quando a tabela pede (fdr.assistant.visual), o SQL e as
+travas que ele cumpriu. No fim, o placar da avaliação (eval/results/).
 """
 
+import altair as alt
+import pandas as pd
 import streamlit as st
 
-from fdr import idioma, interface
+from fdr import idioma, interface, painel
+from fdr.assistant import visual
 from fdr.assistant.agent import Resposta
-from fdr.assistant.eval import ler_perguntas
+from fdr.assistant.eval import ler_perguntas, placar
+from fdr.assistant.guard import TRAVAS
 from fdr.idioma import t
 
 # Origem da resposta -> (rótulo, situação do selo)
@@ -21,11 +28,190 @@ ORIGENS = {
 }
 
 
+CATEGORIAS = {
+    "simples": "Simples",
+    "agregacao": "Somas e rankings",
+    "juncao": "Junções",
+    "tempo": "No tempo",
+    "recusa": "Recusas",
+}
+VEREDITOS = {
+    "equivalente": ("Mesmos números, outra forma", "atencao"),
+    "erro": ("Erro de verdade", "critico"),
+    "sem revisão": ("Sem revisão", "neutro"),
+}
+
+
+def tabela_legivel(tabela: pd.DataFrame) -> pd.DataFrame:
+    """A tabela do SQL com datas, taxas e contagens no formato do app (12,5%, ago/2026, 1.234).
+    Só para mostrar: o gráfico usa os valores originais."""
+    legivel = tabela.copy()
+    for coluna in legivel.columns:
+        serie = legivel[coluna]
+        if pd.api.types.is_datetime64_any_dtype(serie) or (
+            serie.dtype == object
+            and serie.dropna().map(lambda v: hasattr(v, "year")).all()
+            and serie.notna().any()
+        ):
+            datas = pd.to_datetime(serie).dt.date
+            mensal = all(d.day == 1 for d in datas.dropna())
+            legivel[coluna] = [
+                "" if pd.isna(d) else (painel.nome_mes(d) if mensal else painel.data(d))
+                for d in datas
+            ]
+        elif pd.api.types.is_bool_dtype(serie):
+            continue
+        elif pd.api.types.is_numeric_dtype(serie) and not visual.eh_rotulo_numerico(coluna):
+            valores = serie.dropna()
+            if "taxa" in coluna.lower() and valores.between(0, 1).all():
+                legivel[coluna] = [painel.porcentagem(v) for v in serie]
+            elif (valores % 1 == 0).all():
+                legivel[coluna] = ["" if pd.isna(v) else painel.numero(v) for v in serie]
+            else:
+                legivel[coluna] = ["" if pd.isna(v) else painel.decimal(v, 2) for v in serie]
+    return legivel
+
+
+def grafico_da_resposta(tabela: pd.DataFrame) -> None:
+    """O gráfico que a tabela pede (barras para rankings, linha para meses), ou nada."""
+    escolha = visual.escolher(tabela)
+    if escolha is None:
+        return
+    dados = tabela.copy()
+    eixo = dados[escolha.x]
+    if pd.api.types.is_datetime64_any_dtype(eixo) or eixo.map(lambda v: hasattr(v, "year")).all():
+        datas = pd.to_datetime(eixo).dt.date
+        funcao = painel.mes_curto if escolha.tipo == "linha" else painel.nome_mes
+        dados["_rotulo"] = [funcao(d) for d in datas]
+    else:
+        dados["_rotulo"] = eixo.astype(str)
+    if escolha.x_extra:
+        dados["_rotulo"] = dados["_rotulo"] + " → " + dados[escolha.x_extra].astype(str)
+    formato = ".1%" if escolha.porcentagem else ",.0f"
+    if not escolha.porcentagem and not (dados[escolha.y].dropna() % 1 == 0).all():
+        formato = ",.2f"
+    ordem = list(dados["_rotulo"])
+    medida = alt.Y(f"{escolha.y}:Q", title=None, axis=alt.Axis(format=formato, tickCount=4))
+    dica = [
+        alt.Tooltip("_rotulo:N", title=escolha.x),
+        alt.Tooltip(f"{escolha.y}:Q", title=escolha.y, format=formato),
+    ]
+    if escolha.tipo == "linha":
+        base = alt.Chart(dados).encode(
+            x=alt.X("_rotulo:O", sort=ordem, title=None, axis=alt.Axis(labelAngle=0)),
+            y=medida,
+            tooltip=dica,
+        )
+        grafico = base.mark_line(color=interface.DESTAQUE) + base.mark_point(
+            color=interface.DESTAQUE
+        )
+        altura = 240
+    else:
+        barras = alt.Chart(dados).encode(
+            y=alt.Y("_rotulo:N", sort=ordem, title=None, axis=alt.Axis(labelLimit=260)),
+            x=alt.X(f"{escolha.y}:Q", title=None, axis=alt.Axis(format=formato, tickCount=4)),
+            tooltip=dica,
+        )
+        grafico = barras.mark_bar(color=interface.DESTAQUE, size=16) + barras.mark_text(
+            align="left", dx=5, color=interface.TEXTO
+        ).encode(text=alt.Text(f"{escolha.y}:Q", format=formato))
+        altura = 34 * len(dados) + 20
+    interface.grafico(grafico, altura=altura)
+
+
+def travas_cumpridas() -> None:
+    itens = "".join(f"<li><b>✓</b>{interface._e(t(trava))}</li>" for trava in TRAVAS)
+    interface.html_bruto(
+        f'<div class="fdr-travas"><span>{interface._e(t("Travas cumpridas"))}</span>'
+        f"<ul>{itens}</ul></div>"
+    )
+
+
+def mostrar_placar() -> None:
+    resultado = placar()
+    if resultado is None:
+        return
+    e = interface._e
+    interface.secao(
+        t("Como o assistente foi avaliado"),
+        t(
+            "{perguntas} perguntas com resposta conhecida: o resultado do SQL do Gemini é "
+            "comparado com o de um SQL de referência escrito à mão. Nas perguntas que os dados "
+            "não respondem, o certo é recusar.",
+            perguntas=resultado["perguntas"],
+        ),
+    )
+
+    def de(parte: int, total: int) -> str:
+        return t("{parte} de {total}", parte=parte, total=total)
+
+    interface.numeros(
+        [
+            interface.Numero(
+                t("Acerto automático"),
+                painel.porcentagem(resultado["acertos"] / resultado["perguntas"]),
+                de(resultado["acertos"], resultado["perguntas"]),
+                t("A métrica principal: o resultado precisa bater coluna por coluna."),
+            ),
+            interface.Numero(
+                t("Na revisão manual"),
+                de(resultado["acertos_revisados"], resultado["perguntas"]),
+                t("contando as respostas com os mesmos números"),
+            ),
+            interface.Numero(
+                t("SQL válido"),
+                de(resultado["sql_valido"], resultado["respondiveis"]),
+                t("nenhuma consulta bloqueada pelas travas"),
+            ),
+            interface.Numero(
+                t("Recusas certas"),
+                de(resultado["recusas_certas"], resultado["recusas"]),
+                t("preço da passagem, clima, tripulação"),
+            ),
+        ]
+    )
+    esquerda, direita = st.columns([2, 3], gap="medium")
+    with esquerda, interface.quadro("placar_categorias", altura="stretch"):
+        interface.secao(t("Por tipo de pergunta"))
+        interface.ranking(
+            [
+                ("", t(CATEGORIAS.get(nome, nome)), certas / total, de(certas, total))
+                for nome, (certas, total) in resultado["por_categoria"].items()
+            ],
+            maximo=1.0,
+            cor=interface.DESTAQUE,
+        )
+    with direita, interface.quadro("placar_erros", altura="stretch"):
+        interface.secao(
+            t("As que a avaliação marcou como erradas"),
+            t("Revisadas à mão, rodando os dois SQLs nos dados do app."),
+        )
+        linhas = []
+        for erro in resultado["erradas"]:
+            rotulo, situacao = VEREDITOS.get(erro["veredito"], VEREDITOS["sem revisão"])
+            linhas.append(
+                f'<div class="fdr-erro-eval"><div>{interface.selo(t(rotulo), situacao)}</div>'
+                f'<div class="pergunta">{e(t(erro["pergunta"]))}</div>'
+                f'<div class="nota">{e(t(erro["nota"]))}</div></div>'
+            )
+        interface.html_bruto("".join(linhas))
+    interface.nota(
+        t(
+            "Modelo {modelo}, de {inicio} a {fim}, em {lotes} lotes (a cota gratuita do Gemini "
+            "limita os pedidos por dia). Método e resultados completos em docs/assistente.md.",
+            modelo=resultado["modelo"],
+            inicio=painel.data(pd.Timestamp(resultado["datas"][0]).date()),
+            fim=painel.data(pd.Timestamp(resultado["datas"][1]).date()),
+            lotes=resultado["lotes"],
+        )
+    )
+
+
 def exemplos(assistente) -> list[str]:
     """As perguntas de exemplo, no idioma da sessão (as gravadas estão em português)."""
     gravadas = assistente.demonstracao.perguntas()
     return [
-        t(p) for p in (gravadas or [q["pergunta"] for q in ler_perguntas() if q.get("demo")])[:4]
+        t(p) for p in (gravadas or [q["pergunta"] for q in ler_perguntas() if q.get("demo")])[:6]
     ]
 
 
@@ -37,8 +223,10 @@ def mostrar(resposta: Resposta) -> None:
         interface.html_bruto(interface.selo(t(rotulo), situacao))
         st.markdown(resposta.texto)
         if resposta.tabela is not None and not resposta.tabela.empty:
-            st.dataframe(resposta.tabela, hide_index=True, width="stretch")
+            grafico_da_resposta(resposta.tabela)
+            st.dataframe(tabela_legivel(resposta.tabela), hide_index=True, width="stretch")
         if resposta.sql:
+            travas_cumpridas()
             with st.expander(t("Ver a consulta SQL")):
                 st.code(resposta.sql, language="sql")
         for aviso in resposta.avisos:
@@ -144,3 +332,5 @@ with interface.pagina_protegida():
             ),
         ]
     )
+
+    mostrar_placar()
