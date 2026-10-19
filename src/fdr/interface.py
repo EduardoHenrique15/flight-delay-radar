@@ -23,6 +23,7 @@ from datetime import date
 import altair as alt
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as componentes
 
 from fdr import config, painel
 from fdr.assistant.agent import Assistente, criar_assistente
@@ -213,6 +214,17 @@ button[data-variant="pills"]:hover {{
     background: {AMARELO} !important; border-color: {PRETO} !important;
 }}
 button[data-variant="pills"] p {{ font-weight: 600; }}
+/* Seletor de modo (segmented control): o escolhido fica preto com letra amarela, como o menu */
+button[data-variant="segmented_control"] {{
+    background: {SUPERFICIE} !important; border-color: {LINHA} !important;
+    color: {TINTA} !important; border-radius: 2px !important; padding: 8px 16px !important;
+}}
+button[data-variant="segmented_control"] p {{ font-family: {FONTE_TITULO}; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.88rem; }}
+button[data-variant="segmented_control"][aria-checked="true"] {{
+    background: {PRETO} !important; border-color: {PRETO} !important; color: {AMARELO} !important;
+}}
+button[data-variant="segmented_control"]:hover {{ border-color: {PRETO} !important; }}
 
 /* Dicas dos gráficos: pretas, como as placas */
 #vg-tooltip-element {{
@@ -532,6 +544,17 @@ button[data-variant="pills"] p {{ font-weight: 600; }}
     .fdr-cartao .trecho, .fdr-cartao .canhoto {{ padding: 20px 18px; }}
 }}
 
+/* Cartão compacto (Comparar dois voos): uma coluna só, como no celular */
+.fdr-cartao.compacto .fdr-cartao-corpo {{ grid-template-columns: 1fr; }}
+.fdr-cartao.compacto .canhoto {{ border-left: none; border-top: 2px dashed {LINHA}; }}
+.fdr-cartao.compacto .canhoto::before {{ top: -12px; left: -12px; }}
+.fdr-cartao.compacto .canhoto::after {{ top: -12px; bottom: auto; left: auto; right: -12px; }}
+.fdr-cartao.compacto .codigos .iata {{ font-size: 2.6rem; }}
+.fdr-cartao.compacto .dados {{ grid-template-columns: repeat(2, auto); }}
+.fdr-cartao.compacto .chance {{ font-size: 3.2rem; }}
+.fdr-cartao.compacto .fdr-cartao-topo span {{ display: none; }}
+.fdr-cartao.compacto .trecho, .fdr-cartao.compacto .canhoto {{ padding: 20px 22px; }}
+
 /* Fatores (Previsão) */
 .fdr-fatores {{ display: grid; gap: 10px; }}
 .fdr-fatores-cabecalho {{ display: grid; grid-template-columns: minmax(0, 15rem) 1fr 6rem;
@@ -640,8 +663,10 @@ button[data-variant="pills"] p {{ font-weight: 600; }}
     position: relative; box-shadow: 0 0 0 100vmax {PRETO};
     clip-path: inset(0 -100vmax -100vmax -100vmax);
 }}
-.fdr-rodape::before {{ content: ""; position: absolute; top: 0; height: 3px; left: -100vmax;
-    right: -100vmax; background: {AMARELO}; }}
+/* A linha amarela vai de ponta a ponta com o mesmo truque da sombra: um elemento que passasse
+da largura da página criaria uma barra de rolagem lateral. */
+.fdr-rodape::before {{ content: ""; position: absolute; top: 0; height: 3px; left: 0; right: 0;
+    background: {AMARELO}; {PONTA_A_PONTA.format(cor=AMARELO)} }}
 .fdr-rodape-grade {{ display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 32px; }}
 .fdr-rodape .marca {{ display: flex; align-items: center; gap: 12px; font-family: {FONTE_TITULO};
     font-weight: 700; font-size: 1.15rem; color: #ffffff; letter-spacing: 0.1em;
@@ -952,6 +977,47 @@ def etapas(itens: list[tuple[str, str]], limites: bool = False) -> None:
     )
     classe = "fdr-etapas limites" if limites else "fdr-etapas"
     st.markdown(f'<div class="{classe}">{cartoes}</div>', unsafe_allow_html=True)
+
+
+def copiar_link(link: str) -> None:
+    """O link num campo só de leitura e um botão "Copiar link" que avisa quando copiou. Usa a
+    área de transferência do navegador e, se ela não estiver disponível (por exemplo, fora do
+    https), seleciona o texto e copia do jeito antigo."""
+    seguro = html.escape(link, quote=True)
+    componentes.html(
+        f"""
+<div style="display:flex;gap:8px;font-family:Barlow,'Segoe UI',system-ui,sans-serif">
+  <input id="link" readonly value="{seguro}" onclick="this.select()"
+    style="flex:1;min-width:0;padding:10px 12px;border:1px solid {LINHA};border-radius:2px;
+    font-family:'JetBrains Mono',Consolas,monospace;font-size:13px;color:{TINTA};
+    background:#f6f7f8">
+  <button id="copiar" type="button"
+    style="flex:none;padding:0 18px;border:none;border-radius:2px;background:{AMARELO};
+    color:{PRETO};font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+    cursor:pointer">Copiar link</button>
+</div>
+<script>
+const campo = document.getElementById("link"), botao = document.getElementById("copiar");
+function avisar(texto) {{
+  botao.textContent = texto;
+  setTimeout(() => {{ botao.textContent = "Copiar link"; }}, 2000);
+}}
+function jeitoAntigo() {{
+  campo.select();
+  try {{ avisar(document.execCommand("copy") ? "Copiado ✓" : "Use Ctrl+C"); }}
+  catch (e) {{ avisar("Use Ctrl+C"); }}
+}}
+botao.addEventListener("click", () => {{
+  if (navigator.clipboard && window.isSecureContext) {{
+    navigator.clipboard.writeText(campo.value).then(() => avisar("Copiado ✓"), jeitoAntigo);
+  }} else {{
+    jeitoAntigo();
+  }}
+}});
+</script>
+""",
+        height=48,
+    )
 
 
 def resumo(texto_html: str) -> None:

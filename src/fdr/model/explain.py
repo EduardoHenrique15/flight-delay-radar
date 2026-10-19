@@ -101,6 +101,8 @@ def explicar_voos(modelo: ModeloAtraso, dados: pd.DataFrame, fatores: int = 3) -
                     for t, v in ordenada.items()
                     if v < -0.05
                 ][:fatores],
+                # Todos os temas, para comparar dois voos tema a tema.
+                "temas": {t: round(float(v), 2) for t, v in linha.items()},
             }
         )
     return explicacoes

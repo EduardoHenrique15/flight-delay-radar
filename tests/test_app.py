@@ -96,9 +96,25 @@ def test_previsao_mostra_a_chance_e_os_fatores(dados_do_app):
     assert "Chance de atrasar mais de 15 min" in pagina
     assert re.search(r'class="chance">\d+,\d%<', pagina)
     assert "O que mais pesou nesta previsão" in pagina
-    # Trocar a hora refaz a previsão sem erro.
-    app.selectbox[-1].set_value(18).run()
+    # Trocar a hora refaz a previsão sem erro, e a escolha vai para a URL.
+    app.selectbox(key="hora").set_value(18).run()
     sem_erros(app)
+    assert app.query_params["hora"] == "18"
+    assert app.query_params["modo"] == "voo"
+
+
+def test_previsao_melhor_horario_e_comparacao(dados_do_app):
+    app = abrir("paginas/previsao.py")
+    app.session_state["modo"] = "melhor"
+    app.run()
+    sem_erros(app)
+    pagina = texto(app)
+    assert "A semana hora a hora" in pagina or "não dá para comparar horários" in pagina
+    app.session_state["modo"] = "comparar"
+    app.run()
+    sem_erros(app)
+    assert "De onde vem a diferença" in texto(app)
+    assert app.query_params["b_hora"] == "18"  # o voo B começa em outro horário
 
 
 def test_assistente_sem_chave_fica_em_modo_de_demonstracao(dados_do_app, monkeypatch):
