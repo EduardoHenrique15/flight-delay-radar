@@ -15,6 +15,7 @@ As respostas de demonstração são gravadas em português: em inglês, a pergun
 traduzida acha a gravada pela pergunta original. Em português (o padrão), nada muda.
 """
 
+import logging
 import numbers
 import re
 from contextlib import contextmanager
@@ -38,6 +39,7 @@ from fdr.assistant.llm import (
 from fdr.config import ARQUIVO_CACHE_ASSISTENTE, ARQUIVO_DEMO_ASSISTENTE, ARQUIVO_USO_ASSISTENTE
 from fdr.idioma import t
 
+log = logging.getLogger("fdr.assistente")
 PEDIDO_EM_INGLES = "Escreva a explicação em inglês."
 NUMERO = r"\d+"
 
@@ -218,7 +220,16 @@ class Assistente:
                     return self._sem_o_modelo(pergunta, "cota do Gemini esgotada hoje")
                 return self._sem_o_modelo(pergunta, "limite por minuto do Gemini")
             except ErroLLM as erro:
-                texto = t("O assistente não conseguiu responder: {erro}", erro=erro)
+                # Gemini fora do ar ou sobrecarregado (503) ou resposta fora do formato: uma
+                # pergunta de exemplo usa a resposta gravada; as outras recebem um aviso curto,
+                # sem o detalhe técnico (que vai para o log).
+                log.warning("Gemini falhou: %s", erro)
+                if self._demonstracao(pergunta):
+                    return self._sem_o_modelo(pergunta, "o Gemini não respondeu agora")
+                texto = t(
+                    "O Gemini não respondeu agora. Tente de novo em instantes ou use uma das "
+                    "perguntas de exemplo."
+                )
                 return Resposta(pergunta, texto, "erro", tentativas=tentativa)
             if not bruta["pode_responder"]:
                 texto = bruta["explicacao"] or t("Os dados do projeto não têm essa informação.")

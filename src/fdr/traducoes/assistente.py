@@ -210,4 +210,11 @@ TEXTOS = {
     # Cota do Gemini acabou no meio do uso (o app cai no modo de demonstração)
     "cota do Gemini esgotada hoje": "Gemini quota used up for today",
     "limite por minuto do Gemini": "Gemini's per-minute limit",
+    # Gemini fora do ar ou sobrecarregado (503)
+    "o Gemini não respondeu agora": "Gemini did not respond right now",
+    "O Gemini não respondeu agora. Tente de novo em instantes ou use uma das perguntas de "
+    "exemplo.": (
+        "Gemini did not respond right now. Try again in a moment or use one of the example "
+        "questions."
+    ),
 }
