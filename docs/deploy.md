@@ -48,7 +48,8 @@ Antes: o repositório precisa estar público, com `data/marts/` versionado e o C
 
 ### Conferir depois de publicar
 
-- As 6 páginas abrem sem mensagem de erro.
+- As 7 páginas abrem sem mensagem de erro, em português e em inglês (bandeiras no topo ou
+  `?lang=en` no endereço).
 - A página Previsão mostra uma probabilidade e os fatores.
 - Em "Pergunte aos dados", o aviso de modo de demonstração some quando a chave está nos secrets.
 - Para trocar ou remover a chave: no painel do app, **Settings > Secrets**.

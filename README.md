@@ -12,7 +12,7 @@ mês a mês com regra de retreino e um assistente que responde perguntas em SQL.
 
 **[Abrir o app](https://flight-delay-radar.streamlit.app)** (em português ou inglês: botão PT | EN no topo)
 
-![Visão geral do app: indicadores do mês e o painel de partidas com a chance prevista de atraso](docs/img/app_inicio.png)
+![Demonstração de 28 segundos: o painel de partidas, a previsão de um voo, a busca pelo número do voo, o assistente e a versão em inglês](docs/img/demo.gif)
 
 ## O que o app mostra
 
@@ -28,6 +28,7 @@ mês a mês com regra de retreino e um assistente que responde perguntas em SQL.
 
 <table>
 <tr>
+<td><img src="docs/img/app_inicio.png" alt="Visão geral: indicadores do mês, horas de atraso e o painel de partidas"></td>
 <td><img src="docs/img/app_previsao.png" alt="Página de previsão com o cartão de embarque e os fatores"></td>
 <td><img src="docs/img/app_monitoramento.png" alt="Página de monitoramento com a linha do tempo dos retreinos"></td>
 </tr>

@@ -13,7 +13,7 @@ answers questions in SQL.
 
 **[Open the app in English](https://flight-delay-radar.streamlit.app/?lang=en)** (PT | EN switch at the top)
 
-![App overview: the month's indicators and the departures board with the predicted chance of delay](docs/img/app_inicio.png)
+![28-second demo: the departures board, a flight prediction, the flight number lookup, the assistant and the English version](docs/img/demo.gif)
 
 ## What the app shows
 
@@ -29,6 +29,7 @@ answers questions in SQL.
 
 <table>
 <tr>
+<td><img src="docs/img/app_inicio.png" alt="Overview: the month's indicators, hours of delay and the departures board"></td>
 <td><img src="docs/img/app_previsao.png" alt="Prediction page with the boarding pass and the factors"></td>
 <td><img src="docs/img/app_monitoramento.png" alt="Monitoring page with the retraining timeline"></td>
 </tr>
